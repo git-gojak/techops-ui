@@ -1,845 +1,494 @@
-/* GoJak TechOps - Dashboard
-   Batch 3 | Menggunakan TechOpsAPI yang sudah tersedia.
-*/
-(function () {
-  "use strict";
+/* GoJak TechOps - Dashboard Dark Glossy */
 
-  const $ = (selector, root = document) =>
-    root.querySelector(selector);
+.dashboard-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0 14px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(18, 30, 46, 0.72);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
 
-  const state = {
-    computers: [],
-    printers: [],
-    maintenance: [],
-    archiveCounts: { computers: 0, printers: 0 },
-    lastUpdated: null,
-    loading: false,
-    loaded: false,
-    error: null
-  };
+.dashboard-meta > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
 
-  const escapeHTML = value =>
-    String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
+.dashboard-meta-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(34, 199, 139, 0.6);
+}
 
-  function normalizeArray(value) {
-    if (Array.isArray(value)) return value;
-    if (Array.isArray(value?.data)) return value.data;
-    if (Array.isArray(value?.items)) return value.items;
-    return [];
+.dashboard-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-bright);
+  border-radius: 10px;
+  background: rgba(37, 137, 255, 0.1);
+  color: var(--blue-light);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.dashboard-refresh:hover {
+  background: rgba(37, 137, 255, 0.2);
+}
+
+.dashboard-refresh span {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.dashboard-refresh:disabled {
+  opacity: 0.55;
+}
+
+.dashboard-grid .stat-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.dashboard-grid .stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-bright);
+  box-shadow: var(--shadow-blue);
+}
+
+.dashboard-grid .stat-card::after {
+  content: "";
+  position: absolute;
+  top: -45px;
+  right: -45px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(75, 155, 255, 0.055);
+  pointer-events: none;
+}
+
+.dashboard-lower-grid,
+.dashboard-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.dashboard-lower-grid .glass-card,
+.dashboard-extra-grid .glass-card {
+  min-width: 0;
+  padding: 21px;
+}
+
+.dashboard-panel {
+  min-width: 0;
+}
+
+.dashboard-panel .card-heading {
+  margin-bottom: 17px;
+}
+
+.dashboard-panel .card-heading h3 {
+  font-size: 14px;
+}
+
+.dashboard-panel .card-heading p {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.dashboard-unit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-unit-card {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.dashboard-unit-card > strong {
+  display: block;
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-unit-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.dashboard-unit-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.unit-computer {
+  background: rgba(37, 137, 255, 0.13);
+  color: #72b8ff;
+}
+
+.unit-printer {
+  background: rgba(37, 195, 195, 0.12);
+  color: #5bd7d0;
+}
+
+.dashboard-activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-activity-item:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-activity-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  font-size: 16px;
+}
+
+.dashboard-activity-icon.komputer {
+  background: rgba(37, 137, 255, 0.14);
+  color: #72b8ff;
+}
+
+.dashboard-activity-icon.printer {
+  background: rgba(37, 195, 195, 0.14);
+  color: #5bd7d0;
+}
+
+.dashboard-activity-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.dashboard-activity-info strong {
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-activity-info span {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-activity-info small {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.dashboard-activity-serial {
+  max-width: 78px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-schedule-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.dashboard-schedule-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 8px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.dashboard-schedule-summary strong {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.dashboard-schedule-summary span {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.schedule-overdue strong {
+  color: var(--red);
+}
+
+.schedule-upcoming strong {
+  color: var(--yellow);
+}
+
+.schedule-future strong {
+  color: var(--blue-light);
+}
+
+.dashboard-schedule-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-schedule-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-schedule-item:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-schedule-item > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+
+.dashboard-schedule-item strong {
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-schedule-item small {
+  color: var(--text-muted);
+  font-size: 9px;
+  text-transform: capitalize;
+}
+
+.dashboard-schedule-item > span {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.dashboard-condition-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-condition-list > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 47px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-condition-list > div:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-condition-list > div > span:nth-child(2) {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.dashboard-condition-list strong {
+  color: var(--text-main);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.condition-indicator {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.condition-indicator.good {
+  background: var(--green);
+  box-shadow: 0 0 9px rgba(34, 199, 139, 0.45);
+}
+
+.condition-indicator.attention {
+  background: var(--yellow);
+}
+
+.condition-indicator.bad {
+  background: var(--red);
+}
+
+.condition-indicator.unknown {
+  background: var(--text-muted);
+}
+
+.dashboard-condition-note {
+  margin-top: 13px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.dashboard-empty,
+.dashboard-error {
+  padding: 18px 12px;
+  border: 1px dashed var(--border-bright);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.dashboard-error {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--red);
+}
+
+.dashboard-error small {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.dashboard-offline {
+  background: var(--red) !important;
+  box-shadow: 0 0 10px rgba(240, 100, 100, 0.5) !important;
+}
+
+@media (max-width: 900px) {
+  .dashboard-lower-grid,
+  .dashboard-extra-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-meta {
+    align-items: flex-start;
+    padding: 10px;
   }
 
-  function parseDate(value) {
-    if (!value) return null;
-
-    if (value instanceof Date) {
-      return isNaN(value.getTime()) ? null : value;
-    }
-
-    const text = String(value).trim();
-    if (!text) return null;
-
-    // Format ISO: 2026-11-23T10:30:00
-    if (/^\d{4}-\d{2}-\d{2}[T ]/.test(text)) {
-      const date = new Date(text.replace(" ", "T"));
-      return isNaN(date.getTime()) ? null : date;
-    }
-
-    // Format Indonesia: 23-11-2026 10:30:00
-    let match = text.match(
-      /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
-    );
-
-    if (match) {
-      const date = new Date(
-        Number(match[3]),
-        Number(match[2]) - 1,
-        Number(match[1]),
-        Number(match[4] || 0),
-        Number(match[5] || 0),
-        Number(match[6] || 0)
-      );
-
-      return isNaN(date.getTime()) ? null : date;
-    }
-
-    // Format tahun-bulan-tanggal
-    match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-
-    if (match) {
-      return new Date(
-        Number(match[1]),
-        Number(match[2]) - 1,
-        Number(match[3])
-      );
-    }
-
-    const fallback = new Date(text);
-    return isNaN(fallback.getTime()) ? null : fallback;
+  .dashboard-meta > div {
+    max-width: 65%;
+    line-height: 1.4;
   }
 
-  function formatDate(value) {
-    const date = parseDate(value);
-    if (!date) return "Tanggal tidak tersedia";
-
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    }).format(date);
+  .dashboard-refresh {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 10px;
   }
 
-  function formatDateTime(value) {
-    const date = parseDate(value);
-    if (!date) return "Waktu tidak tersedia";
-
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(date);
+  .dashboard-lower-grid,
+  .dashboard-extra-grid {
+    gap: 12px;
+    margin-top: 12px;
   }
 
-  function isAdmin() {
-    return window.TechOpsAuth?.authenticated === true;
+  .dashboard-lower-grid .glass-card,
+  .dashboard-extra-grid .glass-card {
+    padding: 16px;
   }
 
-  // Penyamaran data untuk pengunjung publik.
-  function maskValue(value) {
-    const text = String(value || "").trim();
-
-    if (!text) return "-";
-    if (isAdmin()) return text;
-
-    if (text.length <= 4) {
-      return "*".repeat(text.length);
-    }
-
-    return "*".repeat(text.length - 4) + text.slice(-4);
+  .dashboard-unit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
-  function maskComputerName(value) {
-    const text = String(value || "").trim();
-
-    if (!text) return "Komputer";
-
-    if (isAdmin()) return text;
-
-    if (text.length <= 4) {
-      return "*".repeat(text.length);
-    }
-
-    return text.slice(0, 2) +
-      "*".repeat(text.length - 4) +
-      text.slice(-2);
+  .dashboard-unit-card {
+    padding: 11px;
   }
 
-  function normalizeAssetType(value) {
-    const type = String(value || "").trim().toLowerCase();
-
-    if (["komputer", "computer", "pc"].includes(type)) {
-      return "komputer";
-    }
-
-    if (type === "printer") return "printer";
-
-    return "";
+  .dashboard-activity-item {
+    gap: 8px;
   }
 
-  function isArchived(row) {
-    return String(row?.status || "")
-      .trim()
-      .toLowerCase() === "arsip";
+  .dashboard-activity-serial {
+    max-width: 58px;
+  }
+}
+
+@media (max-width: 390px) {
+  .dashboard-meta {
+    flex-direction: column;
   }
 
-  function getActivityDate(row) {
-    return row?.["Waktu Dibuat"] || row?.Tanggal || null;
+  .dashboard-meta > div {
+    max-width: 100%;
   }
 
-  function deviceKey(type, serial, name) {
-    const assetType = normalizeAssetType(type);
-    const identity = String(serial || name || "")
-      .trim()
-      .toUpperCase();
-
-    return assetType && identity
-      ? `${assetType}|${identity}`
-      : "";
+  .dashboard-refresh {
+    width: 100%;
   }
 
-  function setConnection(online) {
-    document.querySelectorAll(
-      ".system-indicator .status-dot, .system-card .status-dot"
-    ).forEach(dot => {
-      dot.classList.toggle("dashboard-offline", !online);
-    });
+  .dashboard-unit-grid {
+    grid-template-columns: 1fr;
   }
 
-  function withTimeout(promise, label, milliseconds = 20000) {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(label + " tidak merespons."));
-      }, milliseconds);
-
-      promise.then(
-        result => {
-          clearTimeout(timer);
-          resolve(result);
-        },
-        error => {
-          clearTimeout(timer);
-          reject(error);
-        }
-      );
-    });
+  .dashboard-schedule-summary {
+    gap: 6px;
   }
 
-  async function loadData() {
-    if (!window.TechOpsAPI) {
-      throw new Error("TechOpsAPI belum tersedia.");
-    }
-
-    const includeArchived = TechOpsAPI.isAuthenticated();
-
-    const results = await Promise.all([
-      withTimeout(
-        TechOpsAPI.get("computers.list", {
-          includeArchived
-        }),
-        "Data komputer"
-      ),
-
-      withTimeout(
-        TechOpsAPI.get("printers.list", {
-          includeArchived
-        }),
-        "Data printer"
-      ),
-
-      withTimeout(
-        TechOpsAPI.get("maintenance.list"),
-        "Data maintenance"
-      ),
-
-      withTimeout(
-        TechOpsAPI.get("inventory.archiveCounts"),
-        "Data arsip"
-      )
-    ]);
-
-    state.computers = normalizeArray(results[0]);
-    state.printers = normalizeArray(results[1]);
-    state.maintenance = normalizeArray(results[2]);
-
-    state.archiveCounts = {
-      computers: Number(results[3]?.computers || 0),
-      printers: Number(results[3]?.printers || 0)
-    };
-
-    state.lastUpdated = new Date();
-    state.loaded = true;
-    state.error = null;
-
-    setConnection(true);
+  .dashboard-schedule-summary > div {
+    padding: 9px 6px;
   }
-
-  function ensureDashboardExtras() {
-    const page = $("#page-dashboard");
-    const lowerGrid = $(".dashboard-lower-grid", page);
-
-    if (!page || !lowerGrid) return;
-
-    if (!$("#dashboardMeta", page)) {
-      lowerGrid.insertAdjacentHTML("beforebegin", `
-        <div class="dashboard-meta" id="dashboardMeta">
-          <div>
-            <span class="dashboard-meta-dot"></span>
-            <span id="dashboardUpdateText">
-              Menunggu data...
-            </span>
-          </div>
-
-          <button
-            type="button"
-            class="dashboard-refresh"
-            id="dashboardRefresh">
-            <span>↻</span> Perbarui Data
-          </button>
-        </div>
-      `);
-    }
-
-    if (!$("#dashboardExtraGrid", page)) {
-      lowerGrid.insertAdjacentHTML("afterend", `
-        <div class="dashboard-extra-grid" id="dashboardExtraGrid">
-
-          <article class="glass-card dashboard-panel">
-            <div class="card-heading">
-              <h3>Monitoring Jadwal Maintenance</h3>
-              <p>Jadwal perawatan perangkat</p>
-            </div>
-            <div id="dashboardSchedules"></div>
-          </article>
-
-          <article class="glass-card dashboard-panel">
-            <div class="card-heading">
-              <h3>Kondisi Perangkat</h3>
-              <p>Berdasarkan catatan Maintenance terbaru</p>
-            </div>
-            <div id="dashboardConditions"></div>
-          </article>
-
-        </div>
-      `);
-    }
-  }
-
-  function renderStats(computers, printers, maintenance) {
-    const activeComputers = computers.filter(row => !isArchived(row));
-    const activePrinters = printers.filter(row => !isArchived(row));
-
-    const totalGood = countGoodDevices(
-      activeComputers,
-      activePrinters,
-      maintenance
-    );
-
-    $("#totalComputers").textContent = activeComputers.length;
-    $("#totalPrinters").textContent = activePrinters.length;
-    $("#totalMaintenance").textContent = maintenance.length;
-    $("#goodDevices").textContent = totalGood;
-
-    const computerCard = $("#totalComputers")?.closest(".stat-card");
-    const printerCard = $("#totalPrinters")?.closest(".stat-card");
-
-    if (computerCard) {
-      const note = computerCard.querySelector("small");
-      if (note) {
-        note.textContent =
-          `${state.archiveCounts.computers} perangkat arsip`;
-      }
-    }
-
-    if (printerCard) {
-      const note = printerCard.querySelector("small");
-      if (note) {
-        note.textContent =
-          `${state.archiveCounts.printers} perangkat arsip`;
-      }
-    }
-  }
-
-  function countGoodDevices(computers, printers, maintenance) {
-    const latest = new Map();
-
-    maintenance
-      .map(row => ({
-        row,
-        date: parseDate(getActivityDate(row))
-      }))
-      .filter(item => item.date)
-      .sort((a, b) => b.date - a.date)
-      .forEach(item => {
-        const row = item.row;
-        const key = deviceKey(
-          row.jenis_aset,
-          row.serial,
-          row.nama_aset
-        );
-
-        if (key && !latest.has(key)) {
-          latest.set(key, row);
-        }
-      });
-
-    const devices = [
-      ...computers.map(row => ({
-        type: "komputer",
-        serial: row.serial,
-        name: row.komputer
-      })),
-      ...printers.map(row => ({
-        type: "printer",
-        serial: row.serial,
-        name: row.unit
-      }))
-    ];
-
-    return devices.filter(device => {
-      const key = deviceKey(
-        device.type,
-        device.serial,
-        device.name
-      );
-
-      const condition = String(
-        latest.get(key)?.kondisi || ""
-      ).trim().toLowerCase();
-
-      return condition === "baik";
-    }).length;
-  }
-
-  function renderUnits() {
-    const host = $("#unitMonitoring");
-    if (!host) return;
-
-    const units = new Map();
-
-    function addUnit(raw, type) {
-      const value = String(raw || "").trim();
-      if (!value) return;
-
-      // Pengguna komputer memakai format KODE UNIT-NAMA.
-      const code = type === "computers" && value.includes("-")
-        ? value.split("-")[0].trim()
-        : value;
-
-      const label = code.toLocaleUpperCase("id-ID");
-
-      if (!units.has(label)) {
-        units.set(label, {
-          label,
-          computers: 0,
-          printers: 0
-        });
-      }
-
-      units.get(label)[type]++;
-    }
-
-    state.computers
-      .filter(row => !isArchived(row))
-      .forEach(row => addUnit(row.pengguna, "computers"));
-
-    state.printers
-      .filter(row => !isArchived(row))
-      .forEach(row => addUnit(row.unit, "printers"));
-
-    const rows = [...units.values()].sort(
-      (a, b) => a.label.localeCompare(b.label, "id")
-    );
-
-    if (!rows.length) {
-      host.innerHTML = `
-        <div class="dashboard-empty">
-          Belum ada data unit.
-        </div>
-      `;
-      return;
-    }
-
-    host.innerHTML = `
-      <div class="dashboard-unit-grid">
-        ${rows.map(unit => `
-          <div class="dashboard-unit-card">
-            <strong>${escapeHTML(unit.label)}</strong>
-
-            <div class="dashboard-unit-counts">
-              <span class="unit-computer">
-                <span>▣</span>
-                ${unit.computers}
-              </span>
-
-              <span class="unit-printer">
-                <span>▤</span>
-                ${unit.printers}
-              </span>
-            </div>
-          </div>
-        `).join("")}
-      </div>
-    `;
-  }
-
-  function renderActivities() {
-    const host = $("#latestMaintenance");
-    if (!host) return;
-
-    const activities = state.maintenance
-      .map(row => ({
-        ...row,
-        _date: parseDate(getActivityDate(row))
-      }))
-      .sort((a, b) =>
-        (b._date?.getTime() || 0) -
-        (a._date?.getTime() || 0)
-      )
-      .slice(0, 5);
-
-    if (!activities.length) {
-      host.innerHTML = `
-        <div class="dashboard-empty">
-          Belum ada aktivitas Maintenance.
-        </div>
-      `;
-      return;
-    }
-
-    host.innerHTML = `
-      <div class="dashboard-activity-list">
-        ${activities.map(row => {
-          const type = normalizeAssetType(row.jenis_aset);
-          const rawName = row.nama_aset || "Perangkat";
-
-          const name = type === "komputer"
-            ? maskComputerName(rawName)
-            : rawName;
-
-          const serial = maskValue(row.serial);
-          const activity =
-            row.jenis_kegiatan || row.kegiatan || "Maintenance";
-
-          return `
-            <div class="dashboard-activity-item">
-              <div class="dashboard-activity-icon ${type}">
-                ${type === "printer" ? "▤" : "▣"}
-              </div>
-
-              <div class="dashboard-activity-info">
-                <strong>${escapeHTML(name)}</strong>
-
-                <span>
-                  ${escapeHTML(activity)}
-                  · ${escapeHTML(row.kondisi || "Kondisi belum diisi")}
-                </span>
-
-                <small>
-                  ${escapeHTML(formatDateTime(getActivityDate(row)))}
-                </small>
-              </div>
-
-              <span class="dashboard-activity-serial">
-                ${escapeHTML(serial)}
-              </span>
-            </div>
-          `;
-        }).join("")}
-      </div>
-    `;
-  }
-
-  function renderSchedules() {
-    const host = $("#dashboardSchedules");
-    if (!host) return;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const next30 = new Date(today);
-    next30.setDate(next30.getDate() + 30);
-
-    const latestCare = new Map();
-
-    state.maintenance
-      .filter(row =>
-        String(row.jenis_kegiatan || row.kegiatan || "")
-          .trim()
-          .toLowerCase() === "perawatan"
-      )
-      .map(row => ({
-        row,
-        created: parseDate(getActivityDate(row))
-      }))
-      .sort((a, b) =>
-        (b.created?.getTime() || 0) -
-        (a.created?.getTime() || 0)
-      )
-      .forEach(item => {
-        const row = item.row;
-        const key = deviceKey(
-          row.jenis_aset,
-          row.serial,
-          row.nama_aset
-        );
-
-        if (key && !latestCare.has(key)) {
-          latestCare.set(key, row);
-        }
-      });
-
-    const schedules = [...latestCare.values()]
-      .map(row => ({
-        row,
-        date: parseDate(row.jadwal)
-      }))
-      .filter(item => item.date)
-      .sort((a, b) => a.date - b.date);
-
-    const overdue = schedules.filter(item => item.date < today).length;
-    const upcoming = schedules.filter(
-      item => item.date >= today && item.date <= next30
-    ).length;
-
-    const future = schedules.filter(item => item.date > next30).length;
-
-    host.innerHTML = `
-      <div class="dashboard-schedule-summary">
-        <div class="schedule-overdue">
-          <strong>${overdue}</strong>
-          <span>Terlambat</span>
-        </div>
-
-        <div class="schedule-upcoming">
-          <strong>${upcoming}</strong>
-          <span>30 Hari</span>
-        </div>
-
-        <div class="schedule-future">
-          <strong>${future}</strong>
-          <span>Terjadwal</span>
-        </div>
-      </div>
-
-      ${
-        schedules.length
-          ? `
-            <div class="dashboard-schedule-list">
-              ${schedules.slice(0, 5).map(item => {
-                const row = item.row;
-                const type = normalizeAssetType(row.jenis_aset);
-
-                const name = type === "komputer"
-                  ? maskComputerName(row.nama_aset)
-                  : (row.nama_aset || "Printer");
-
-                return `
-                  <div class="dashboard-schedule-item">
-                    <div>
-                      <strong>${escapeHTML(name)}</strong>
-                      <small>${escapeHTML(type || "Perangkat")}</small>
-                    </div>
-                    <span>${escapeHTML(formatDate(item.date))}</span>
-                  </div>
-                `;
-              }).join("")}
-            </div>
-          `
-          : `
-            <div class="dashboard-empty">
-              Belum ada jadwal perawatan.
-            </div>
-          `
-      }
-    `;
-  }
-
-  function renderConditions() {
-    const host = $("#dashboardConditions");
-    if (!host) return;
-
-    const latest = new Map();
-
-    state.maintenance
-      .map(row => ({
-        row,
-        date: parseDate(getActivityDate(row))
-      }))
-      .filter(item => item.date)
-      .sort((a, b) => b.date - a.date)
-      .forEach(item => {
-        const row = item.row;
-        const key = deviceKey(
-          row.jenis_aset,
-          row.serial,
-          row.nama_aset
-        );
-
-        if (key && !latest.has(key)) {
-          latest.set(key, row);
-        }
-      });
-
-    const counts = {
-      baik: 0,
-      perhatian: 0,
-      rusak: 0,
-      unknown: 0
-    };
-
-    const devices = [
-      ...state.computers
-        .filter(row => !isArchived(row))
-        .map(row => ({
-          type: "komputer",
-          serial: row.serial,
-          name: row.komputer
-        })),
-      ...state.printers
-        .filter(row => !isArchived(row))
-        .map(row => ({
-          type: "printer",
-          serial: row.serial,
-          name: row.unit
-        }))
-    ];
-
-    devices.forEach(device => {
-      const key = deviceKey(
-        device.type,
-        device.serial,
-        device.name
-      );
-
-      const condition = String(
-        latest.get(key)?.kondisi || ""
-      ).trim().toLowerCase();
-
-      if (condition === "baik") {
-        counts.baik++;
-      } else if (condition === "perlu perhatian") {
-        counts.perhatian++;
-      } else if (condition === "rusak") {
-        counts.rusak++;
-      } else {
-        counts.unknown++;
-      }
-    });
-
-    host.innerHTML = `
-      <div class="dashboard-condition-list">
-        <div>
-          <span class="condition-indicator good"></span>
-          <span>Baik</span>
-          <strong>${counts.baik}</strong>
-        </div>
-
-        <div>
-          <span class="condition-indicator attention"></span>
-          <span>Perlu Perhatian</span>
-          <strong>${counts.perhatian}</strong>
-        </div>
-
-        <div>
-          <span class="condition-indicator bad"></span>
-          <span>Rusak</span>
-          <strong>${counts.rusak}</strong>
-        </div>
-
-        <div>
-          <span class="condition-indicator unknown"></span>
-          <span>Belum Ada Data Kondisi</span>
-          <strong>${counts.unknown}</strong>
-        </div>
-      </div>
-
-      <p class="dashboard-condition-note">
-        Kondisi dihitung dari catatan Maintenance terbaru
-        untuk setiap perangkat aktif.
-      </p>
-    `;
-  }
-
-  function renderMeta() {
-    const label = $("#dashboardUpdateText");
-    if (label) {
-      label.textContent = state.lastUpdated
-        ? "Data diperbarui " + formatDateTime(state.lastUpdated)
-        : "Data belum diperbarui";
-    }
-  }
-
-  function renderError(error) {
-    const message = escapeHTML(
-      error?.message || "Terjadi kesalahan saat mengambil data."
-    );
-
-    [
-      "#unitMonitoring",
-      "#latestMaintenance",
-      "#dashboardSchedules",
-      "#dashboardConditions"
-    ].forEach(selector => {
-      const host = $(selector);
-      if (!host) return;
-
-      host.innerHTML = `
-        <div class="dashboard-error">
-          <span>Data belum dapat dimuat.</span>
-          <small>${message}</small>
-        </div>
-      `;
-    });
-
-    setConnection(false);
-  }
-
-  function render() {
-    ensureDashboardExtras();
-
-    const computers = state.computers.filter(row => !isArchived(row));
-    const printers = state.printers.filter(row => !isArchived(row));
-
-    renderStats(computers, printers, state.maintenance);
-    renderUnits();
-    renderActivities();
-    renderSchedules();
-    renderConditions();
-    renderMeta();
-
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
-  }
-
-  async function refresh() {
-    if (state.loading) return;
-
-    state.loading = true;
-
-    const button = $("#dashboardRefresh");
-    if (button) {
-      button.disabled = true;
-      button.innerHTML = "<span>↻</span> Memuat...";
-    }
-
-    try {
-      await loadData();
-      render();
-    } catch (error) {
-      state.error = error;
-      renderError(error);
-      console.error("Dashboard gagal dimuat:", error);
-    } finally {
-      state.loading = false;
-
-      const currentButton = $("#dashboardRefresh");
-      if (currentButton) {
-        currentButton.disabled = false;
-        currentButton.innerHTML = "<span>↻</span> Perbarui Data";
-      }
-    }
-  }
-
-  function init() {
-    ensureDashboardExtras();
-
-    document.addEventListener("click", event => {
-      if (event.target.closest("#dashboardRefresh")) {
-        refresh();
-      }
-    });
-
-    // Saat login/logout, data dimuat ulang sesuai hak akses.
-    document.addEventListener("techops:authchange", () => {
-      refresh();
-    });
-
-    refresh();
-  }
-
-  document.addEventListener("DOMContentLoaded", init);
-
-  window.DashboardPage = {
-    refresh,
-    render,
-    getState: () => state
-  };
-})();
+}
