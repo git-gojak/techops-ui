@@ -1,38 +1,27 @@
-
-/* =====================================================
-   GOJAK TECHOPS
-   DASHBOARD - DARK GLOSSY
-   Gabungan CSS dasar + Batch 3
-   ===================================================== */
-
-
-/* =====================================================
-   1. WELCOME PANEL - STYLE ASLI DIPULIHKAN
-   ===================================================== */
+/* GoJak TechOps — Dashboard Dark Glossy */
 
 .welcome-panel {
   position: relative;
-  min-height: 165px;
+  min-height: 155px;
   overflow: hidden;
-  padding: 27px 30px;
+  padding: 26px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   background:
     radial-gradient(
       circle at 85% 50%,
-      rgba(37, 137, 255, 0.25),
-      transparent 32%
+      rgba(37,137,255,.24),
+      transparent 34%
     ),
-    linear-gradient(120deg, #192b43, #132238);
+    linear-gradient(120deg,#192b43,#132238);
 }
 
 .eyebrow {
   color: var(--blue-light);
   font-size: 10px;
   font-weight: 750;
-  letter-spacing: 0.15em;
+  letter-spacing: .15em;
 }
 
 .welcome-panel h2 {
@@ -45,71 +34,55 @@
 }
 
 .welcome-decoration {
-  color: rgba(130, 190, 255, 0.12);
+  color: rgba(130,190,255,.12);
   font-size: 100px;
   font-weight: 900;
   line-height: 1;
-  user-select: none;
 }
-
-
-/* =====================================================
-   2. RINGKASAN PERANGKAT - STYLE ASLI DIPULIHKAN
-   ===================================================== */
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 14px;
 }
 
 .stat-card {
   min-width: 0;
-  min-height: 125px;
-  padding: 18px;
-
+  min-height: 118px;
+  padding: 17px;
   display: flex;
   align-items: center;
-  gap: 14px;
-
-  transition: var(--transition);
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--border-bright);
+  gap: 12px;
 }
 
 .stat-icon {
-  width: 43px;
-  height: 43px;
-  flex: 0 0 auto;
-
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
   display: grid;
   place-items: center;
-
-  border-radius: 14px;
-  font-size: 20px;
+  border-radius: 13px;
+  font-size: 19px;
 }
 
 .stat-icon.blue {
-  color: var(--blue-light);
-  background: rgba(37, 137, 255, 0.14);
+  color: #72b8ff;
+  background: rgba(37,137,255,.15);
 }
 
 .stat-icon.teal {
-  color: var(--teal);
-  background: rgba(37, 195, 195, 0.13);
+  color: #5bd7d0;
+  background: rgba(37,195,195,.14);
 }
 
 .stat-icon.purple {
-  color: var(--purple);
-  background: rgba(166, 139, 255, 0.13);
+  color: #b9a5ff;
+  background: rgba(166,139,255,.14);
 }
 
 .stat-icon.green {
-  color: var(--green);
-  background: rgba(34, 199, 139, 0.13);
+  color: #52dda9;
+  background: rgba(34,199,139,.14);
 }
 
 .stat-info {
@@ -118,118 +91,81 @@
   flex-direction: column;
 }
 
-.stat-info span {
+.stat-info > span {
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
-.stat-info strong {
+.stat-info > strong {
   margin: 3px 0;
-  font-size: 25px;
-  line-height: 1.2;
+  font-size: 26px;
+  line-height: 1.15;
 }
 
 .stat-info small {
   color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
 }
 
+.stat-info small b {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
 
-/* Efek glossy kartu ringkasan */
+.stat-info small i {
+  padding: 0 2px;
+  font-style: normal;
+  color: var(--text-muted);
+}
 
-.dashboard-grid .stat-card {
+.dash-stat {
   position: relative;
   overflow: hidden;
-
-  transition:
-    transform var(--transition),
-    border-color var(--transition),
-    box-shadow var(--transition);
 }
 
-.dashboard-grid .stat-card:hover {
-  box-shadow: var(--shadow-blue);
-}
-
-.dashboard-grid .stat-card::after {
+.dash-stat:after {
   content: "";
   position: absolute;
-  top: -45px;
+  width: 100px;
+  height: 100px;
   right: -45px;
-
-  width: 110px;
-  height: 110px;
-
+  top: -48px;
   border-radius: 50%;
-  background: rgba(75, 155, 255, 0.055);
+  background: rgba(75,155,255,.055);
   pointer-events: none;
 }
 
-
-/* =====================================================
-   3. JARAK DAN PANEL DASHBOARD
-   ===================================================== */
-
-.dashboard-lower-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 20px;
+.dash-stat:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-bright);
+  box-shadow: var(--shadow-blue);
+  transition: var(--transition);
 }
 
-.dashboard-lower-grid .glass-card,
-.dashboard-extra-grid .glass-card {
-  min-width: 0;
-  padding: 21px;
+.dashboard-connection-label {
+  color: var(--green);
+  font-size: 19px !important;
 }
 
-.dashboard-extra-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.dashboard-panel {
-  min-width: 0;
-}
-
-.dashboard-panel .card-heading {
-  margin-bottom: 17px;
-}
-
-.dashboard-panel .card-heading h3 {
-  font-size: 14px;
-}
-
-.dashboard-panel .card-heading p {
-  margin-top: 4px;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-
-/* =====================================================
-   4. INFORMASI PEMBARUAN DATA
-   ===================================================== */
+/* Data terakhir diperbarui */
 
 .dashboard-meta {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
-
-  margin: 18px 0 14px;
+  margin: 17px 0 13px;
   padding: 11px 14px;
-
   border: 1px solid var(--border);
   border-radius: 13px;
-  background: rgba(18, 30, 46, 0.72);
-
+  background: rgba(18,30,46,.72);
   color: var(--text-secondary);
   font-size: 11px;
 }
 
-.dashboard-meta > div {
+.dashboard-meta > span {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -237,70 +173,77 @@
 }
 
 .dashboard-meta-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 10px rgba(34, 199, 139, 0.6);
+  box-shadow: 0 0 9px rgba(34,199,139,.55);
 }
 
 .dashboard-refresh {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-
-  min-height: 34px;
-  padding: 0 12px;
-
+  min-height: 36px;
+  padding: 0 13px;
   border: 1px solid var(--border-bright);
   border-radius: 10px;
-  background: rgba(37, 137, 255, 0.1);
-
+  background: rgba(37,137,255,.12);
   color: var(--blue-light);
   font-size: 11px;
   white-space: nowrap;
 }
 
-.dashboard-refresh:hover {
-  background: rgba(37, 137, 255, 0.2);
-}
-
-.dashboard-refresh span {
-  font-size: 17px;
-  line-height: 1;
-}
-
 .dashboard-refresh:disabled {
-  opacity: 0.55;
+  opacity: .55;
 }
 
+/* Panel dashboard */
 
-/* =====================================================
-   5. MONITORING PERANGKAT PER UNIT
-   ===================================================== */
+.dashboard-lower-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 15px;
+  margin-top: 0;
+}
+
+.dash-panel {
+  min-width: 0;
+  padding: 19px !important;
+}
+
+.dash-panel .card-heading {
+  margin-bottom: 15px;
+}
+
+.dash-panel .card-heading h3 {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.dash-panel .card-heading p {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Monitoring unit */
 
 .dashboard-unit-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 9px;
 }
 
 .dashboard-unit-card {
   min-width: 0;
-  padding: 13px;
-
+  padding: 11px;
   border: 1px solid var(--border);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.025);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
 }
 
 .dashboard-unit-card > strong {
   display: block;
   overflow: hidden;
-
   color: var(--text-main);
   font-size: 12px;
   text-overflow: ellipsis;
@@ -309,78 +252,70 @@
 
 .dashboard-unit-counts {
   display: flex;
-  flex-wrap: wrap;
   gap: 7px;
-  margin-top: 11px;
+  margin-top: 9px;
 }
 
 .dashboard-unit-counts span {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-
   padding: 5px 8px;
   border-radius: 8px;
-
   font-size: 11px;
   font-weight: 700;
 }
 
 .unit-computer {
-  background: rgba(37, 137, 255, 0.13);
   color: #72b8ff;
+  background: rgba(37,137,255,.14);
 }
 
 .unit-printer {
-  background: rgba(37, 195, 195, 0.12);
   color: #5bd7d0;
+  background: rgba(37,195,195,.13);
 }
 
+/* Aktivitas maintenance */
 
-/* =====================================================
-   6. AKTIVITAS MAINTENANCE TERBARU
-   ===================================================== */
-
-.dashboard-activity-list {
+.dashboard-activity-list,
+.dashboard-schedule-list {
   display: flex;
   flex-direction: column;
 }
 
 .dashboard-activity-item {
   display: flex;
-  align-items: center;
-  gap: 10px;
-
-  min-width: 0;
-  padding: 11px 0;
-
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
+  min-width: 0;
 }
 
-.dashboard-activity-item:last-child {
+.dashboard-activity-item:last-child,
+.dashboard-schedule-item:last-child {
   border-bottom: 0;
 }
 
 .dashboard-activity-icon {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
   display: grid;
   place-items: center;
-
   border-radius: 11px;
   font-size: 16px;
 }
 
 .dashboard-activity-icon.komputer {
-  background: rgba(37, 137, 255, 0.14);
   color: #72b8ff;
+  background: rgba(37,137,255,.15);
 }
 
 .dashboard-activity-icon.printer {
-  background: rgba(37, 195, 195, 0.14);
   color: #5bd7d0;
+  background: rgba(37,195,195,.14);
 }
 
 .dashboard-activity-info {
@@ -388,72 +323,59 @@
   flex: 1;
   flex-direction: column;
   min-width: 0;
-  gap: 2px;
+  gap: 3px;
 }
 
 .dashboard-activity-info strong {
-  overflow: hidden;
   color: var(--text-main);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
-.dashboard-activity-info span {
-  overflow: hidden;
-  color: var(--text-secondary);
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+.dashboard-activity-info span,
 .dashboard-activity-info small {
-  color: var(--text-muted);
-  font-size: 9px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
-.dashboard-activity-serial {
-  max-width: 78px;
-  overflow: hidden;
-
+.dashboard-activity-info time {
   color: var(--text-muted);
-  font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
-
-/* =====================================================
-   7. MONITORING JADWAL MAINTENANCE
-   ===================================================== */
+/* Jadwal maintenance */
 
 .dashboard-schedule-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3,minmax(0,1fr));
   gap: 8px;
-  margin-bottom: 15px;
+  margin-bottom: 13px;
 }
 
 .dashboard-schedule-summary > div {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-
-  padding: 11px 8px;
-
+  gap: 4px;
+  padding: 11px 9px;
   border: 1px solid var(--border);
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(255,255,255,.025);
 }
 
 .dashboard-schedule-summary strong {
-  font-size: 20px;
-  line-height: 1.2;
+  font-size: 22px;
+  line-height: 1.1;
 }
 
 .dashboard-schedule-summary span {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 10px;
+  line-height: 1.3;
 }
 
 .schedule-overdue strong {
@@ -468,97 +390,115 @@
   color: var(--blue-light);
 }
 
-.dashboard-schedule-list {
-  display: flex;
-  flex-direction: column;
-}
-
 .dashboard-schedule-item {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 10px;
-
   padding: 11px 0;
   border-bottom: 1px solid var(--border);
-}
-
-.dashboard-schedule-item:last-child {
-  border-bottom: 0;
 }
 
 .dashboard-schedule-item > div {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: 3px;
+  gap: 4px;
 }
 
 .dashboard-schedule-item strong {
-  overflow: hidden;
   color: var(--text-main);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-schedule-item small {
   color: var(--text-muted);
-  font-size: 9px;
-  text-transform: capitalize;
-}
-
-.dashboard-schedule-item > span {
-  flex: 0 0 auto;
-  color: var(--text-secondary);
   font-size: 10px;
 }
 
-
-/* =====================================================
-   8. KONDISI PERANGKAT
-   ===================================================== */
-
-.dashboard-condition-list {
-  display: flex;
-  flex-direction: column;
+.dashboard-schedule-item time {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-align: right;
 }
 
-.dashboard-condition-list > div {
+.dashboard-more {
+  display: block;
+  margin-top: 9px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+/* Kondisi perangkat */
+
+.dashboard-condition-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+}
+
+.dashboard-condition-column {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255,255,255,.02);
+}
+
+.dashboard-condition-column h4 {
+  margin: 0 0 8px;
+  color: var(--text-main);
+  font-size: 13px;
+}
+
+.dashboard-condition-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-
-  min-height: 47px;
+  justify-content: space-between;
+  gap: 7px;
+  min-height: 35px;
   border-bottom: 1px solid var(--border);
 }
 
-.dashboard-condition-list > div:last-child {
+.dashboard-condition-row:last-of-type {
   border-bottom: 0;
 }
 
-.dashboard-condition-list > div > span:nth-child(2) {
-  flex: 1;
+.dashboard-condition-row > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   color: var(--text-secondary);
   font-size: 11px;
+  line-height: 1.3;
 }
 
-.dashboard-condition-list strong {
+.dashboard-condition-row strong {
   color: var(--text-main);
-  font-size: 15px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
+}
+
+.dashboard-condition-column > small {
+  display: block;
+  margin-top: 9px;
+  color: var(--text-muted);
+  font-size: 10px;
 }
 
 .condition-indicator {
   width: 8px;
   height: 8px;
-  flex: 0 0 auto;
+  flex: 0 0 8px;
   border-radius: 50%;
+  background: var(--text-muted);
 }
 
-.condition-indicator.good {
+.condition-indicator.baik {
   background: var(--green);
-  box-shadow: 0 0 9px rgba(34, 199, 139, 0.45);
+  box-shadow: 0 0 8px rgba(34,199,139,.4);
 }
 
 .condition-indicator.attention {
@@ -569,31 +509,22 @@
   background: var(--red);
 }
 
-.condition-indicator.unknown {
-  background: var(--text-muted);
-}
-
 .dashboard-condition-note {
-  margin-top: 13px;
+  margin-top: 12px;
   color: var(--text-muted);
   font-size: 10px;
   line-height: 1.5;
 }
 
-
-/* =====================================================
-   9. STATUS KOSONG, ERROR, KONEKSI
-   ===================================================== */
+/* Status dan pesan */
 
 .dashboard-empty,
 .dashboard-error {
-  padding: 18px 12px;
-
+  padding: 17px 12px;
   border: 1px dashed var(--border-bright);
-  border-radius: 12px;
-
+  border-radius: 11px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 12px;
   text-align: center;
 }
 
@@ -602,82 +533,134 @@
   flex-direction: column;
   gap: 6px;
   color: var(--red);
+  overflow-wrap: anywhere;
 }
 
 .dashboard-error small {
   color: var(--text-muted);
-  overflow-wrap: anywhere;
 }
 
 .dashboard-offline {
   background: var(--red) !important;
-  box-shadow: 0 0 10px rgba(240, 100, 100, 0.5) !important;
+  box-shadow: 0 0 9px rgba(240,100,100,.5) !important;
 }
 
+/* Tablet */
 
-/* =====================================================
-   10. RESPONSIVE KHUSUS KOMPONEN DASHBOARD
-   Breakpoint dasar tetap ditangani responsive.css
-   ===================================================== */
-
-@media (max-width: 900px) {
-  .dashboard-extra-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .dashboard-meta {
-    align-items: flex-start;
-    padding: 10px;
-  }
-
-  .dashboard-meta > div {
-    max-width: 65%;
-    line-height: 1.4;
-  }
-
-  .dashboard-refresh {
-    min-height: 32px;
-    padding: 0 9px;
-    font-size: 10px;
-  }
-
-  .dashboard-extra-grid {
-    gap: 12px;
-    margin-top: 12px;
-  }
-
-  .dashboard-lower-grid .glass-card,
-  .dashboard-extra-grid .glass-card {
-    padding: 16px;
+@media (max-width:1100px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
   }
 
   .dashboard-unit-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+/* Mobile */
+
+@media (max-width:760px) {
+  .welcome-panel {
+    min-height: 140px;
+    padding: 20px 18px;
+  }
+
+  .welcome-panel h2 {
+    max-width: 260px;
+    font-size: 19px;
+  }
+
+  .welcome-panel p {
+    max-width: 250px;
+    font-size: 11px;
+  }
+
+  .welcome-decoration {
+    position: absolute;
+    right: 8px;
+    font-size: 72px;
+  }
+
+  .dashboard-grid {
+    gap: 9px;
+  }
+
+  .stat-card {
+    min-height: 105px;
+    padding: 12px 10px;
+    gap: 8px;
+  }
+
+  .stat-icon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    font-size: 16px;
+  }
+
+  .stat-info > span {
+    font-size: 10px;
+  }
+
+  .stat-info > strong {
+    font-size: 22px;
+  }
+
+  .stat-info small {
+    font-size: 9px;
+  }
+
+  .dashboard-lower-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dash-panel {
+    padding: 15px !important;
+  }
+
+  .dashboard-unit-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
     gap: 8px;
   }
 
   .dashboard-unit-card {
-    padding: 11px;
+    padding: 10px;
   }
 
-  .dashboard-activity-item {
-    gap: 8px;
+  .dashboard-meta {
+    align-items: flex-start;
   }
 
-  .dashboard-activity-serial {
-    max-width: 58px;
+  .dashboard-meta > span {
+    line-height: 1.45;
+  }
+
+  .dashboard-refresh {
+    min-height: 34px;
+    padding: 0 9px;
+  }
+
+  .dashboard-activity-info strong {
+    font-size: 13px;
+  }
+
+  .dashboard-activity-info span,
+  .dashboard-activity-info small,
+  .dashboard-activity-info time {
+    font-size: 11px;
+  }
+
+  .dashboard-condition-grid {
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 390px) {
+/* HP kecil */
+
+@media (max-width:390px) {
   .dashboard-meta {
     flex-direction: column;
-  }
-
-  .dashboard-meta > div {
-    max-width: 100%;
   }
 
   .dashboard-refresh {
@@ -685,7 +668,7 @@
   }
 
   .dashboard-unit-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2,minmax(0,1fr));
   }
 
   .dashboard-schedule-summary {
@@ -693,6 +676,10 @@
   }
 
   .dashboard-schedule-summary > div {
-    padding: 9px 6px;
+    padding: 9px 7px;
   }
-}
+
+  .dashboard-schedule-summary span {
+    font-size: 9px;
+  }
+   }
