@@ -1,0 +1,96 @@
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#087BFF"/>
+      <stop offset="0.48" stop-color="#063A9D"/>
+      <stop offset="1" stop-color="#06143F"/>
+    </linearGradient>
+
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#21E5FF"/>
+      <stop offset="0.5" stop-color="#087BFF"/>
+      <stop offset="1" stop-color="#0646C9"/>
+    </linearGradient>
+
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD43B"/>
+      <stop offset="1" stop-color="#FF7900"/>
+    </linearGradient>
+
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+
+    <clipPath id="circle">
+      <circle cx="256" cy="256" r="242"/>
+    </clipPath>
+  </defs>
+
+  <!-- Shadow -->
+  <circle cx="256" cy="263" r="244"
+          fill="#00102F" opacity=".45" filter="url(#shadow)"/>
+
+  <!-- Circular emblem -->
+  <circle cx="256" cy="256" r="244"
+          fill="url(#bg)"/>
+
+  <g clip-path="url(#circle)">
+    <!-- Blue light -->
+    <ellipse cx="150" cy="75" rx="210" ry="125"
+             fill="#159BFF" opacity=".22"/>
+
+    <!-- Circuit lines -->
+    <g fill="none" stroke="#16DFFF"
+       stroke-width="8" stroke-linecap="round"
+       stroke-linejoin="round" opacity=".8">
+      <path d="M20 190 H90 L145 135 H205 L250 90 H290"/>
+      <path d="M25 235 H95 L130 200 H185 L225 160 H275"/>
+      <path d="M310 75 H350 L390 35"/>
+      <path d="M340 430 H390 L430 390 H490"/>
+      <path d="M290 465 H340 L375 430 H420"/>
+      <path d="M430 320 H465 L495 290"/>
+    </g>
+
+    <g fill="#082A73" stroke="#16DFFF" stroke-width="7">
+      <circle cx="290" cy="90" r="13"/>
+      <circle cx="390" cy="35" r="11"/>
+      <circle cx="430" cy="390" r="12"/>
+      <circle cx="490" cy="290" r="11"/>
+      <circle cx="290" cy="465" r="11"/>
+    </g>
+
+    <!-- GT lettering -->
+    <text x="256" y="292"
+          text-anchor="middle"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="158"
+          font-weight="900"
+          font-style="italic"
+          letter-spacing="-12"
+          fill="#FFFFFF">GT</text>
+
+    <!-- Orange motion swoosh -->
+    <path d="M95 330
+             C150 390 310 385 415 275
+             C385 350 290 420 180 405
+             C130 398 100 370 95 330Z"
+          fill="url(#orange)"/>
+
+    <path d="M300 185
+             C365 135 435 155 450 205"
+          fill="none"
+          stroke="url(#orange)"
+          stroke-width="9"
+          stroke-linecap="round"/>
+  </g>
+
+  <!-- Glossy circular rim -->
+  <circle cx="256" cy="256" r="244"
+          fill="none" stroke="url(#rim)" stroke-width="13"/>
+
+  <circle cx="256" cy="256" r="232"
+          fill="none" stroke="#FFFFFF"
+          stroke-width="2" opacity=".12"/>
+</svg>
