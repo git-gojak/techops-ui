@@ -13,13 +13,43 @@
 
   const avatar = $("#profileButton");
   const modal = $("#loginModal");
+  const loginForm = $("#loginForm");
   const pinInput = $("#adminPin");
   const loginButton = $("#loginButton");
+  const loginError = $("#loginError");
+
+  if (
+    !avatar ||
+    !modal ||
+    !loginForm ||
+    !pinInput ||
+    !loginButton ||
+    !window.TechOpsAPI
+  ) {
+    console.error("Auth gagal diinisialisasi: elemen atau API tidak ditemukan.");
+    return;
+  }
+
+  // =====================================================
+  // UTILITAS
+  // =====================================================
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
 
   function initials(user) {
     const name = String(
-      user?.nama || user?.name ||
-      user?.username || "Admin"
+      user?.nama ||
+      user?.name ||
+      user?.username ||
+      "Admin"
     ).trim();
 
     const words = name.split(/\s+/).filter(Boolean);
@@ -38,20 +68,26 @@
     alert(message);
   }
 
-  function closeLogin() {
-    modal.classList.remove("open");
-    pinInput.value = "";
-  }
-
-  function openLogin() {
-    if (state.checking) {
-      notify("Sedang memeriksa sesi Admin.");
-      return;
+  function setLoginError(message = "") {
+    if (loginError) {
+      loginError.textContent = message;
     }
-
-    modal.classList.add("open");
-    pinInput.focus();
   }
+
+  function dispatchAuthChange() {
+    document.dispatchEvent(
+      new CustomEvent("techops:authchange", {
+        detail: {
+          authenticated: state.authenticated,
+          user: state.user
+        }
+      })
+    );
+  }
+
+  // =====================================================
+  // STATUS DAN AVATAR
+  // =====================================================
 
   function updateAvatar() {
     avatar.textContent = state.authenticated
@@ -66,7 +102,56 @@
       "aria-label",
       avatar.title
     );
+
+    avatar.setAttribute(
+      "aria-expanded",
+      "false"
+    );
   }
+
+  function setAuthenticated(authenticated, user = null) {
+    state.authenticated = authenticated;
+    state.user = authenticated
+      ? (user || state.user || {
+          nama: "Admin",
+          role: "Admin"
+        })
+      : null;
+
+    updateAvatar();
+
+    if (!authenticated) {
+      closeDynamicModal();
+      closeLogin();
+    }
+
+    dispatchAuthChange();
+  }
+
+  // =====================================================
+  // MODAL LOGIN
+  // =====================================================
+
+  function closeLogin() {
+    modal.classList.remove("open");
+    pinInput.value = "";
+    setLoginError("");
+  }
+
+  function openLogin() {
+    if (state.checking) {
+      notify("Sedang memeriksa sesi Admin. Silakan tunggu.");
+      return;
+    }
+
+    setLoginError("");
+    modal.classList.add("open");
+    pinInput.focus();
+  }
+
+  // =====================================================
+  // MODAL DINAMIS
+  // =====================================================
 
   function closeDynamicModal() {
     document.querySelectorAll(
@@ -92,12 +177,17 @@
 
     overlay.innerHTML = `
       <section class="modal-card">
-        <button class="modal-close" aria-label="Tutup">×</button>
-        <div class="modal-logo">${initials(user)}</div>
+        <button class="modal-close" type="button"
+          aria-label="Tutup">×</button>
+
+        <div class="modal-logo">${escapeHTML(initials(user))}</div>
+
         <h2>Profil Admin</h2>
+
         <p class="modal-description">
           Informasi akun yang sedang digunakan
         </p>
+
         <div class="profile-details">
           ${fields.map(([label, value]) => `
             <div class="profile-detail">
@@ -115,18 +205,10 @@
       .addEventListener("click", () => overlay.remove());
 
     overlay.addEventListener("click", event => {
-      if (event.target === overlay) overlay.remove();
+      if (event.target === overlay) {
+        overlay.remove();
+      }
     });
-  }
-
-  function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
   }
 
   function profileMenu() {
@@ -138,18 +220,27 @@
 
     overlay.innerHTML = `
       <section class="modal-card profile-menu-card">
-        <button class="modal-close" aria-label="Tutup">×</button>
-        <div class="modal-logo">${initials(state.user)}</div>
+        <button class="modal-close" type="button"
+          aria-label="Tutup">×</button>
+
+        <div class="modal-logo">
+          ${escapeHTML(initials(state.user))}
+        </div>
+
         <h2>Admin</h2>
+
         <p class="modal-description">
           Pengelolaan akun
         </p>
+
         <button class="profile-action" data-action="profile">
           Profil Admin
         </button>
+
         <button class="profile-action" data-action="pin">
           Ganti PIN
         </button>
+
         <button class="profile-action danger" data-action="logout">
           Keluar
         </button>
@@ -158,56 +249,81 @@
 
     document.body.appendChild(overlay);
 
+    avatar.setAttribute("aria-expanded", "true");
+
     overlay.querySelector(".modal-close")
-      .addEventListener("click", () => overlay.remove());
+      .addEventListener("click", () => {
+        overlay.remove();
+        avatar.setAttribute("aria-expanded", "false");
+      });
 
     overlay.addEventListener("click", event => {
-      if (event.target === overlay) overlay.remove();
-    });
-
-    overlay.querySelectorAll("[data-action]").forEach(button => {
-      button.addEventListener("click", () => {
-        const action = button.dataset.action;
+      if (event.target === overlay) {
         overlay.remove();
-
-        if (action === "profile") showProfile();
-        if (action === "pin") showChangePin();
-        if (action === "logout") logout();
-      });
+        avatar.setAttribute("aria-expanded", "false");
+      }
     });
+
+    overlay.querySelectorAll("[data-action]")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          const action = button.dataset.action;
+
+          overlay.remove();
+          avatar.setAttribute("aria-expanded", "false");
+
+          if (action === "profile") showProfile();
+          if (action === "pin") showChangePin();
+          if (action === "logout") logout();
+        });
+      });
   }
 
+  // =====================================================
+  // GANTI PIN
+  // =====================================================
+
   function showChangePin() {
+    closeDynamicModal();
+
     const overlay = document.createElement("div");
     overlay.className = "modal-overlay open";
     overlay.id = "techOpsChangePinModal";
 
     overlay.innerHTML = `
       <section class="modal-card">
-        <button class="modal-close" aria-label="Tutup">×</button>
+        <button class="modal-close" type="button"
+          aria-label="Tutup">×</button>
+
         <div class="modal-logo">GT</div>
+
         <h2>Ganti PIN Admin</h2>
+
         <p class="modal-description">
           Masukkan PIN lama dan PIN baru.
         </p>
 
         <form id="changePinForm">
-          <label>PIN Lama</label>
+          <label for="oldPin">PIN Lama</label>
           <input id="oldPin" type="password"
             inputmode="numeric" maxlength="6"
-            pattern="[0-9]{6}" required>
+            pattern="[0-9]{6}" autocomplete="current-password"
+            required>
 
-          <label>PIN Baru</label>
+          <label for="newPin">PIN Baru</label>
           <input id="newPin" type="password"
             inputmode="numeric" maxlength="6"
-            pattern="[0-9]{6}" required>
+            pattern="[0-9]{6}" autocomplete="new-password"
+            required>
 
-          <label>Konfirmasi PIN Baru</label>
+          <label for="confirmPin">Konfirmasi PIN Baru</label>
           <input id="confirmPin" type="password"
             inputmode="numeric" maxlength="6"
-            pattern="[0-9]{6}" required>
+            pattern="[0-9]{6}" autocomplete="new-password"
+            required>
 
-          <p id="changePinError" class="auth-error"></p>
+          <p id="changePinError" class="auth-error"
+            role="alert" aria-live="polite"></p>
 
           <button class="primary-button" type="submit">
             Simpan PIN Baru
@@ -222,25 +338,30 @@
       .addEventListener("click", () => overlay.remove());
 
     overlay.addEventListener("click", event => {
-      if (event.target === overlay) overlay.remove();
+      if (event.target === overlay) {
+        overlay.remove();
+      }
     });
 
     $("#changePinForm", overlay)
-      .addEventListener("submit", changePin);
+      .addEventListener("submit", handleChangePin);
   }
 
-  async function changePin(event) {
+  async function handleChangePin(event) {
     event.preventDefault();
 
-    const oldPin = $("#oldPin").value;
-    const newPin = $("#newPin").value;
-    const confirmPin = $("#confirmPin").value;
-    const error = $("#changePinError");
-    const button = event.submitter;
+    const form = event.currentTarget;
+    const oldPin = $("#oldPin", form).value;
+    const newPin = $("#newPin", form).value;
+    const confirmPin = $("#confirmPin", form).value;
+    const error = $("#changePinError", form);
+    const button = form.querySelector('[type="submit"]');
 
-    if (!/^[0-9]{6}$/.test(oldPin) ||
-        !/^[0-9]{6}$/.test(newPin)) {
-      error.textContent = "PIN harus 6 digit angka.";
+    if (
+      !/^[0-9]{6}$/.test(oldPin) ||
+      !/^[0-9]{6}$/.test(newPin)
+    ) {
+      error.textContent = "PIN harus terdiri dari 6 digit angka.";
       return;
     }
 
@@ -250,7 +371,7 @@
     }
 
     if (oldPin === newPin) {
-      error.textContent = "PIN baru harus berbeda.";
+      error.textContent = "PIN baru harus berbeda dari PIN lama.";
       return;
     }
 
@@ -260,32 +381,36 @@
     try {
       await TechOpsAPI.changePin(oldPin, newPin);
 
-      state.user = null;
-      state.authenticated = false;
-
+      setAuthenticated(false);
       closeDynamicModal();
-      closeLogin();
-      updateAvatar();
 
       notify("PIN berhasil diganti. Silakan login kembali.");
 
-    } catch (err) {
-      error.textContent = err.message || "Gagal mengganti PIN.";
+    } catch (error) {
+      error.textContent = error.message || "Gagal mengganti PIN.";
       button.disabled = false;
       button.textContent = "Simpan PIN Baru";
     }
   }
 
-  async function handleLogin() {
+  // =====================================================
+  // LOGIN
+  // =====================================================
+
+  async function handleLogin(event) {
+    event.preventDefault();
+
     const pin = pinInput.value;
 
     if (!/^[0-9]{6}$/.test(pin)) {
-      notify("PIN harus terdiri dari 6 digit angka.");
+      setLoginError("PIN harus terdiri dari 6 digit angka.");
+      pinInput.focus();
       return;
     }
 
     loginButton.disabled = true;
     loginButton.textContent = "Memeriksa PIN...";
+    setLoginError("");
 
     try {
       const result = await TechOpsAPI.login(pin);
@@ -294,30 +419,19 @@
         throw new Error("Login Admin gagal.");
       }
 
-      state.user = result.user ||
+      const user = result.user ||
         TechOpsAPI.getUser() || {
           nama: "Admin",
           role: "Admin"
         };
 
-      state.authenticated = true;
-
-      updateAvatar();
+      setAuthenticated(true, user);
       closeLogin();
-
-      document.dispatchEvent(
-        new CustomEvent("techops:authchange", {
-          detail: {
-            authenticated: true,
-            user: state.user
-          }
-        })
-      );
 
       notify("Login Admin berhasil.");
 
-    } catch (err) {
-      notify(err.message || "Login gagal.");
+    } catch (error) {
+      setLoginError(error.message || "Login gagal.");
       pinInput.value = "";
       pinInput.focus();
 
@@ -327,6 +441,10 @@
     }
   }
 
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+
   async function logout() {
     if (!confirm("Yakin ingin keluar dari GoJak TechOps?")) {
       return;
@@ -335,54 +453,70 @@
     try {
       await TechOpsAPI.logout();
 
-      state.user = null;
-      state.authenticated = false;
-
-      closeDynamicModal();
-      updateAvatar();
-
-      document.dispatchEvent(
-        new CustomEvent("techops:authchange", {
-          detail: {
-            authenticated: false,
-            user: null
-          }
-        })
-      );
+      setAuthenticated(false);
 
       notify("Logout berhasil.");
 
-    } catch (err) {
-      notify("Logout gagal: " + err.message);
+    } catch (error) {
+      // API menghapus sesi lokal meskipun permintaan server gagal.
+      // Sinkronkan tampilan dengan status sesi lokal tersebut.
+      if (!TechOpsAPI.isAuthenticated()) {
+        setAuthenticated(false);
+      }
+
+      notify("Logout tidak dapat dikonfirmasi ke server: " + error.message);
     }
   }
+
+  // =====================================================
+  // PEMULIHAN SESI SAAT HALAMAN DIBUKA
+  // =====================================================
 
   async function restoreSession() {
     try {
       const valid = await TechOpsAPI.validateSession();
 
       if (valid === true) {
-        state.user = TechOpsAPI.getUser() || {
+        setAuthenticated(
+          true,
+          TechOpsAPI.getUser() || {
+            nama: "Admin",
+            role: "Admin"
+          }
+        );
+
+      } else if (valid === null && TechOpsAPI.isAuthenticated()) {
+        // Gangguan jaringan: pertahankan sesi lokal.
+        // Backend tetap wajib memvalidasi setiap operasi Admin.
+        setAuthenticated(true, {
           nama: "Admin",
           role: "Admin"
-        };
+        });
 
-        state.authenticated = true;
       } else {
-        state.user = null;
-        state.authenticated = false;
+        setAuthenticated(false);
       }
 
-    } catch (err) {
-      console.warn("Pemulihan sesi:", err);
-      state.user = null;
-      state.authenticated = false;
+    } catch (error) {
+      console.warn("Pemulihan sesi Admin:", error);
+
+      if (TechOpsAPI.isAuthenticated()) {
+        setAuthenticated(true, {
+          nama: "Admin",
+          role: "Admin"
+        });
+      } else {
+        setAuthenticated(false);
+      }
 
     } finally {
       state.checking = false;
-      updateAvatar();
     }
   }
+
+  // =====================================================
+  // EVENT AVATAR DAN MODAL
+  // =====================================================
 
   avatar.addEventListener("click", () => {
     if (state.authenticated) {
@@ -392,64 +526,68 @@
     }
   });
 
-  $("#closeLoginModal").addEventListener("click", closeLogin);
+  $("#closeLoginModal")
+    ?.addEventListener("click", closeLogin);
 
   modal.addEventListener("click", event => {
-    if (event.target === modal) closeLogin();
+    if (event.target === modal) {
+      closeLogin();
+    }
   });
 
-  loginButton.addEventListener("click", handleLogin);
+  // Satu-satunya handler Login: submit form.
+  loginForm.addEventListener("submit", handleLogin);
 
-  pinInput.addEventListener("keydown", event => {
-    if (event.key === "Enter") handleLogin();
-  });
+  // =====================================================
+  // SINKRONISASI ANTAR-TAB
+  // =====================================================
 
-  // Sinkronisasi status autentikasi antar-tab.
-  TechOpsAPI.onAuthChange(async auth => {
+  TechOpsAPI.onAuthChange(auth => {
+    // Jangan memanggil validateSession() dari listener ini.
+    // validateSession() sendiri memicu notifyAuthChange().
+    // Memanggilnya kembali di sini akan membuat loop.
     if (auth.authenticated) {
-      const valid = await TechOpsAPI.validateSession();
-
-      if (valid === true) {
-        state.user = TechOpsAPI.getUser() || {
+      setAuthenticated(
+        true,
+        auth.user || {
           nama: "Admin",
           role: "Admin"
-        };
-        state.authenticated = true;
-      }
-    } else {
-      state.user = null;
-      state.authenticated = false;
-    }
-
-    updateAvatar();
-
-    document.dispatchEvent(
-      new CustomEvent("techops:authchange", {
-        detail: {
-          authenticated: state.authenticated,
-          user: state.user
         }
-      })
-    );
+      );
+    } else {
+      setAuthenticated(false);
+    }
   });
+
+  // =====================================================
+  // TUTUP MODAL DENGAN ESCAPE
+  // =====================================================
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
       closeLogin();
       closeDynamicModal();
+      avatar.setAttribute("aria-expanded", "false");
     }
   });
 
-  restoreSession();
+  // =====================================================
+  // PUBLIC AUTH STATE UNTUK MODUL LAIN
+  // =====================================================
 
   window.TechOpsAuth = {
     get authenticated() {
       return state.authenticated;
     },
+
     get user() {
       return state.user;
     },
-    logout
+
+    logout: logout
   };
+
+  // Mulai pemulihan sesi setelah seluruh listener siap.
+  restoreSession();
 
 })();
