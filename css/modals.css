@@ -1,0 +1,77 @@
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 7, 14, 0.78);
+  backdrop-filter: blur(9px);
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  padding: 30px;
+  border: 1px solid var(--border-bright);
+  border-radius: 23px;
+  background: linear-gradient(145deg, #1b2a40, #101a29);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 24px;
+}
+
+.modal-logo {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+}
+
+.modal-description {
+  margin: 5px 0 24px;
+  font-size: 12px;
+}
+
+.modal-card label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.modal-card input {
+  width: 100%;
+  height: 46px;
+  margin-bottom: 16px;
+  padding: 0 13px;
+  border: 1px solid var(--border-bright);
+  border-radius: 11px;
+  background: var(--bg-input);
+  color: white;
+}
+
+.modal-note {
+  margin-top: 15px;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-align: center;
+}
