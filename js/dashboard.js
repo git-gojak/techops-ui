@@ -1,7 +1,7 @@
 
 /* =========================================================
    GOJAK TECHOPS
-   DASHBOARD - REVISI DETAIL JADWAL, SENSOR, DAN KONDISI
+   DASHBOARD - DETAIL JADWAL, SENSOR, DAN KONDISI
    ========================================================= */
 
 (function () {
@@ -183,8 +183,6 @@
         s.slice(-2);
   }
 
-  // Model komputer disensor dengan pola yang sama
-  // seperti serial: hanya empat karakter terakhir terlihat.
   function maskComputerModel(value) {
     return maskValue(value);
   }
@@ -593,6 +591,7 @@
       );
 
       if (serialKey) map.set(serialKey, device);
+
       if (nameKey && !map.has(nameKey)) {
         map.set(nameKey, device);
       }
@@ -665,13 +664,15 @@
               ? maskComputer(row.nama_aset)
               : (row.nama_aset || "Printer");
 
-            const rawModel = getDeviceModel(row, map) ||
-              "Model tidak tersedia";
+            const rawModel = getDeviceModel(row, map);
 
             // Hanya model komputer yang disensor.
-            const model = type === "komputer"
-              ? maskComputerModel(rawModel)
-              : rawModel;
+            // Model printer ditampilkan apa adanya.
+            const model = !rawModel
+              ? "Model tidak tersedia"
+              : type === "komputer"
+                ? maskComputerModel(rawModel)
+                : rawModel;
 
             const activity =
               row.jenis_kegiatan ||
@@ -689,11 +690,7 @@
                 <div class="dashboard-activity-info">
                   <strong>${esc(name)}</strong>
 
-                  <span>
-                    ${esc(model)}
-                    ·
-                    ${esc(maskSerial(row.serial))}
-                  </span>
+                  <span>${esc(model)}</span>
 
                   <small>
                     ${esc(activity)}
@@ -771,9 +768,6 @@
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
 
-    // Jadwal mengikuti catatan perawatan terbaru:
-    // Tanggal menjadi acuan utama, Waktu Dibuat
-    // menjadi pembanding apabila Tanggal sama.
     const latestCare = latestMaintenanceMap(row =>
       activityType(row) === "perawatan"
     );
@@ -809,8 +803,11 @@
             row.nama_aset ||
             "Komputer";
 
-          const model = getDeviceModel(row, map) ||
-            "Model tidak tersedia";
+          const rawModel = getDeviceModel(row, map);
+
+          const model = rawModel
+            ? maskComputerModel(rawModel)
+            : "Model tidak tersedia";
 
           return `
             <div class="dashboard-schedule-item">
@@ -821,7 +818,7 @@
 
                 <small>
                   Computer Name
-                  · Model: ${esc(maskComputerModel(model))}
+                  · Model: ${esc(model)}
                   · Serial: ${esc(maskSerial(
                     device?.serial || row.serial
                   ))}
@@ -974,7 +971,7 @@
       Number(state.archiveCounts.printers || 0);
 
     // Arsip tetap masuk kategori Rusak
-    // sesuai perilaku Dashboard lama.
+    // mengikuti perilaku Dashboard lama.
     groups.komputer.bad += computerArchive;
     groups.printer.bad += printerArchive;
 
