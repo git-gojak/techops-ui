@@ -394,7 +394,8 @@
 .dashboard-schedule-item small {
   color: var(--text-muted);
   font-size: 10px;
-  line-height: 1.4;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-schedule-item time {
