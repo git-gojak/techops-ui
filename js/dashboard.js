@@ -35,6 +35,45 @@
     })[char]);
   }
 
+  function iconSvg(name) {
+    const paths = {
+      computer: `
+        <rect x="3" y="4" width="18" height="13" rx="2"/>
+        <path d="M8 21h8M12 17v4"/>
+      `,
+      printer: `
+        <path d="M6 9V3h12v6"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <path d="M6 14h12v7H6z"/>
+        <path d="M18 12h.01"/>
+      `,
+      maintenance: `
+        <path d="M14.7 6.3a5 5 0 0 0-6.4 6.4L3 18l3 3 5.3-5.3a5 5 0 0 0 6.4-6.4L14 12l-2-2z"/>
+      `,
+      connection: `
+        <path d="M5 12h14"/>
+        <path d="m12 5 7 7-7 7"/>
+        <path d="m12 5-7 7 7 7"/>
+      `
+    };
+
+    return `
+      <svg
+        viewBox="0 0 24 24"
+        width="21"
+        height="21"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        ${paths[name] || paths.computer}
+      </svg>
+    `;
+  }
+
   function arr(value) {
     if (Array.isArray(value)) return value;
     if (Array.isArray(value?.data)) return value.data;
@@ -123,7 +162,8 @@
   }
 
   function isAdmin() {
-    return window.TechOpsAuth?.authenticated === true;
+    return window.TechOpsAuth?.authenticated === true ||
+      window.TechOpsAPI?.isAuthenticated?.() === true;
   }
 
   function maskSerial(value) {
@@ -211,9 +251,7 @@
   function timeout(promise, label) {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-        reject(
-          new Error(label + " tidak merespons.")
-        );
+        reject(new Error(label + " tidak merespons."));
       }, 20000);
 
       promise.then(
@@ -287,7 +325,6 @@
 
   function ensureLayout() {
     const page = $("#page-dashboard");
-
     if (!page) return;
 
     const grid = $(".dashboard-grid", page);
@@ -295,7 +332,9 @@
     if (grid) {
       grid.innerHTML = `
         <article class="stat-card dash-stat computer">
-          <div class="stat-icon blue">▣</div>
+          <div class="stat-icon blue">
+            ${iconSvg("computer")}
+          </div>
 
           <div class="stat-info">
             <span>Total Komputer</span>
@@ -310,7 +349,9 @@
         </article>
 
         <article class="stat-card dash-stat printer">
-          <div class="stat-icon teal">▤</div>
+          <div class="stat-icon teal">
+            ${iconSvg("printer")}
+          </div>
 
           <div class="stat-info">
             <span>Total Printer</span>
@@ -325,7 +366,9 @@
         </article>
 
         <article class="stat-card dash-stat maintenance">
-          <div class="stat-icon purple">◷</div>
+          <div class="stat-icon purple">
+            ${iconSvg("maintenance")}
+          </div>
 
           <div class="stat-info">
             <span>Total Maintenance</span>
@@ -340,7 +383,9 @@
         </article>
 
         <article class="stat-card dash-stat connection">
-          <div class="stat-icon green">⌁</div>
+          <div class="stat-icon green">
+            ${iconSvg("connection")}
+          </div>
 
           <div class="stat-info">
             <span>Koneksi</span>
@@ -356,7 +401,6 @@
     }
 
     const lower = $(".dashboard-lower-grid", page);
-
     if (!lower) return;
 
     lower.innerHTML = `
@@ -364,9 +408,7 @@
         <div class="card-heading">
           <div>
             <h3>Monitoring Perangkat per Unit</h3>
-            <p>
-              Jumlah komputer dan printer pada setiap unit
-            </p>
+            <p>Jumlah komputer dan printer pada setiap unit</p>
           </div>
         </div>
 
@@ -391,9 +433,7 @@
         <div class="card-heading">
           <div>
             <h3>Aktivitas Maintenance Terbaru</h3>
-            <p>
-              Lima aktivitas komputer dan printer paling baru
-            </p>
+            <p>Lima aktivitas komputer dan printer paling baru</p>
           </div>
         </div>
 
@@ -404,9 +444,7 @@
         <div class="card-heading">
           <div>
             <h3>Kondisi Perangkat</h3>
-            <p>
-              Berdasarkan catatan Maintenance terbaru
-            </p>
+            <p>Berdasarkan catatan Maintenance terbaru</p>
           </div>
         </div>
 
@@ -431,24 +469,15 @@
     const maintenance = state.maintenance;
     const year = new Date().getFullYear();
 
-    $("#totalComputers").textContent =
-      computers.length;
-
-    $("#totalPrinters").textContent =
-      printers.length;
-
-    $("#totalMaintenance").textContent =
-      maintenance.length;
+    $("#totalComputers").textContent = computers.length;
+    $("#totalPrinters").textContent = printers.length;
+    $("#totalMaintenance").textContent = maintenance.length;
 
     $("#computerAcquired").textContent =
-      computers.filter(
-        row => yearOf(row.tahun) === year
-      ).length;
+      computers.filter(row => yearOf(row.tahun) === year).length;
 
     $("#printerAcquired").textContent =
-      printers.filter(
-        row => yearOf(row.ftp) === year
-      ).length;
+      printers.filter(row => yearOf(row.ftp) === year).length;
 
     $("#computerArchived").textContent =
       state.archiveCounts.computers;
@@ -482,7 +511,6 @@
 
     function add(raw, type) {
       const value = String(raw || "").trim();
-
       if (!value) return;
 
       const label = (
@@ -504,15 +532,11 @@
 
     state.computers
       .filter(row => !archived(row))
-      .forEach(row => {
-        add(row.pengguna, "computers");
-      });
+      .forEach(row => add(row.pengguna, "computers"));
 
     state.printers
       .filter(row => !archived(row))
-      .forEach(row => {
-        add(row.unit, "printers");
-      });
+      .forEach(row => add(row.unit, "printers"));
 
     const rows = [...map.values()].sort(
       (a, b) => a.label.localeCompare(b.label, "id")
@@ -527,11 +551,13 @@
 
               <div class="dashboard-unit-counts">
                 <span class="unit-computer">
-                  ▣ <b>${unit.computers}</b>
+                  ${iconSvg("computer")}
+                  <b>${unit.computers}</b>
                 </span>
 
                 <span class="unit-printer">
-                  ▤ <b>${unit.printers}</b>
+                  ${iconSvg("printer")}
+                  <b>${unit.printers}</b>
                 </span>
               </div>
             </div>
@@ -602,7 +628,6 @@
     $("#latestMaintenance").innerHTML = rows.length
       ? `
         <div class="dashboard-activity-list">
-
           ${rows.map(({ row, date }) => {
             const type = typeOf(row.jenis_aset);
 
@@ -627,11 +652,12 @@
               <div class="dashboard-activity-item">
 
                 <span class="dashboard-activity-icon ${type}">
-                  ${type === "printer" ? "▤" : "▣"}
+                  ${iconSvg(
+                    type === "printer" ? "printer" : "computer"
+                  )}
                 </span>
 
                 <div class="dashboard-activity-info">
-
                   <strong>${esc(name)}</strong>
 
                   <span>
@@ -643,21 +669,15 @@
                   <small>
                     ${esc(activity)}
                     ·
-                    ${esc(
-                      row.kondisi ||
-                      "Kondisi belum diisi"
-                    )}
+                    ${esc(row.kondisi || "Kondisi belum diisi")}
                   </small>
 
-                  <time>
-                    ${esc(fmtDateTime(date))}
-                  </time>
-
+                  <time>${esc(fmtDateTime(date))}</time>
                 </div>
+
               </div>
             `;
           }).join("")}
-
         </div>
       `
       : `
@@ -729,9 +749,7 @@
     );
 
     const soon = schedules.filter(
-      item =>
-        item.date >= today &&
-        item.date <= limit
+      item => item.date >= today && item.date <= limit
     );
 
     const later = schedules.filter(
@@ -757,7 +775,6 @@
 
         return `
           <div class="dashboard-schedule-item">
-
             <div>
               <strong>${esc(name)}</strong>
 
@@ -769,7 +786,6 @@
             </div>
 
             <time>${esc(fmtDate(date))}</time>
-
           </div>
         `;
       })
@@ -797,11 +813,7 @@
 
       ${
         list
-          ? `
-            <div class="dashboard-schedule-list">
-              ${list}
-            </div>
-          `
+          ? `<div class="dashboard-schedule-list">${list}</div>`
           : `
             <div class="dashboard-empty">
               Belum ada jadwal perawatan.
@@ -823,7 +835,6 @@
 
   // =======================================================
   // KONDISI PERANGKAT
-  // TABEL KOMPUTER DAN PRINTER
   // =======================================================
 
   function renderConditions() {
@@ -900,22 +911,10 @@
     groups.printer.bad += printerArchive;
 
     const rows = [
-      {
-        key: "baik",
-        label: "Baik"
-      },
-      {
-        key: "attention",
-        label: "Perlu Perhatian"
-      },
-      {
-        key: "bad",
-        label: "Rusak"
-      },
-      {
-        key: "unknown",
-        label: "Belum Ada Data Kondisi"
-      }
+      { key: "baik", label: "Baik" },
+      { key: "attention", label: "Perlu Perhatian" },
+      { key: "bad", label: "Rusak" },
+      { key: "unknown", label: "Belum Ada Data Kondisi" }
     ];
 
     const komputerAktif = state.computers.filter(
@@ -943,13 +942,8 @@
               ${item.label}
             </span>
 
-            <strong>
-              ${groups.komputer[item.key]}
-            </strong>
-
-            <strong>
-              ${groups.printer[item.key]}
-            </strong>
+            <strong>${groups.komputer[item.key]}</strong>
+            <strong>${groups.printer[item.key]}</strong>
 
           </div>
         `).join("")}
@@ -998,7 +992,6 @@
         element.innerHTML = `
           <div class="dashboard-error">
             Data belum dapat dimuat.
-
             <small>${message}</small>
           </div>
         `;
@@ -1038,11 +1031,7 @@
       render();
 
     } catch (error) {
-      console.error(
-        "Dashboard gagal dimuat:",
-        error
-      );
-
+      console.error("Dashboard gagal dimuat:", error);
       renderError(error);
 
     } finally {
@@ -1057,20 +1046,15 @@
   function init() {
     ensureLayout();
 
-    // Muat ulang ketika status Admin berubah.
     document.addEventListener(
       "techops:authchange",
       refresh
     );
 
-    // Pemuatan awal Dashboard.
     refresh();
   }
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    init
-  );
+  document.addEventListener("DOMContentLoaded", init);
 
   // =======================================================
   // PUBLIC DASHBOARD API
