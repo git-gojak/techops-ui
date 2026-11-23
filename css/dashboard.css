@@ -1,66 +1,145 @@
-/* GoJak TechOps - Dashboard Dark Glossy */
 
-.dashboard-meta {
+/* =====================================================
+   GOJAK TECHOPS
+   DASHBOARD - DARK GLOSSY
+   Gabungan CSS dasar + Batch 3
+   ===================================================== */
+
+
+/* =====================================================
+   1. WELCOME PANEL - STYLE ASLI DIPULIHKAN
+   ===================================================== */
+
+.welcome-panel {
+  position: relative;
+  min-height: 165px;
+  overflow: hidden;
+  padding: 27px 30px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin: 18px 0 14px;
-  padding: 11px 14px;
-  border: 1px solid var(--border);
-  border-radius: 13px;
-  background: rgba(18, 30, 46, 0.72);
+
+  background:
+    radial-gradient(
+      circle at 85% 50%,
+      rgba(37, 137, 255, 0.25),
+      transparent 32%
+    ),
+    linear-gradient(120deg, #192b43, #132238);
+}
+
+.eyebrow {
+  color: var(--blue-light);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.15em;
+}
+
+.welcome-panel h2 {
+  margin: 8px 0 5px;
+  font-size: 23px;
+}
+
+.welcome-panel p {
+  font-size: 12px;
+}
+
+.welcome-decoration {
+  color: rgba(130, 190, 255, 0.12);
+  font-size: 100px;
+  font-weight: 900;
+  line-height: 1;
+  user-select: none;
+}
+
+
+/* =====================================================
+   2. RINGKASAN PERANGKAT - STYLE ASLI DIPULIHKAN
+   ===================================================== */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  min-width: 0;
+  min-height: 125px;
+  padding: 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-bright);
+}
+
+.stat-icon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 auto;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 14px;
+  font-size: 20px;
+}
+
+.stat-icon.blue {
+  color: var(--blue-light);
+  background: rgba(37, 137, 255, 0.14);
+}
+
+.stat-icon.teal {
+  color: var(--teal);
+  background: rgba(37, 195, 195, 0.13);
+}
+
+.stat-icon.purple {
+  color: var(--purple);
+  background: rgba(166, 139, 255, 0.13);
+}
+
+.stat-icon.green {
+  color: var(--green);
+  background: rgba(34, 199, 139, 0.13);
+}
+
+.stat-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-info span {
   color: var(--text-secondary);
   font-size: 11px;
 }
 
-.dashboard-meta > div {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
+.stat-info strong {
+  margin: 3px 0;
+  font-size: 25px;
+  line-height: 1.2;
 }
 
-.dashboard-meta-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 10px rgba(34, 199, 139, 0.6);
+.stat-info small {
+  color: var(--text-muted);
 }
 
-.dashboard-refresh {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid var(--border-bright);
-  border-radius: 10px;
-  background: rgba(37, 137, 255, 0.1);
-  color: var(--blue-light);
-  font-size: 11px;
-  white-space: nowrap;
-}
 
-.dashboard-refresh:hover {
-  background: rgba(37, 137, 255, 0.2);
-}
-
-.dashboard-refresh span {
-  font-size: 17px;
-  line-height: 1;
-}
-
-.dashboard-refresh:disabled {
-  opacity: 0.55;
-}
+/* Efek glossy kartu ringkasan */
 
 .dashboard-grid .stat-card {
   position: relative;
   overflow: hidden;
+
   transition:
     transform var(--transition),
     border-color var(--transition),
@@ -68,8 +147,6 @@
 }
 
 .dashboard-grid .stat-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--border-bright);
   box-shadow: var(--shadow-blue);
 }
 
@@ -78,25 +155,38 @@
   position: absolute;
   top: -45px;
   right: -45px;
+
   width: 110px;
   height: 110px;
+
   border-radius: 50%;
   background: rgba(75, 155, 255, 0.055);
   pointer-events: none;
 }
 
-.dashboard-lower-grid,
-.dashboard-extra-grid {
+
+/* =====================================================
+   3. JARAK DAN PANEL DASHBOARD
+   ===================================================== */
+
+.dashboard-lower-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .dashboard-lower-grid .glass-card,
 .dashboard-extra-grid .glass-card {
   min-width: 0;
   padding: 21px;
+}
+
+.dashboard-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 
 .dashboard-panel {
@@ -117,6 +207,81 @@
   font-size: 11px;
 }
 
+
+/* =====================================================
+   4. INFORMASI PEMBARUAN DATA
+   ===================================================== */
+
+.dashboard-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin: 18px 0 14px;
+  padding: 11px 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(18, 30, 46, 0.72);
+
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.dashboard-meta > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.dashboard-meta-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(34, 199, 139, 0.6);
+}
+
+.dashboard-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 34px;
+  padding: 0 12px;
+
+  border: 1px solid var(--border-bright);
+  border-radius: 10px;
+  background: rgba(37, 137, 255, 0.1);
+
+  color: var(--blue-light);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.dashboard-refresh:hover {
+  background: rgba(37, 137, 255, 0.2);
+}
+
+.dashboard-refresh span {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.dashboard-refresh:disabled {
+  opacity: 0.55;
+}
+
+
+/* =====================================================
+   5. MONITORING PERANGKAT PER UNIT
+   ===================================================== */
+
 .dashboard-unit-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -126,6 +291,7 @@
 .dashboard-unit-card {
   min-width: 0;
   padding: 13px;
+
   border: 1px solid var(--border);
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.025);
@@ -134,6 +300,7 @@
 .dashboard-unit-card > strong {
   display: block;
   overflow: hidden;
+
   color: var(--text-main);
   font-size: 12px;
   text-overflow: ellipsis;
@@ -151,8 +318,10 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+
   padding: 5px 8px;
   border-radius: 8px;
+
   font-size: 11px;
   font-weight: 700;
 }
@@ -167,6 +336,11 @@
   color: #5bd7d0;
 }
 
+
+/* =====================================================
+   6. AKTIVITAS MAINTENANCE TERBARU
+   ===================================================== */
+
 .dashboard-activity-list {
   display: flex;
   flex-direction: column;
@@ -176,8 +350,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
+
   min-width: 0;
   padding: 11px 0;
+
   border-bottom: 1px solid var(--border);
 }
 
@@ -189,8 +365,10 @@
   width: 34px;
   height: 34px;
   flex: 0 0 auto;
+
   display: grid;
   place-items: center;
+
   border-radius: 11px;
   font-size: 16px;
 }
@@ -237,11 +415,17 @@
 .dashboard-activity-serial {
   max-width: 78px;
   overflow: hidden;
+
   color: var(--text-muted);
   font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+
+/* =====================================================
+   7. MONITORING JADWAL MAINTENANCE
+   ===================================================== */
 
 .dashboard-schedule-summary {
   display: grid;
@@ -254,7 +438,9 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+
   padding: 11px 8px;
+
   border: 1px solid var(--border);
   border-radius: 11px;
   background: rgba(255, 255, 255, 0.025);
@@ -292,6 +478,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+
   padding: 11px 0;
   border-bottom: 1px solid var(--border);
 }
@@ -327,6 +514,11 @@
   font-size: 10px;
 }
 
+
+/* =====================================================
+   8. KONDISI PERANGKAT
+   ===================================================== */
+
 .dashboard-condition-list {
   display: flex;
   flex-direction: column;
@@ -336,6 +528,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+
   min-height: 47px;
   border-bottom: 1px solid var(--border);
 }
@@ -387,11 +580,18 @@
   line-height: 1.5;
 }
 
+
+/* =====================================================
+   9. STATUS KOSONG, ERROR, KONEKSI
+   ===================================================== */
+
 .dashboard-empty,
 .dashboard-error {
   padding: 18px 12px;
+
   border: 1px dashed var(--border-bright);
   border-radius: 12px;
+
   color: var(--text-muted);
   font-size: 11px;
   text-align: center;
@@ -414,8 +614,13 @@
   box-shadow: 0 0 10px rgba(240, 100, 100, 0.5) !important;
 }
 
+
+/* =====================================================
+   10. RESPONSIVE KHUSUS KOMPONEN DASHBOARD
+   Breakpoint dasar tetap ditangani responsive.css
+   ===================================================== */
+
 @media (max-width: 900px) {
-  .dashboard-lower-grid,
   .dashboard-extra-grid {
     grid-template-columns: 1fr;
   }
@@ -438,7 +643,6 @@
     font-size: 10px;
   }
 
-  .dashboard-lower-grid,
   .dashboard-extra-grid {
     gap: 12px;
     margin-top: 12px;
@@ -492,96 +696,3 @@
     padding: 9px 6px;
   }
 }
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.dashboard-grid .stat-card {
-  min-width: 0;
-  min-height: 112px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px;
-}
-
-.dashboard-grid .stat-icon {
-  width: 43px;
-  height: 43px;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  border-radius: 13px;
-  font-size: 19px;
-}
-
-.dashboard-grid .stat-icon.blue {
-  color: #72b8ff;
-  background: rgba(37, 137, 255, 0.15);
-}
-
-.dashboard-grid .stat-icon.teal {
-  color: #5bd7d0;
-  background: rgba(37, 195, 195, 0.15);
-}
-
-.dashboard-grid .stat-icon.purple {
-  color: #b7a2ff;
-  background: rgba(166, 139, 255, 0.15);
-}
-
-.dashboard-grid .stat-icon.green {
-  color: #5ce0ad;
-  background: rgba(34, 199, 139, 0.15);
-}
-
-.dashboard-grid .stat-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 3px;
-}
-
-.dashboard-grid .stat-info span {
-  color: var(--text-secondary);
-  font-size: 11px;
-}
-
-.dashboard-grid .stat-info strong {
-  color: var(--text-main);
-  font-size: 25px;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-}
-
-.dashboard-grid .stat-info small {
-  color: var(--text-muted);
-  font-size: 9px;
-}
-
-@media (max-width: 1100px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 390px) {
-  .dashboard-grid .stat-card {
-    min-height: 100px;
-    gap: 8px;
-    padding: 11px 8px;
-  }
-
-  .dashboard-grid .stat-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 15px;
-  }
-
-  .dashboard-grid .stat-info strong {
-    font-size: 20px;
-  }
-    }
