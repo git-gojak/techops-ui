@@ -1,197 +1,140 @@
-/* GoJak TechOps - Dashboard
-   Batch 3 | Menggunakan TechOpsAPI yang sudah tersedia.
+/* GoJak TechOps — Dashboard
+   Redesign Batch 3 | fitur dan sumber data mengikuti dashboard lama.
+   Tidak mengubah API, autentikasi, atau backend.
 */
 (function () {
   "use strict";
 
-  const $ = (selector, root = document) =>
-    root.querySelector(selector);
-
+  const $ = (s, root = document) => root.querySelector(s);
   const state = {
-    computers: [],
-    printers: [],
-    maintenance: [],
+    computers: [], printers: [], maintenance: [],
     archiveCounts: { computers: 0, printers: 0 },
-    lastUpdated: null,
-    loading: false,
-    loaded: false,
-    error: null
+    lastUpdated: null, loading: false
   };
 
-  const escapeHTML = value =>
-    String(value ?? "").replace(/[&<>"']/g, char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    })[char]);
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[c]));
 
-  function normalizeArray(value) {
+  function arr(value) {
     if (Array.isArray(value)) return value;
     if (Array.isArray(value?.data)) return value.data;
     if (Array.isArray(value?.items)) return value.items;
     return [];
   }
 
-  function parseDate(value) {
+  function dateOf(value) {
     if (!value) return null;
+    if (value instanceof Date) return isNaN(value) ? null : value;
+    const s = String(value).trim();
+    if (!s) return null;
 
-    if (value instanceof Date) {
-      return isNaN(value.getTime()) ? null : value;
-    }
-
-    const text = String(value).trim();
-    if (!text) return null;
-
-    // Format ISO: 2026-11-23T10:30:00
-    if (/^\d{4}-\d{2}-\d{2}[T ]/.test(text)) {
-      const date = new Date(text.replace(" ", "T"));
-      return isNaN(date.getTime()) ? null : date;
-    }
-
-    // Format Indonesia: 23-11-2026 10:30:00
-    let match = text.match(
-      /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/
+    let m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (m) return new Date(
+      +m[3], +m[2]-1, +m[1],
+      +(m[4]||0), +(m[5]||0), +(m[6]||0)
     );
 
-    if (match) {
-      const date = new Date(
-        Number(match[3]),
-        Number(match[2]) - 1,
-        Number(match[1]),
-        Number(match[4] || 0),
-        Number(match[5] || 0),
-        Number(match[6] || 0)
-      );
+    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (m) return new Date(
+      +m[1], +m[2]-1, +m[3],
+      +(m[4]||0), +(m[5]||0), +(m[6]||0)
+    );
 
-      return isNaN(date.getTime()) ? null : date;
-    }
-
-    // Format tahun-bulan-tanggal
-    match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-
-    if (match) {
-      return new Date(
-        Number(match[1]),
-        Number(match[2]) - 1,
-        Number(match[3])
-      );
-    }
-
-    const fallback = new Date(text);
-    return isNaN(fallback.getTime()) ? null : fallback;
+    const d = new Date(s);
+    return isNaN(d) ? null : d;
   }
 
-  function formatDate(value) {
-    const date = parseDate(value);
-    if (!date) return "Tanggal tidak tersedia";
-
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    }).format(date);
+  function yearOf(value) {
+    const s = String(value ?? "").trim();
+    const m = s.match(/^(19|20)\d{2}$/);
+    if (m) return +m[0];
+    const d = dateOf(value);
+    return d ? d.getFullYear() : null;
   }
 
-  function formatDateTime(value) {
-    const date = parseDate(value);
-    if (!date) return "Waktu tidak tersedia";
+  function fmtDate(value) {
+    const d = dateOf(value);
+    return d ? new Intl.DateTimeFormat("id-ID", {
+      day:"2-digit", month:"short", year:"numeric"
+    }).format(d) : "Tanggal tidak tersedia";
+  }
 
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(date);
+  function fmtDateTime(value) {
+    const d = dateOf(value);
+    return d ? new Intl.DateTimeFormat("id-ID", {
+      day:"2-digit", month:"short", year:"numeric",
+      hour:"2-digit", minute:"2-digit"
+    }).format(d) : "Waktu tidak tersedia";
   }
 
   function isAdmin() {
     return window.TechOpsAuth?.authenticated === true;
   }
 
-  // Penyamaran data untuk pengunjung publik.
-  function maskValue(value) {
-    const text = String(value || "").trim();
-
-    if (!text) return "-";
-    if (isAdmin()) return text;
-
-    if (text.length <= 4) {
-      return "*".repeat(text.length);
-    }
-
-    return "*".repeat(text.length - 4) + text.slice(-4);
+  function maskSerial(value) {
+    const s = String(value || "").trim();
+    if (!s) return "-";
+    if (isAdmin()) return s;
+    return s.length <= 4
+      ? "*".repeat(s.length)
+      : "*".repeat(s.length - 4) + s.slice(-4);
   }
 
-  function maskComputerName(value) {
-    const text = String(value || "").trim();
-
-    if (!text) return "Komputer";
-
-    if (isAdmin()) return text;
-
-    if (text.length <= 4) {
-      return "*".repeat(text.length);
-    }
-
-    return text.slice(0, 2) +
-      "*".repeat(text.length - 4) +
-      text.slice(-2);
+  function maskComputer(value) {
+    const s = String(value || "").trim();
+    if (!s) return "Komputer";
+    if (isAdmin()) return s;
+    return s.length <= 4
+      ? "*".repeat(s.length)
+      : s.slice(0,2) + "*".repeat(s.length-4) + s.slice(-2);
   }
 
-  function normalizeAssetType(value) {
-    const type = String(value || "").trim().toLowerCase();
-
-    if (["komputer", "computer", "pc"].includes(type)) {
-      return "komputer";
-    }
-
-    if (type === "printer") return "printer";
-
+  function typeOf(value) {
+    const s = String(value || "").trim().toLowerCase();
+    if (["komputer","computer","pc"].includes(s)) return "komputer";
+    if (s === "printer") return "printer";
     return "";
   }
 
-  function isArchived(row) {
-    return String(row?.status || "")
-      .trim()
-      .toLowerCase() === "arsip";
+  function archived(row) {
+    return String(row?.status || "").trim().toLowerCase() === "arsip";
   }
 
-  function getActivityDate(row) {
+  function activityDate(row) {
     return row?.["Waktu Dibuat"] || row?.Tanggal || null;
   }
 
-  function deviceKey(type, serial, name) {
-    const assetType = normalizeAssetType(type);
-    const identity = String(serial || name || "")
-      .trim()
-      .toUpperCase();
-
-    return assetType && identity
-      ? `${assetType}|${identity}`
-      : "";
+  function keyOf(type, serial, name) {
+    const t = typeOf(type);
+    const id = String(serial || name || "").trim().toUpperCase();
+    return t && id ? `${t}|${id}` : "";
   }
 
-  function setConnection(online) {
+  function setOnline(online) {
     document.querySelectorAll(
       ".system-indicator .status-dot, .system-card .status-dot"
     ).forEach(dot => {
       dot.classList.toggle("dashboard-offline", !online);
     });
+
+    const label = $(".dashboard-connection-label");
+    if (label) {
+      label.textContent = online ? "Online" : "Tidak terhubung";
+    }
   }
 
-  function withTimeout(promise, label, milliseconds = 20000) {
+  function timeout(promise, label) {
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(label + " tidak merespons."));
-      }, milliseconds);
+      const timer = setTimeout(
+        () => reject(new Error(label + " tidak merespons.")),
+        20000
+      );
 
       promise.then(
-        result => {
+        value => {
           clearTimeout(timer);
-          resolve(result);
+          resolve(value);
         },
         error => {
           clearTimeout(timer);
@@ -208,585 +151,615 @@
 
     const includeArchived = TechOpsAPI.isAuthenticated();
 
-    const results = await Promise.all([
-      withTimeout(
-        TechOpsAPI.get("computers.list", {
-          includeArchived
-        }),
+    const result = await Promise.all([
+      timeout(
+        TechOpsAPI.get("computers.list", { includeArchived }),
         "Data komputer"
       ),
-
-      withTimeout(
-        TechOpsAPI.get("printers.list", {
-          includeArchived
-        }),
+      timeout(
+        TechOpsAPI.get("printers.list", { includeArchived }),
         "Data printer"
       ),
-
-      withTimeout(
+      timeout(
         TechOpsAPI.get("maintenance.list"),
         "Data maintenance"
       ),
-
-      withTimeout(
+      timeout(
         TechOpsAPI.get("inventory.archiveCounts"),
         "Data arsip"
       )
     ]);
 
-    state.computers = normalizeArray(results[0]);
-    state.printers = normalizeArray(results[1]);
-    state.maintenance = normalizeArray(results[2]);
+    state.computers = arr(result[0]);
+    state.printers = arr(result[1]);
+    state.maintenance = arr(result[2]);
 
     state.archiveCounts = {
-      computers: Number(results[3]?.computers || 0),
-      printers: Number(results[3]?.printers || 0)
+      computers: Number(result[3]?.computers || 0),
+      printers: Number(result[3]?.printers || 0)
     };
 
     state.lastUpdated = new Date();
-    state.loaded = true;
-    state.error = null;
-
-    setConnection(true);
+    setOnline(true);
   }
 
-  function ensureDashboardExtras() {
+  function ensureLayout() {
     const page = $("#page-dashboard");
-    const lowerGrid = $(".dashboard-lower-grid", page);
+    if (!page) return;
 
-    if (!page || !lowerGrid) return;
+    const grid = $(".dashboard-grid", page);
+
+    if (grid) {
+      grid.innerHTML = `
+        <article class="stat-card dash-stat computer">
+          <div class="stat-icon blue">▣</div>
+          <div class="stat-info">
+            <span>Total Komputer</span>
+            <strong id="totalComputers">—</strong>
+            <small>
+              <b id="computerAcquired">—</b> Tahun Ini
+              <i>·</i>
+              <b id="computerArchived">—</b> Arsip
+            </small>
+          </div>
+        </article>
+
+        <article class="stat-card dash-stat printer">
+          <div class="stat-icon teal">▤</div>
+          <div class="stat-info">
+            <span>Total Printer</span>
+            <strong id="totalPrinters">—</strong>
+            <small>
+              <b id="printerAcquired">—</b> Tahun Ini
+              <i>·</i>
+              <b id="printerArchived">—</b> Arsip
+            </small>
+          </div>
+        </article>
+
+        <article class="stat-card dash-stat maintenance">
+          <div class="stat-icon purple">◷</div>
+          <div class="stat-info">
+            <span>Total Maintenance</span>
+            <strong id="totalMaintenance">—</strong>
+            <small>
+              <b id="totalCare">—</b> Perawatan
+              <i>·</i>
+              <b id="totalRepair">—</b> Perbaikan
+            </small>
+          </div>
+        </article>
+
+        <article class="stat-card dash-stat connection">
+          <div class="stat-icon green">⌁</div>
+          <div class="stat-info">
+            <span>Koneksi</span>
+            <strong class="dashboard-connection-label">
+              Memeriksa...
+            </strong>
+            <small>Google Apps Script</small>
+          </div>
+        </article>
+      `;
+    }
+
+    const lower = $(".dashboard-lower-grid", page);
+    if (!lower) return;
+
+    lower.innerHTML = `
+      <article class="glass-card dash-panel">
+        <div class="card-heading">
+          <div>
+            <h3>Monitoring Perangkat per Unit</h3>
+            <p>Jumlah komputer dan printer pada setiap unit</p>
+          </div>
+        </div>
+        <div id="unitMonitoring"></div>
+      </article>
+
+      <article class="glass-card dash-panel">
+        <div class="card-heading">
+          <div>
+            <h3>Monitoring Jadwal Maintenance</h3>
+            <p>Jadwal berdasarkan catatan perawatan terbaru setiap perangkat</p>
+          </div>
+        </div>
+        <div id="dashboardSchedules"></div>
+      </article>
+
+      <article class="glass-card dash-panel">
+        <div class="card-heading">
+          <div>
+            <h3>Aktivitas Maintenance Terbaru</h3>
+            <p>Lima aktivitas komputer dan printer paling baru</p>
+          </div>
+        </div>
+        <div id="latestMaintenance"></div>
+      </article>
+
+      <article class="glass-card dash-panel">
+        <div class="card-heading">
+          <div>
+            <h3>Kondisi Perangkat</h3>
+            <p>Berdasarkan catatan Maintenance terbaru</p>
+          </div>
+        </div>
+        <div id="dashboardConditions"></div>
+      </article>
+    `;
 
     if (!$("#dashboardMeta", page)) {
-      lowerGrid.insertAdjacentHTML("beforebegin", `
+      lower.insertAdjacentHTML("beforebegin", `
         <div class="dashboard-meta" id="dashboardMeta">
-          <div>
-            <span class="dashboard-meta-dot"></span>
-            <span id="dashboardUpdateText">
-              Menunggu data...
-            </span>
-          </div>
-
+          <span>
+            <i class="dashboard-meta-dot"></i>
+            <span id="dashboardUpdateText">Menunggu data...</span>
+          </span>
           <button
             type="button"
             class="dashboard-refresh"
-            id="dashboardRefresh">
-            <span>↻</span> Perbarui Data
-          </button>
-        </div>
-      `);
-    }
-
-    if (!$("#dashboardExtraGrid", page)) {
-      lowerGrid.insertAdjacentHTML("afterend", `
-        <div class="dashboard-extra-grid" id="dashboardExtraGrid">
-
-          <article class="glass-card dashboard-panel">
-            <div class="card-heading">
-              <h3>Monitoring Jadwal Maintenance</h3>
-              <p>Jadwal perawatan perangkat</p>
-            </div>
-            <div id="dashboardSchedules"></div>
-          </article>
-
-          <article class="glass-card dashboard-panel">
-            <div class="card-heading">
-              <h3>Kondisi Perangkat</h3>
-              <p>Berdasarkan catatan Maintenance terbaru</p>
-            </div>
-            <div id="dashboardConditions"></div>
-          </article>
-
+            id="dashboardRefresh"
+          >↻ Perbarui Data</button>
         </div>
       `);
     }
   }
 
-  function renderStats(computers, printers, maintenance) {
-    const activeComputers = computers.filter(row => !isArchived(row));
-    const activePrinters = printers.filter(row => !isArchived(row));
+  function renderStats() {
+    const c = state.computers.filter(r => !archived(r));
+    const p = state.printers.filter(r => !archived(r));
+    const m = state.maintenance;
+    const year = new Date().getFullYear();
 
-    const totalGood = countGoodDevices(
-      activeComputers,
-      activePrinters,
-      maintenance
-    );
+    $("#totalComputers").textContent = c.length;
+    $("#totalPrinters").textContent = p.length;
+    $("#totalMaintenance").textContent = m.length;
 
-    $("#totalComputers").textContent = activeComputers.length;
-    $("#totalPrinters").textContent = activePrinters.length;
-    $("#totalMaintenance").textContent = maintenance.length;
-    $("#goodDevices").textContent = totalGood;
+    $("#computerAcquired").textContent =
+      c.filter(r => yearOf(r.tahun) === year).length;
 
-    const computerCard = $("#totalComputers")?.closest(".stat-card");
-    const printerCard = $("#totalPrinters")?.closest(".stat-card");
+    $("#printerAcquired").textContent =
+      p.filter(r => yearOf(r.ftp) === year).length;
 
-    if (computerCard) {
-      const note = computerCard.querySelector("small");
-      if (note) {
-        note.textContent =
-          `${state.archiveCounts.computers} perangkat arsip`;
-      }
-    }
+    $("#computerArchived").textContent =
+      state.archiveCounts.computers;
 
-    if (printerCard) {
-      const note = printerCard.querySelector("small");
-      if (note) {
-        note.textContent =
-          `${state.archiveCounts.printers} perangkat arsip`;
-      }
-    }
-  }
+    $("#printerArchived").textContent =
+      state.archiveCounts.printers;
 
-  function countGoodDevices(computers, printers, maintenance) {
-    const latest = new Map();
+    $("#totalCare").textContent = m.filter(row =>
+      String(row.jenis_kegiatan || row.kegiatan || "")
+        .trim().toLowerCase() === "perawatan"
+    ).length;
 
-    maintenance
-      .map(row => ({
-        row,
-        date: parseDate(getActivityDate(row))
-      }))
-      .filter(item => item.date)
-      .sort((a, b) => b.date - a.date)
-      .forEach(item => {
-        const row = item.row;
-        const key = deviceKey(
-          row.jenis_aset,
-          row.serial,
-          row.nama_aset
-        );
+    $("#totalRepair").textContent = m.filter(row =>
+      String(row.jenis_kegiatan || row.kegiatan || "")
+        .trim().toLowerCase() === "perbaikan"
+    ).length;
 
-        if (key && !latest.has(key)) {
-          latest.set(key, row);
-        }
-      });
-
-    const devices = [
-      ...computers.map(row => ({
-        type: "komputer",
-        serial: row.serial,
-        name: row.komputer
-      })),
-      ...printers.map(row => ({
-        type: "printer",
-        serial: row.serial,
-        name: row.unit
-      }))
-    ];
-
-    return devices.filter(device => {
-      const key = deviceKey(
-        device.type,
-        device.serial,
-        device.name
-      );
-
-      const condition = String(
-        latest.get(key)?.kondisi || ""
-      ).trim().toLowerCase();
-
-      return condition === "baik";
-    }).length;
+    setOnline(true);
   }
 
   function renderUnits() {
-    const host = $("#unitMonitoring");
-    if (!host) return;
+    const map = new Map();
 
-    const units = new Map();
+    function add(raw, type) {
+      const s = String(raw || "").trim();
+      if (!s) return;
 
-    function addUnit(raw, type) {
-      const value = String(raw || "").trim();
-      if (!value) return;
+      const label = (
+        type === "computers" && s.includes("-")
+          ? s.split("-")[0]
+          : s
+      ).trim().toLocaleUpperCase("id-ID");
 
-      // Pengguna komputer memakai format KODE UNIT-NAMA.
-      const code = type === "computers" && value.includes("-")
-        ? value.split("-")[0].trim()
-        : value;
-
-      const label = code.toLocaleUpperCase("id-ID");
-
-      if (!units.has(label)) {
-        units.set(label, {
+      if (!map.has(label)) {
+        map.set(label, {
           label,
           computers: 0,
           printers: 0
         });
       }
 
-      units.get(label)[type]++;
+      map.get(label)[type]++;
     }
 
     state.computers
-      .filter(row => !isArchived(row))
-      .forEach(row => addUnit(row.pengguna, "computers"));
+      .filter(r => !archived(r))
+      .forEach(r => add(r.pengguna, "computers"));
 
     state.printers
-      .filter(row => !isArchived(row))
-      .forEach(row => addUnit(row.unit, "printers"));
+      .filter(r => !archived(r))
+      .forEach(r => add(r.unit, "printers"));
 
-    const rows = [...units.values()].sort(
-      (a, b) => a.label.localeCompare(b.label, "id")
-    );
+    const rows = [...map.values()]
+      .sort((a,b) => a.label.localeCompare(b.label, "id"));
 
-    if (!rows.length) {
-      host.innerHTML = `
-        <div class="dashboard-empty">
-          Belum ada data unit.
-        </div>
-      `;
-      return;
-    }
-
-    host.innerHTML = `
+    $("#unitMonitoring").innerHTML = rows.length ? `
       <div class="dashboard-unit-grid">
-        ${rows.map(unit => `
+        ${rows.map(u => `
           <div class="dashboard-unit-card">
-            <strong>${escapeHTML(unit.label)}</strong>
-
+            <strong>${esc(u.label)}</strong>
             <div class="dashboard-unit-counts">
               <span class="unit-computer">
-                <span>▣</span>
-                ${unit.computers}
+                ▣ <b>${u.computers}</b>
               </span>
-
               <span class="unit-printer">
-                <span>▤</span>
-                ${unit.printers}
+                ▤ <b>${u.printers}</b>
               </span>
             </div>
           </div>
         `).join("")}
       </div>
+    ` : `
+      <div class="dashboard-empty">
+        Belum ada data unit.
+      </div>
     `;
   }
 
-  function renderActivities() {
-    const host = $("#latestMaintenance");
-    if (!host) return;
+  function inventoryModels() {
+    const map = new Map();
 
-    const activities = state.maintenance
-      .map(row => ({
-        ...row,
-        _date: parseDate(getActivityDate(row))
+    [
+      ...state.computers.map(r => ({
+        type: "komputer",
+        serial: r.serial,
+        name: r.komputer,
+        model: r.model || r.Model
+      })),
+      ...state.printers.map(r => ({
+        type: "printer",
+        serial: r.serial,
+        name: r.unit,
+        model: r.model || r.Model
       }))
-      .sort((a, b) =>
-        (b._date?.getTime() || 0) -
-        (a._date?.getTime() || 0)
+    ].forEach(d => {
+      const k = keyOf(d.type, d.serial, d.name);
+      if (k && d.model) map.set(k, d.model);
+    });
+
+    return map;
+  }
+
+  function renderActivities(models) {
+    const rows = state.maintenance
+      .map(row => ({
+        row,
+        date: dateOf(activityDate(row))
+      }))
+      .sort((a,b) =>
+        (b.date?.getTime() || 0) -
+        (a.date?.getTime() || 0)
       )
-      .slice(0, 5);
+      .slice(0,5);
 
-    if (!activities.length) {
-      host.innerHTML = `
-        <div class="dashboard-empty">
-          Belum ada aktivitas Maintenance.
-        </div>
-      `;
-      return;
-    }
-
-    host.innerHTML = `
+    $("#latestMaintenance").innerHTML = rows.length ? `
       <div class="dashboard-activity-list">
-        ${activities.map(row => {
-          const type = normalizeAssetType(row.jenis_aset);
-          const rawName = row.nama_aset || "Perangkat";
+        ${rows.map(({row,date}) => {
+          const type = typeOf(row.jenis_aset);
 
           const name = type === "komputer"
-            ? maskComputerName(rawName)
-            : rawName;
+            ? maskComputer(row.nama_aset)
+            : (row.nama_aset || "Printer");
 
-          const serial = maskValue(row.serial);
+          const model =
+            row.model ||
+            row.Model ||
+            models.get(keyOf(type,row.serial,row.nama_aset)) ||
+            "Model tidak tersedia";
+
           const activity =
-            row.jenis_kegiatan || row.kegiatan || "Maintenance";
+            row.jenis_kegiatan ||
+            row.kegiatan ||
+            "Maintenance";
 
           return `
             <div class="dashboard-activity-item">
-              <div class="dashboard-activity-icon ${type}">
+              <span class="dashboard-activity-icon ${type}">
                 ${type === "printer" ? "▤" : "▣"}
-              </div>
+              </span>
 
               <div class="dashboard-activity-info">
-                <strong>${escapeHTML(name)}</strong>
-
+                <strong>${esc(name)}</strong>
                 <span>
-                  ${escapeHTML(activity)}
-                  · ${escapeHTML(row.kondisi || "Kondisi belum diisi")}
+                  ${esc(model)} · ${esc(maskSerial(row.serial))}
                 </span>
-
                 <small>
-                  ${escapeHTML(formatDateTime(getActivityDate(row)))}
+                  ${esc(activity)} ·
+                  ${esc(row.kondisi || "Kondisi belum diisi")}
                 </small>
+                <time>${esc(fmtDateTime(date))}</time>
               </div>
-
-              <span class="dashboard-activity-serial">
-                ${escapeHTML(serial)}
-              </span>
             </div>
           `;
         }).join("")}
       </div>
+    ` : `
+      <div class="dashboard-empty">
+        Belum ada aktivitas Maintenance.
+      </div>
     `;
   }
 
-  function renderSchedules() {
-    const host = $("#dashboardSchedules");
-    if (!host) return;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const next30 = new Date(today);
-    next30.setDate(next30.getDate() + 30);
-
-    const latestCare = new Map();
+  function latestMaintenanceMap(filter) {
+    const map = new Map();
 
     state.maintenance
-      .filter(row =>
-        String(row.jenis_kegiatan || row.kegiatan || "")
-          .trim()
-          .toLowerCase() === "perawatan"
-      )
       .map(row => ({
         row,
-        created: parseDate(getActivityDate(row))
+        date: dateOf(activityDate(row))
       }))
-      .sort((a, b) =>
-        (b.created?.getTime() || 0) -
-        (a.created?.getTime() || 0)
-      )
-      .forEach(item => {
-        const row = item.row;
-        const key = deviceKey(
+      .filter(x => x.date && (!filter || filter(x.row)))
+      .sort((a,b) => b.date - a.date)
+      .forEach(({row}) => {
+        const k = keyOf(
           row.jenis_aset,
           row.serial,
           row.nama_aset
         );
 
-        if (key && !latestCare.has(key)) {
-          latestCare.set(key, row);
+        if (k && !map.has(k)) {
+          map.set(k,row);
         }
       });
+
+    return map;
+  }
+
+  function renderSchedules(models) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const limit = new Date(today);
+    limit.setDate(limit.getDate()+30);
+
+    const latestCare = latestMaintenanceMap(row =>
+      String(row.jenis_kegiatan || row.kegiatan || "")
+        .trim().toLowerCase() === "perawatan"
+    );
 
     const schedules = [...latestCare.values()]
       .map(row => ({
         row,
-        date: parseDate(row.jadwal)
+        date: dateOf(row.jadwal)
       }))
-      .filter(item => item.date)
-      .sort((a, b) => a.date - b.date);
+      .filter(x => x.date)
+      .sort((a,b) => a.date-b.date);
 
-    const overdue = schedules.filter(item => item.date < today).length;
-    const upcoming = schedules.filter(
-      item => item.date >= today && item.date <= next30
-    ).length;
+    const late = schedules.filter(x => x.date < today);
+    const soon = schedules.filter(
+      x => x.date >= today && x.date <= limit
+    );
+    const later = schedules.filter(x => x.date > limit);
 
-    const future = schedules.filter(item => item.date > next30).length;
+    const list = schedules.slice(0,8).map(({row,date}) => {
+      const type = typeOf(row.jenis_aset);
 
-    host.innerHTML = `
+      const name = type === "komputer"
+        ? maskComputer(row.nama_aset)
+        : (row.nama_aset || "Printer");
+
+      const model =
+        row.model ||
+        row.Model ||
+        models.get(keyOf(type,row.serial,row.nama_aset)) ||
+        "Model tidak tersedia";
+
+      return `
+        <div class="dashboard-schedule-item">
+          <div>
+            <strong>${esc(name)}</strong>
+            <small>
+              ${esc(type || "Perangkat")} · ${esc(model)}
+            </small>
+          </div>
+          <time>${esc(fmtDate(date))}</time>
+        </div>
+      `;
+    }).join("");
+
+    $("#dashboardSchedules").innerHTML = `
       <div class="dashboard-schedule-summary">
         <div class="schedule-overdue">
-          <strong>${overdue}</strong>
+          <strong>${late.length}</strong>
           <span>Terlambat</span>
         </div>
 
         <div class="schedule-upcoming">
-          <strong>${upcoming}</strong>
-          <span>30 Hari</span>
+          <strong>${soon.length}</strong>
+          <span>Segera · 30 hari</span>
         </div>
 
         <div class="schedule-future">
-          <strong>${future}</strong>
+          <strong>${later.length}</strong>
           <span>Terjadwal</span>
         </div>
       </div>
 
-      ${
-        schedules.length
-          ? `
-            <div class="dashboard-schedule-list">
-              ${schedules.slice(0, 5).map(item => {
-                const row = item.row;
-                const type = normalizeAssetType(row.jenis_aset);
+      ${list ? `
+        <div class="dashboard-schedule-list">
+          ${list}
+        </div>
+      ` : `
+        <div class="dashboard-empty">
+          Belum ada jadwal perawatan.
+        </div>
+      `}
 
-                const name = type === "komputer"
-                  ? maskComputerName(row.nama_aset)
-                  : (row.nama_aset || "Printer");
-
-                return `
-                  <div class="dashboard-schedule-item">
-                    <div>
-                      <strong>${escapeHTML(name)}</strong>
-                      <small>${escapeHTML(type || "Perangkat")}</small>
-                    </div>
-                    <span>${escapeHTML(formatDate(item.date))}</span>
-                  </div>
-                `;
-              }).join("")}
-            </div>
-          `
-          : `
-            <div class="dashboard-empty">
-              Belum ada jadwal perawatan.
-            </div>
-          `
-      }
+      ${schedules.length > 8 ? `
+        <small class="dashboard-more">
+          Menampilkan 8 dari ${schedules.length} jadwal.
+        </small>
+      ` : ""}
     `;
   }
 
   function renderConditions() {
-    const host = $("#dashboardConditions");
-    if (!host) return;
+    const latest = latestMaintenanceMap();
 
-    const latest = new Map();
-
-    state.maintenance
-      .map(row => ({
-        row,
-        date: parseDate(getActivityDate(row))
-      }))
-      .filter(item => item.date)
-      .sort((a, b) => b.date - a.date)
-      .forEach(item => {
-        const row = item.row;
-        const key = deviceKey(
-          row.jenis_aset,
-          row.serial,
-          row.nama_aset
-        );
-
-        if (key && !latest.has(key)) {
-          latest.set(key, row);
-        }
-      });
-
-    const counts = {
-      baik: 0,
-      perhatian: 0,
-      rusak: 0,
-      unknown: 0
+    const groups = {
+      komputer: {
+        baik: 0,
+        attention: 0,
+        bad: 0,
+        unknown: 0
+      },
+      printer: {
+        baik: 0,
+        attention: 0,
+        bad: 0,
+        unknown: 0
+      }
     };
 
     const devices = [
       ...state.computers
-        .filter(row => !isArchived(row))
-        .map(row => ({
+        .filter(r => !archived(r))
+        .map(r => ({
           type: "komputer",
-          serial: row.serial,
-          name: row.komputer
+          serial: r.serial,
+          name: r.komputer
         })),
+
       ...state.printers
-        .filter(row => !isArchived(row))
-        .map(row => ({
+        .filter(r => !archived(r))
+        .map(r => ({
           type: "printer",
-          serial: row.serial,
-          name: row.unit
+          serial: r.serial,
+          name: r.unit
         }))
     ];
 
-    devices.forEach(device => {
-      const key = deviceKey(
-        device.type,
-        device.serial,
-        device.name
-      );
-
-      const condition = String(
-        latest.get(key)?.kondisi || ""
+    devices.forEach(d => {
+      const c = String(
+        latest.get(keyOf(d.type,d.serial,d.name))?.kondisi || ""
       ).trim().toLowerCase();
 
-      if (condition === "baik") {
-        counts.baik++;
-      } else if (condition === "perlu perhatian") {
-        counts.perhatian++;
-      } else if (condition === "rusak") {
-        counts.rusak++;
-      } else {
-        counts.unknown++;
-      }
+      const bucket =
+        c === "baik" ? "baik" :
+        c === "perlu perhatian" ? "attention" :
+        c === "rusak" ? "bad" :
+        "unknown";
+
+      groups[d.type][bucket]++;
     });
 
-    host.innerHTML = `
-      <div class="dashboard-condition-list">
-        <div>
-          <span class="condition-indicator good"></span>
-          <span>Baik</span>
-          <strong>${counts.baik}</strong>
-        </div>
+    const labels = [
+      ["baik","Baik"],
+      ["attention","Perlu Perhatian"],
+      ["bad","Rusak"],
+      ["unknown","Belum Ada Data Kondisi"]
+    ];
 
-        <div>
-          <span class="condition-indicator attention"></span>
-          <span>Perlu Perhatian</span>
-          <strong>${counts.perhatian}</strong>
-        </div>
+    function column(type,title,archiveCount) {
+      const g = groups[type];
 
-        <div>
-          <span class="condition-indicator bad"></span>
-          <span>Rusak</span>
-          <strong>${counts.rusak}</strong>
-        </div>
+      const totalBad =
+        g.bad + Number(archiveCount || 0);
 
-        <div>
-          <span class="condition-indicator unknown"></span>
-          <span>Belum Ada Data Kondisi</span>
-          <strong>${counts.unknown}</strong>
-        </div>
+      const values = {
+        baik: g.baik,
+        attention: g.attention,
+        bad: totalBad,
+        unknown: g.unknown
+      };
+
+      const activeCount = type === "komputer"
+        ? state.computers.filter(r => !archived(r)).length
+        : state.printers.filter(r => !archived(r)).length;
+
+      return `
+        <section class="dashboard-condition-column">
+          <h4>${title}</h4>
+
+          ${labels.map(([k,label]) => `
+            <div class="dashboard-condition-row">
+              <span>
+                <i class="condition-indicator ${k}"></i>
+                ${label}
+              </span>
+              <strong>${values[k]}</strong>
+            </div>
+          `).join("")}
+
+          <small>
+            ${activeCount} aktif · ${archiveCount} arsip
+          </small>
+        </section>
+      `;
+    }
+
+    $("#dashboardConditions").innerHTML = `
+      <div class="dashboard-condition-grid">
+        ${column(
+          "komputer",
+          "Komputer",
+          state.archiveCounts.computers
+        )}
+
+        ${column(
+          "printer",
+          "Printer",
+          state.archiveCounts.printers
+        )}
       </div>
 
       <p class="dashboard-condition-note">
-        Kondisi dihitung dari catatan Maintenance terbaru
-        untuk setiap perangkat aktif.
+        Kondisi perangkat aktif mengikuti catatan Maintenance terbaru.
+        Perangkat arsip tetap dihitung dalam kategori Rusak,
+        sesuai dashboard lama.
       </p>
     `;
   }
 
   function renderMeta() {
-    const label = $("#dashboardUpdateText");
-    if (label) {
-      label.textContent = state.lastUpdated
-        ? "Data diperbarui " + formatDateTime(state.lastUpdated)
+    const el = $("#dashboardUpdateText");
+
+    if (el) {
+      el.textContent = state.lastUpdated
+        ? "Data diperbarui " + fmtDateTime(state.lastUpdated)
         : "Data belum diperbarui";
     }
   }
 
   function renderError(error) {
-    const message = escapeHTML(
+    const message = esc(
       error?.message || "Terjadi kesalahan saat mengambil data."
     );
 
     [
       "#unitMonitoring",
-      "#latestMaintenance",
       "#dashboardSchedules",
+      "#latestMaintenance",
       "#dashboardConditions"
-    ].forEach(selector => {
-      const host = $(selector);
-      if (!host) return;
+    ].forEach(sel => {
+      const el = $(sel);
 
-      host.innerHTML = `
-        <div class="dashboard-error">
-          <span>Data belum dapat dimuat.</span>
-          <small>${message}</small>
-        </div>
-      `;
+      if (el) {
+        el.innerHTML = `
+          <div class="dashboard-error">
+            Data belum dapat dimuat.
+            <small>${message}</small>
+          </div>
+        `;
+      }
     });
 
-    setConnection(false);
+    setOnline(false);
   }
 
   function render() {
-    ensureDashboardExtras();
+    ensureLayout();
 
-    const computers = state.computers.filter(row => !isArchived(row));
-    const printers = state.printers.filter(row => !isArchived(row));
+    const models = inventoryModels();
 
-    renderStats(computers, printers, state.maintenance);
+    renderStats();
     renderUnits();
-    renderActivities();
-    renderSchedules();
+    renderActivities(models);
+    renderSchedules(models);
     renderConditions();
     renderMeta();
-
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
   }
 
   async function refresh() {
@@ -795,42 +768,40 @@
     state.loading = true;
 
     const button = $("#dashboardRefresh");
+
     if (button) {
       button.disabled = true;
-      button.innerHTML = "<span>↻</span> Memuat...";
+      button.textContent = "Memuat...";
     }
 
     try {
       await loadData();
       render();
     } catch (error) {
-      state.error = error;
-      renderError(error);
       console.error("Dashboard gagal dimuat:", error);
+      renderError(error);
     } finally {
       state.loading = false;
 
-      const currentButton = $("#dashboardRefresh");
-      if (currentButton) {
-        currentButton.disabled = false;
-        currentButton.innerHTML = "<span>↻</span> Perbarui Data";
+      const b = $("#dashboardRefresh");
+
+      if (b) {
+        b.disabled = false;
+        b.textContent = "↻ Perbarui Data";
       }
     }
   }
 
   function init() {
-    ensureDashboardExtras();
+    ensureLayout();
 
-    document.addEventListener("click", event => {
-      if (event.target.closest("#dashboardRefresh")) {
+    document.addEventListener("click", e => {
+      if (e.target.closest("#dashboardRefresh")) {
         refresh();
       }
     });
 
-    // Saat login/logout, data dimuat ulang sesuai hak akses.
-    document.addEventListener("techops:authchange", () => {
-      refresh();
-    });
+    document.addEventListener("techops:authchange", refresh);
 
     refresh();
   }
