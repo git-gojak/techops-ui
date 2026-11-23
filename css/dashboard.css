@@ -1,0 +1,125 @@
+
+.welcome-panel {
+  position: relative;
+  min-height: 165px;
+  overflow: hidden;
+  padding: 27px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background:
+    radial-gradient(
+      circle at 85% 50%,
+      rgba(37, 137, 255, 0.25),
+      transparent 32%
+    ),
+    linear-gradient(120deg, #192b43, #132238);
+}
+
+.eyebrow {
+  color: var(--blue-light);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.15em;
+}
+
+.welcome-panel h2 {
+  margin: 8px 0 5px;
+  font-size: 23px;
+}
+
+.welcome-panel p {
+  font-size: 12px;
+}
+
+.welcome-decoration {
+  color: rgba(130, 190, 255, 0.12);
+  font-size: 100px;
+  font-weight: 900;
+  line-height: 1;
+  user-select: none;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.stat-card {
+  min-width: 0;
+  min-height: 125px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-bright);
+}
+
+.stat-icon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  font-size: 20px;
+}
+
+.stat-icon.blue {
+  color: var(--blue-light);
+  background: rgba(37, 137, 255, 0.14);
+}
+
+.stat-icon.teal {
+  color: var(--teal);
+  background: rgba(37, 195, 195, 0.13);
+}
+
+.stat-icon.purple {
+  color: var(--purple);
+  background: rgba(166, 139, 255, 0.13);
+}
+
+.stat-icon.green {
+  color: var(--green);
+  background: rgba(34, 199, 139, 0.13);
+}
+
+.stat-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-info span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.stat-info strong {
+  margin: 3px 0;
+  font-size: 25px;
+  line-height: 1.2;
+}
+
+.stat-info small {
+  color: var(--text-muted);
+}
+
+.dashboard-lower-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.dashboard-lower-grid .glass-card {
+  min-width: 0;
+  padding: 21px;
+}
