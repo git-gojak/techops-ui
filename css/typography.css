@@ -1,0 +1,42 @@
+
+body {
+  font-family:
+    Inter,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text-main);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-size: 21px;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+h3 {
+  font-size: 15px;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+small {
+  font-size: 11px;
+}
+
+button {
+  font-weight: 550;
+}
