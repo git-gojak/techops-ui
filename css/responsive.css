@@ -176,9 +176,34 @@
     color: var(--text-muted);
   }
 
-  .mobile-nav-item span {
-    font-size: 20px;
-  }
+  
+.mobile-nav-item span {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.mobile-nav-item svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mobile-qr-button svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
   .mobile-nav-item small {
     font-size: 9px;
