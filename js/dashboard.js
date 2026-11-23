@@ -484,7 +484,7 @@
   }
 
   // =======================================================
-  // MONITORING UNIT
+  // MONITORING UNIT - DIPERTAHANKAN
   // =======================================================
 
   function renderUnits() {
@@ -552,24 +552,69 @@
 
   // =======================================================
   // PENCARIAN DATA INVENTARIS
+  // Khusus kebutuhan dua kartu Maintenance
   // =======================================================
+
+  function fieldValue(row, names) {
+    for (const name of names) {
+      const value = row?.[name];
+
+      if (
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== ""
+      ) {
+        return String(value).trim();
+      }
+    }
+
+    return "";
+  }
 
   function inventoryDevices() {
     return [
       ...state.computers.map(row => ({
         type: "komputer",
-        serial: row.serial || "",
-        name: row.komputer || "",
-        model: row.model || row.Model || "",
-        merek: row.manufacturer || row.merek || row.Merek || ""
+
+        serial: fieldValue(row, [
+          "serial", "Serial", "sn_asset", "SN Asset",
+          "asset_serial_id", "Asset/Serial ID"
+        ]),
+
+        name: fieldValue(row, [
+          "komputer", "Computer Name",
+          "computer_name", "nama_aset"
+        ]),
+
+        model: fieldValue(row, [
+          "model", "Model", "model_aset", "Model Aset"
+        ]),
+
+        merek: fieldValue(row, [
+          "manufacturer", "Manufacturer",
+          "merek", "Merek"
+        ])
       })),
 
       ...state.printers.map(row => ({
         type: "printer",
-        serial: row.serial || "",
-        name: row.unit || "",
-        model: row.model || row.Model || "",
-        merek: row.merek || row.Merek || row.manufacturer || ""
+
+        serial: fieldValue(row, [
+          "serial", "Serial", "sn_asset", "SN Asset",
+          "asset_serial_id", "Asset/Serial ID"
+        ]),
+
+        name: fieldValue(row, [
+          "unit", "nama_aset", "Nama Aset", "printer"
+        ]),
+
+        model: fieldValue(row, [
+          "model", "Model", "model_aset", "Model Aset"
+        ]),
+
+        merek: fieldValue(row, [
+          "merek", "Merek", "manufacturer", "Manufacturer"
+        ])
       }))
     ];
   }
@@ -590,7 +635,9 @@
         device.name
       );
 
-      if (serialKey) map.set(serialKey, device);
+      if (serialKey) {
+        map.set(serialKey, device);
+      }
 
       if (nameKey && !map.has(nameKey)) {
         map.set(nameKey, device);
@@ -601,24 +648,30 @@
   }
 
   function findInventoryDevice(row, map) {
-    const type = typeOf(row?.jenis_aset);
+    const type = typeOf(fieldValue(row, [
+      "jenis_aset", "Jenis Aset",
+      "jenis aset", "tipe_aset"
+    ]));
+
     if (!type) return null;
 
-    const serialKey = keyOf(
-      type,
-      row?.serial,
-      ""
-    );
+    const serial = fieldValue(row, [
+      "serial", "Serial", "sn_asset", "SN Asset",
+      "asset_serial_id", "Asset/Serial ID"
+    ]);
+
+    const name = fieldValue(row, [
+      "nama_aset", "Nama Aset", "komputer",
+      "Computer Name", "unit", "nama_perangkat"
+    ]);
+
+    const serialKey = keyOf(type, serial, "");
 
     if (serialKey && map.has(serialKey)) {
       return map.get(serialKey);
     }
 
-    const nameKey = keyOf(
-      type,
-      "",
-      row?.nama_aset
-    );
+    const nameKey = keyOf(type, "", name);
 
     if (nameKey && map.has(nameKey)) {
       return map.get(nameKey);
@@ -630,12 +683,10 @@
   function getDeviceModel(row, map) {
     const inventory = findInventoryDevice(row, map);
 
-    return String(
-      row?.model ||
-      row?.Model ||
-      inventory?.model ||
-      ""
-    ).trim();
+    return fieldValue(row, [
+      "model", "Model", "model_aset", "Model Aset",
+      "model_perangkat", "Model Perangkat"
+    ]) || inventory?.model || "";
   }
 
   // =======================================================
@@ -658,16 +709,26 @@
       ? `
         <div class="dashboard-activity-list">
           ${rows.map(({ row, date }) => {
-            const type = typeOf(row.jenis_aset);
+            const type = typeOf(fieldValue(row, [
+              "jenis_aset", "Jenis Aset",
+              "jenis aset", "tipe_aset"
+            ]));
+
+            const device = findInventoryDevice(row, map);
+
+            const rawName = fieldValue(row, [
+              "nama_aset", "Nama Aset", "komputer",
+              "Computer Name", "unit", "nama_perangkat"
+            ]) || device?.name || "";
 
             const name = type === "komputer"
-              ? maskComputer(row.nama_aset)
-              : (row.nama_aset || "Printer");
+              ? maskComputer(rawName || "Komputer")
+              : (rawName || "Printer");
 
             const rawModel = getDeviceModel(row, map);
 
-            // Hanya model komputer yang disensor.
-            // Model printer ditampilkan apa adanya.
+            // Model komputer disensor untuk publik.
+            // Model printer tetap terlihat untuk publik.
             const model = !rawModel
               ? "Model tidak tersedia"
               : type === "komputer"
@@ -795,15 +856,26 @@
     const list = schedules
       .slice(0, 8)
       .map(({ row, date }) => {
-        const type = typeOf(row.jenis_aset);
+        const type = typeOf(fieldValue(row, [
+          "jenis_aset", "Jenis Aset",
+          "jenis aset", "tipe_aset"
+        ]));
+
         const device = findInventoryDevice(row, map);
+        const rawModel = getDeviceModel(row, map);
+
+        const rawSerial = fieldValue(row, [
+          "serial", "Serial", "sn_asset", "SN Asset",
+          "asset_serial_id", "Asset/Serial ID"
+        ]) || device?.serial || "";
 
         if (type === "komputer") {
           const computerName = device?.name ||
-            row.nama_aset ||
+            fieldValue(row, [
+              "nama_aset", "Nama Aset", "komputer",
+              "Computer Name", "nama_perangkat"
+            ]) ||
             "Komputer";
-
-          const rawModel = getDeviceModel(row, map);
 
           const model = rawModel
             ? maskComputerModel(rawModel)
@@ -812,16 +884,11 @@
           return `
             <div class="dashboard-schedule-item">
               <div>
-                <strong>
-                  ${esc(maskComputer(computerName))}
-                </strong>
+                <strong>${esc(maskComputer(computerName))}</strong>
 
                 <small>
-                  Computer Name
-                  · Model: ${esc(model)}
-                  · Serial: ${esc(maskSerial(
-                    device?.serial || row.serial
-                  ))}
+                  Model: ${esc(model)}
+                  · Serial: ${esc(maskSerial(rawSerial))}
                 </small>
               </div>
 
@@ -831,17 +898,19 @@
         }
 
         const printerUnit = device?.name ||
-          row.nama_aset ||
+          fieldValue(row, [
+            "nama_aset", "Nama Aset", "unit", "nama_perangkat"
+          ]) ||
           "Printer";
 
         const printerBrand = device?.merek ||
-          row.merek ||
-          row.Merek ||
+          fieldValue(row, [
+            "merek", "Merek", "manufacturer"
+          ]) ||
           "Merek tidak tersedia";
 
-        const printerSerial = device?.serial ||
-          row.serial ||
-          "";
+        const printerModel = rawModel ||
+          "Model tidak tersedia";
 
         return `
           <div class="dashboard-schedule-item">
@@ -850,7 +919,8 @@
 
               <small>
                 Merek: ${esc(printerBrand)}
-                · Serial: ${esc(maskSerial(printerSerial))}
+                · Model: ${esc(printerModel)}
+                · Serial: ${esc(maskSerial(rawSerial))}
               </small>
             </div>
 
@@ -901,7 +971,7 @@
   }
 
   // =======================================================
-  // KONDISI PERANGKAT
+  // KONDISI PERANGKAT - DIPERTAHANKAN
   // =======================================================
 
   function renderConditions() {
