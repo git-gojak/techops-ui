@@ -75,3 +75,66 @@
   font-size: 10px;
   text-align: center;
 }
+
+
+.profile-details {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.profile-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255,255,255,.025);
+}
+
+.profile-detail small {
+  color: var(--text-muted);
+}
+
+.profile-detail strong {
+  overflow-wrap: anywhere;
+  color: var(--text-main);
+}
+
+.profile-menu-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-menu-card .modal-logo {
+  margin-bottom: 4px;
+}
+
+.profile-action {
+  width: 100%;
+  min-height: 43px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255,255,255,.035);
+  color: var(--text-main);
+  text-align: left;
+}
+
+.profile-action:hover {
+  border-color: var(--border-bright);
+  background: rgba(37,137,255,.10);
+}
+
+.profile-action.danger {
+  color: var(--red);
+}
+
+.auth-error {
+  min-height: 18px;
+  margin: 8px 0;
+  color: var(--red);
+  font-size: 12px;
+}
