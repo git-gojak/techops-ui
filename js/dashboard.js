@@ -1,7 +1,7 @@
 
 /* =========================================================
    GOJAK TECHOPS
-   DASHBOARD - BATCH 3
+   DASHBOARD - REVISI DETAIL JADWAL, SENSOR, DAN KONDISI
    ========================================================= */
 
 (function () {
@@ -51,24 +51,21 @@
         <path d="M14.7 6.3a5 5 0 0 0-6.4 6.4L3 18l3 3 5.3-5.3a5 5 0 0 0 6.4-6.4L14 12l-2-2z"/>
       `,
       connection: `
-        <path d="M5 12h14"/>
-        <path d="m12 5 7 7-7 7"/>
-        <path d="m12 5-7 7 7 7"/>
+        <circle cx="5" cy="12" r="2"/>
+        <circle cx="19" cy="5" r="2"/>
+        <circle cx="19" cy="19" r="2"/>
+        <path d="m7 11 10-5M7 13l10 5"/>
       `
     };
 
     return `
-      <svg
-        viewBox="0 0 24 24"
-        width="21"
-        height="21"
-        fill="none"
-        stroke="currentColor"
+      <svg viewBox="0 0 24 24"
+        width="21" height="21"
+        fill="none" stroke="currentColor"
         stroke-width="1.7"
         stroke-linecap="round"
         stroke-linejoin="round"
-        aria-hidden="true"
-      >
+        aria-hidden="true">
         ${paths[name] || paths.computer}
       </svg>
     `;
@@ -97,12 +94,8 @@
 
     if (m) {
       return new Date(
-        +m[3],
-        +m[2] - 1,
-        +m[1],
-        +(m[4] || 0),
-        +(m[5] || 0),
-        +(m[6] || 0)
+        +m[3], +m[2] - 1, +m[1],
+        +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)
       );
     }
 
@@ -112,12 +105,8 @@
 
     if (m) {
       return new Date(
-        +m[1],
-        +m[2] - 1,
-        +m[3],
-        +(m[4] || 0),
-        +(m[5] || 0),
-        +(m[6] || 0)
+        +m[1], +m[2] - 1, +m[3],
+        +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)
       );
     }
 
@@ -129,7 +118,7 @@
     const s = String(value ?? "").trim();
     const m = s.match(/^(19|20)\d{2}$/);
 
-    if (m) return +m[0];
+    if (m) return Number(m[0]);
 
     const d = dateOf(value);
     return d ? d.getFullYear() : null;
@@ -166,7 +155,7 @@
       window.TechOpsAPI?.isAuthenticated?.() === true;
   }
 
-  function maskSerial(value) {
+  function maskValue(value) {
     const s = String(value || "").trim();
 
     if (!s) return "-";
@@ -175,6 +164,10 @@
     return s.length <= 4
       ? "*".repeat(s.length)
       : "*".repeat(s.length - 4) + s.slice(-4);
+  }
+
+  function maskSerial(value) {
+    return maskValue(value);
   }
 
   function maskComputer(value) {
@@ -188,6 +181,12 @@
       : s.slice(0, 2) +
         "*".repeat(s.length - 4) +
         s.slice(-2);
+  }
+
+  // Model komputer disensor dengan pola yang sama
+  // seperti serial: hanya empat karakter terakhir terlihat.
+  function maskComputerModel(value) {
+    return maskValue(value);
   }
 
   function typeOf(value) {
@@ -221,6 +220,12 @@
     return t && id ? `${t}|${id}` : "";
   }
 
+  function activityType(row) {
+    return String(
+      row?.jenis_kegiatan || row?.kegiatan || ""
+    ).trim().toLowerCase();
+  }
+
   // =======================================================
   // STATUS KONEKSI
   // =======================================================
@@ -229,10 +234,7 @@
     document.querySelectorAll(
       ".system-indicator .status-dot, .system-card .status-dot"
     ).forEach(dot => {
-      dot.classList.toggle(
-        "dashboard-offline",
-        !online
-      );
+      dot.classList.toggle("dashboard-offline", !online);
     });
 
     const label = $(".dashboard-connection-label");
@@ -281,18 +283,16 @@
 
     const result = await Promise.all([
       timeout(
-        TechOpsAPI.get(
-          "computers.list",
-          { includeArchived }
-        ),
+        TechOpsAPI.get("computers.list", {
+          includeArchived
+        }),
         "Data komputer"
       ),
 
       timeout(
-        TechOpsAPI.get(
-          "printers.list",
-          { includeArchived }
-        ),
+        TechOpsAPI.get("printers.list", {
+          includeArchived
+        }),
         "Data printer"
       ),
 
@@ -335,11 +335,9 @@
           <div class="stat-icon blue">
             ${iconSvg("computer")}
           </div>
-
           <div class="stat-info">
             <span>Total Komputer</span>
             <strong id="totalComputers">—</strong>
-
             <small>
               <b id="computerAcquired">—</b> Tahun Ini
               <i>·</i>
@@ -352,11 +350,9 @@
           <div class="stat-icon teal">
             ${iconSvg("printer")}
           </div>
-
           <div class="stat-info">
             <span>Total Printer</span>
             <strong id="totalPrinters">—</strong>
-
             <small>
               <b id="printerAcquired">—</b> Tahun Ini
               <i>·</i>
@@ -369,11 +365,9 @@
           <div class="stat-icon purple">
             ${iconSvg("maintenance")}
           </div>
-
           <div class="stat-info">
             <span>Total Maintenance</span>
             <strong id="totalMaintenance">—</strong>
-
             <small>
               <b id="totalCare">—</b> Perawatan
               <i>·</i>
@@ -386,14 +380,11 @@
           <div class="stat-icon green">
             ${iconSvg("connection")}
           </div>
-
           <div class="stat-info">
             <span>Koneksi</span>
-
             <strong class="dashboard-connection-label">
               Memeriksa...
             </strong>
-
             <small>Google Apps Script</small>
           </div>
         </article>
@@ -411,7 +402,6 @@
             <p>Jumlah komputer dan printer pada setiap unit</p>
           </div>
         </div>
-
         <div id="unitMonitoring"></div>
       </article>
 
@@ -425,7 +415,6 @@
             </p>
           </div>
         </div>
-
         <div id="dashboardSchedules"></div>
       </article>
 
@@ -436,7 +425,6 @@
             <p>Lima aktivitas komputer dan printer paling baru</p>
           </div>
         </div>
-
         <div id="latestMaintenance"></div>
       </article>
 
@@ -447,7 +435,6 @@
             <p>Berdasarkan catatan Maintenance terbaru</p>
           </div>
         </div>
-
         <div id="dashboardConditions"></div>
       </article>
     `;
@@ -487,16 +474,12 @@
 
     $("#totalCare").textContent =
       maintenance.filter(row =>
-        String(
-          row.jenis_kegiatan || row.kegiatan || ""
-        ).trim().toLowerCase() === "perawatan"
+        activityType(row) === "perawatan"
       ).length;
 
     $("#totalRepair").textContent =
       maintenance.filter(row =>
-        String(
-          row.jenis_kegiatan || row.kegiatan || ""
-        ).trim().toLowerCase() === "perbaikan"
+        activityType(row) === "perbaikan"
       ).length;
 
     setOnline(true);
@@ -548,13 +531,11 @@
           ${rows.map(unit => `
             <div class="dashboard-unit-card">
               <strong>${esc(unit.label)}</strong>
-
               <div class="dashboard-unit-counts">
                 <span class="unit-computer">
                   ${iconSvg("computer")}
                   <b>${unit.computers}</b>
                 </span>
-
                 <span class="unit-printer">
                   ${iconSvg("printer")}
                   <b>${unit.printers}</b>
@@ -572,48 +553,97 @@
   }
 
   // =======================================================
-  // DATA MODEL PERANGKAT
+  // PENCARIAN DATA INVENTARIS
   // =======================================================
 
-  function inventoryModels() {
-    const map = new Map();
-
-    const devices = [
+  function inventoryDevices() {
+    return [
       ...state.computers.map(row => ({
         type: "komputer",
-        serial: row.serial,
-        name: row.komputer,
-        model: row.model || row.Model
+        serial: row.serial || "",
+        name: row.komputer || "",
+        model: row.model || row.Model || "",
+        merek: row.manufacturer || row.merek || row.Merek || ""
       })),
 
       ...state.printers.map(row => ({
         type: "printer",
-        serial: row.serial,
-        name: row.unit,
-        model: row.model || row.Model
+        serial: row.serial || "",
+        name: row.unit || "",
+        model: row.model || row.Model || "",
+        merek: row.merek || row.Merek || row.manufacturer || ""
       }))
     ];
+  }
 
-    devices.forEach(device => {
-      const key = keyOf(
+  function inventoryMap() {
+    const map = new Map();
+
+    inventoryDevices().forEach(device => {
+      const serialKey = keyOf(
         device.type,
         device.serial,
+        ""
+      );
+
+      const nameKey = keyOf(
+        device.type,
+        "",
         device.name
       );
 
-      if (key && device.model) {
-        map.set(key, device.model);
+      if (serialKey) map.set(serialKey, device);
+      if (nameKey && !map.has(nameKey)) {
+        map.set(nameKey, device);
       }
     });
 
     return map;
   }
 
+  function findInventoryDevice(row, map) {
+    const type = typeOf(row?.jenis_aset);
+    if (!type) return null;
+
+    const serialKey = keyOf(
+      type,
+      row?.serial,
+      ""
+    );
+
+    if (serialKey && map.has(serialKey)) {
+      return map.get(serialKey);
+    }
+
+    const nameKey = keyOf(
+      type,
+      "",
+      row?.nama_aset
+    );
+
+    if (nameKey && map.has(nameKey)) {
+      return map.get(nameKey);
+    }
+
+    return null;
+  }
+
+  function getDeviceModel(row, map) {
+    const inventory = findInventoryDevice(row, map);
+
+    return String(
+      row?.model ||
+      row?.Model ||
+      inventory?.model ||
+      ""
+    ).trim();
+  }
+
   // =======================================================
   // AKTIVITAS MAINTENANCE TERBARU
   // =======================================================
 
-  function renderActivities(models) {
+  function renderActivities(map) {
     const rows = state.maintenance
       .map(row => ({
         row,
@@ -635,13 +665,13 @@
               ? maskComputer(row.nama_aset)
               : (row.nama_aset || "Printer");
 
-            const model =
-              row.model ||
-              row.Model ||
-              models.get(
-                keyOf(type, row.serial, row.nama_aset)
-              ) ||
+            const rawModel = getDeviceModel(row, map) ||
               "Model tidak tersedia";
+
+            // Hanya model komputer yang disensor.
+            const model = type === "komputer"
+              ? maskComputerModel(rawModel)
+              : rawModel;
 
             const activity =
               row.jenis_kegiatan ||
@@ -650,7 +680,6 @@
 
             return `
               <div class="dashboard-activity-item">
-
                 <span class="dashboard-activity-icon ${type}">
                   ${iconSvg(
                     type === "printer" ? "printer" : "computer"
@@ -674,7 +703,6 @@
 
                   <time>${esc(fmtDateTime(date))}</time>
                 </div>
-
               </div>
             `;
           }).join("")}
@@ -688,7 +716,7 @@
   }
 
   // =======================================================
-  // MAINTENANCE TERBARU PER PERANGKAT
+  // CATATAN MAINTENANCE TERBARU PER PERANGKAT
   // =======================================================
 
   function latestMaintenanceMap(filter) {
@@ -697,13 +725,26 @@
     state.maintenance
       .map(row => ({
         row,
-        date: dateOf(activityDate(row))
+        activity: dateOf(row.Tanggal),
+        created: dateOf(row["Waktu Dibuat"]),
+        fallback: dateOf(activityDate(row))
       }))
       .filter(item =>
-        item.date &&
+        item.fallback &&
         (!filter || filter(item.row))
       )
-      .sort((a, b) => b.date - a.date)
+      .sort((a, b) => {
+        const activityDiff =
+          (b.activity?.getTime() || 0) -
+          (a.activity?.getTime() || 0);
+
+        if (activityDiff !== 0) return activityDiff;
+
+        return (
+          (b.created?.getTime() || 0) -
+          (a.created?.getTime() || 0)
+        );
+      })
       .forEach(({ row }) => {
         const key = keyOf(
           row.jenis_aset,
@@ -723,17 +764,18 @@
   // MONITORING JADWAL MAINTENANCE
   // =======================================================
 
-  function renderSchedules(models) {
+  function renderSchedules(map) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
 
+    // Jadwal mengikuti catatan perawatan terbaru:
+    // Tanggal menjadi acuan utama, Waktu Dibuat
+    // menjadi pembanding apabila Tanggal sama.
     const latestCare = latestMaintenanceMap(row =>
-      String(
-        row.jenis_kegiatan || row.kegiatan || ""
-      ).trim().toLowerCase() === "perawatan"
+      activityType(row) === "perawatan"
     );
 
     const schedules = [...latestCare.values()]
@@ -760,28 +802,58 @@
       .slice(0, 8)
       .map(({ row, date }) => {
         const type = typeOf(row.jenis_aset);
+        const device = findInventoryDevice(row, map);
 
-        const name = type === "komputer"
-          ? maskComputer(row.nama_aset)
-          : (row.nama_aset || "Printer");
+        if (type === "komputer") {
+          const computerName = device?.name ||
+            row.nama_aset ||
+            "Komputer";
 
-        const model =
-          row.model ||
-          row.Model ||
-          models.get(
-            keyOf(type, row.serial, row.nama_aset)
-          ) ||
-          "Model tidak tersedia";
+          const model = getDeviceModel(row, map) ||
+            "Model tidak tersedia";
+
+          return `
+            <div class="dashboard-schedule-item">
+              <div>
+                <strong>
+                  ${esc(maskComputer(computerName))}
+                </strong>
+
+                <small>
+                  Computer Name
+                  · Model: ${esc(maskComputerModel(model))}
+                  · Serial: ${esc(maskSerial(
+                    device?.serial || row.serial
+                  ))}
+                </small>
+              </div>
+
+              <time>${esc(fmtDate(date))}</time>
+            </div>
+          `;
+        }
+
+        const printerUnit = device?.name ||
+          row.nama_aset ||
+          "Printer";
+
+        const printerBrand = device?.merek ||
+          row.merek ||
+          row.Merek ||
+          "Merek tidak tersedia";
+
+        const printerSerial = device?.serial ||
+          row.serial ||
+          "";
 
         return `
           <div class="dashboard-schedule-item">
             <div>
-              <strong>${esc(name)}</strong>
+              <strong>${esc(printerUnit)}</strong>
 
               <small>
-                ${esc(type || "Perangkat")}
-                ·
-                ${esc(model)}
+                Merek: ${esc(printerBrand)}
+                · Serial: ${esc(maskSerial(printerSerial))}
               </small>
             </div>
 
@@ -793,7 +865,6 @@
 
     $("#dashboardSchedules").innerHTML = `
       <div class="dashboard-schedule-summary">
-
         <div class="schedule-overdue">
           <strong>${late.length}</strong>
           <span>Terlambat</span>
@@ -808,7 +879,6 @@
           <strong>${later.length}</strong>
           <span>Terjadwal</span>
         </div>
-
       </div>
 
       ${
@@ -847,7 +917,6 @@
         bad: 0,
         unknown: 0
       },
-
       printer: {
         baik: 0,
         attention: 0,
@@ -904,9 +973,8 @@
     const printerArchive =
       Number(state.archiveCounts.printers || 0);
 
-    // Arsip tetap dihitung dalam kategori Rusak,
-    // mengikuti perhitungan dashboard lama.
-
+    // Arsip tetap masuk kategori Rusak
+    // sesuai perilaku Dashboard lama.
     groups.komputer.bad += computerArchive;
     groups.printer.bad += printerArchive;
 
@@ -927,16 +995,20 @@
 
     $("#dashboardConditions").innerHTML = `
       <div class="dashboard-condition-table">
-
         <div class="condition-table-header">
           <span>Kondisi</span>
-          <strong>Komputer</strong>
-          <strong>Printer</strong>
+          <strong>
+            ${iconSvg("computer")}
+            Komputer
+          </strong>
+          <strong>
+            ${iconSvg("printer")}
+            Printer
+          </strong>
         </div>
 
         ${rows.map(item => `
           <div class="condition-table-row">
-
             <span class="condition-name">
               <i class="condition-indicator ${item.key}"></i>
               ${item.label}
@@ -944,28 +1016,22 @@
 
             <strong>${groups.komputer[item.key]}</strong>
             <strong>${groups.printer[item.key]}</strong>
-
           </div>
         `).join("")}
-
       </div>
 
       <div class="dashboard-condition-footer">
-
         <span>
-          Komputer:
-          ${komputerAktif} aktif
-          ·
-          ${computerArchive} arsip
+          <b>${iconSvg("computer")}</b>
+          Komputer: ${komputerAktif} aktif
+          · ${computerArchive} arsip
         </span>
 
         <span>
-          Printer:
-          ${printerAktif} aktif
-          ·
-          ${printerArchive} arsip
+          <b>${iconSvg("printer")}</b>
+          Printer: ${printerAktif} aktif
+          · ${printerArchive} arsip
         </span>
-
       </div>
     `;
   }
@@ -1008,12 +1074,12 @@
   function render() {
     ensureLayout();
 
-    const models = inventoryModels();
+    const map = inventoryMap();
 
     renderStats();
     renderUnits();
-    renderActivities(models);
-    renderSchedules(models);
+    renderActivities(map);
+    renderSchedules(map);
     renderConditions();
   }
 
@@ -1029,11 +1095,9 @@
     try {
       await loadData();
       render();
-
     } catch (error) {
       console.error("Dashboard gagal dimuat:", error);
       renderError(error);
-
     } finally {
       state.loading = false;
     }
@@ -1055,10 +1119,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", init);
-
-  // =======================================================
-  // PUBLIC DASHBOARD API
-  // =======================================================
 
   window.DashboardPage = {
     refresh,
