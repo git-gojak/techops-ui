@@ -392,18 +392,13 @@
     const lower = $(".dashboard-lower-grid", page);
     if (!lower) return;
 
-    lower.innerHTML = `
-      <article class="glass-card dash-panel">
-        <div class="card-heading">
-          <div>
-            <h3>Monitoring Perangkat per Unit</h3>
-            <p>Jumlah komputer dan printer pada setiap unit</p>
-          </div>
-        </div>
-        <div id="unitMonitoring"></div>
-      </article>
+    // Pertahankan kartu yang sudah ada. Jangan mengganti seluruh
+    // lower grid karena kartu Monitoring Unit dan Aktivitas sudah ada.
 
-      <article class="glass-card dash-panel">
+    if (!$("#dashboardSchedules", lower)) {
+      const card = document.createElement("article");
+      card.className = "glass-card dash-panel";
+      card.innerHTML = `
         <div class="card-heading">
           <div>
             <h3>Monitoring Jadwal Maintenance</h3>
@@ -414,19 +409,24 @@
           </div>
         </div>
         <div id="dashboardSchedules"></div>
-      </article>
+      `;
 
-      <article class="glass-card dash-panel">
-        <div class="card-heading">
-          <div>
-            <h3>Aktivitas Maintenance Terbaru</h3>
-            <p>Lima aktivitas komputer dan printer paling baru</p>
-          </div>
-        </div>
-        <div id="latestMaintenance"></div>
-      </article>
+      const activityCard = $("#latestMaintenance", lower)
+        ?.closest(".glass-card");
 
-      <article class="glass-card dash-panel">
+      if (activityCard) {
+        lower.insertBefore(card, activityCard);
+      } else {
+        lower.appendChild(card);
+      }
+    }
+
+    // Kartu Kondisi Perangkat tetap tersedia seperti perilaku
+    // dashboard sebelumnya, tanpa membangun ulang kartu lain.
+    if (!$("#dashboardConditions", lower)) {
+      const card = document.createElement("article");
+      card.className = "glass-card dash-panel";
+      card.innerHTML = `
         <div class="card-heading">
           <div>
             <h3>Kondisi Perangkat</h3>
@@ -434,8 +434,9 @@
           </div>
         </div>
         <div id="dashboardConditions"></div>
-      </article>
-    `;
+      `;
+      lower.appendChild(card);
+    }
   }
 
   // =======================================================
@@ -721,6 +722,8 @@
               "Computer Name", "unit", "nama_perangkat"
             ]) || device?.name || "";
 
+            // Nama komputer disensor untuk publik.
+            // Admin tetap melihat nama lengkap.
             const name = type === "komputer"
               ? maskComputer(rawName || "Komputer")
               : (rawName || "Printer");
@@ -819,6 +822,59 @@
   }
 
   // =======================================================
+  // PERAWATAN TERBARU PER PERANGKAT UNTUK JADWAL
+  // Menggunakan Waktu Dibuat sebagai acuan utama.
+  // =======================================================
+
+  function scheduleDeviceKey(row, map) {
+    const type = typeOf(fieldValue(row, [
+      "jenis_aset", "Jenis Aset",
+      "jenis aset", "tipe_aset"
+    ]));
+
+    if (!type) return "";
+
+    const device = findInventoryDevice(row, map);
+
+    const serial = fieldValue(row, [
+      "serial", "Serial", "sn_asset", "SN Asset",
+      "asset_serial_id", "Asset/Serial ID"
+    ]) || device?.serial || "";
+
+    const name = fieldValue(row, [
+      "nama_aset", "Nama Aset", "komputer",
+      "Computer Name", "unit", "nama_perangkat"
+    ]) || device?.name || "";
+
+    const identity = String(serial || name).trim().toUpperCase();
+    return identity ? type + "|" + identity : "";
+  }
+
+  function latestCareForSchedule(map) {
+    const latest = new Map();
+
+    state.maintenance
+      .filter(row => activityType(row) === "perawatan")
+      .map(row => ({
+        row,
+        key: scheduleDeviceKey(row, map),
+        timestamp:
+          dateOf(row["Waktu Dibuat"]) ||
+          dateOf(row.Tanggal) ||
+          dateOf(activityDate(row))
+      }))
+      .filter(item => item.key && item.timestamp)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .forEach(item => {
+        if (!latest.has(item.key)) {
+          latest.set(item.key, item.row);
+        }
+      });
+
+    return [...latest.values()];
+  }
+
+  // =======================================================
   // MONITORING JADWAL MAINTENANCE
   // =======================================================
 
@@ -829,29 +885,34 @@
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
 
-    const latestCare = latestMaintenanceMap(row =>
-      activityType(row) === "perawatan"
-    );
-
-    const schedules = [...latestCare.values()]
+    const schedules = latestCareForSchedule(map)
       .map(row => ({
         row,
-        date: dateOf(row.jadwal)
+        date: dateOf(fieldValue(row, [
+          "jadwal", "Jadwal",
+          "tanggal_jadwal", "Tanggal Jadwal"
+        ]))
       }))
       .filter(item => item.date)
       .sort((a, b) => a.date - b.date);
 
-    const late = schedules.filter(
-      item => item.date < today
-    );
+    const late = schedules.filter(item => {
+      const date = new Date(item.date);
+      date.setHours(0, 0, 0, 0);
+      return date < today;
+    });
 
-    const soon = schedules.filter(
-      item => item.date >= today && item.date <= limit
-    );
+    const soon = schedules.filter(item => {
+      const date = new Date(item.date);
+      date.setHours(0, 0, 0, 0);
+      return date >= today && date <= limit;
+    });
 
-    const later = schedules.filter(
-      item => item.date > limit
-    );
+    const later = schedules.filter(item => {
+      const date = new Date(item.date);
+      date.setHours(0, 0, 0, 0);
+      return date > limit;
+    });
 
     const list = schedules
       .slice(0, 8)
@@ -869,6 +930,7 @@
           "asset_serial_id", "Asset/Serial ID"
         ]) || device?.serial || "";
 
+        // Komputer: nama, model, dan serial disensor untuk publik.
         if (type === "komputer") {
           const computerName = device?.name ||
             fieldValue(row, [
@@ -897,6 +959,7 @@
           `;
         }
 
+        // Printer: merek dan model terlihat, serial disensor.
         const printerUnit = device?.name ||
           fieldValue(row, [
             "nama_aset", "Nama Aset", "unit", "nama_perangkat"
@@ -1113,11 +1176,10 @@
       "Terjadi kesalahan saat mengambil data."
     );
 
+    // Pesan error hanya mengubah dua kartu Maintenance.
     [
-      "#unitMonitoring",
       "#dashboardSchedules",
-      "#latestMaintenance",
-      "#dashboardConditions"
+      "#latestMaintenance"
     ].forEach(selector => {
       const element = $(selector);
 
