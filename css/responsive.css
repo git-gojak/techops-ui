@@ -1,7 +1,14 @@
+/* =========================================
+   GOJAK TECHOPS
+   RESPONSIVE LAYOUT
+   Desktop, Tablet, Mobile
+   ========================================= */
+
+/* Tablet dan layar menengah */
 
 @media (max-width: 1100px) {
   .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2,minmax(0,1fr));
   }
 
   .content-area {
@@ -10,15 +17,19 @@
   }
 }
 
+/* Mobile */
+
 @media (max-width: 760px) {
   :root {
     --header-height: 68px;
   }
 
+  /* Sidebar */
+
   .sidebar {
     transform: translateX(-100%);
     transition: transform var(--transition);
-    box-shadow: 15px 0 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 15px 0 40px rgba(0,0,0,.35);
   }
 
   .sidebar.open {
@@ -29,6 +40,8 @@
     width: 100%;
     margin-left: 0;
   }
+
+  /* Header */
 
   .topbar {
     padding: 10px 15px;
@@ -50,9 +63,13 @@
     display: none;
   }
 
+  /* Area konten */
+
   .content-area {
     padding: 18px 14px 100px;
   }
+
+  /* Welcome */
 
   .welcome-panel {
     min-height: 145px;
@@ -75,8 +92,12 @@
     font-size: 75px;
   }
 
+  /* Dashboard */
+
   .dashboard-grid {
-    gap: 10px;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 12px;
+    margin-bottom: 18px;
   }
 
   .stat-card {
@@ -89,15 +110,20 @@
   .stat-icon {
     width: 36px;
     height: 36px;
+    flex-basis: 36px;
     border-radius: 11px;
-    font-size: 17px;
   }
 
-  .stat-info span {
+  .stat-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .stat-info > span {
     font-size: 10px;
   }
 
-  .stat-info strong {
+  .stat-info > strong {
     font-size: 21px;
   }
 
@@ -107,12 +133,23 @@
 
   .dashboard-lower-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 16px;
   }
 
-  .dashboard-lower-grid .glass-card {
-    padding: 17px;
+  .dash-panel {
+    padding: 18px !important;
   }
+
+  .dashboard-unit-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 10px;
+  }
+
+  .dashboard-unit-card {
+    padding: 11px;
+  }
+
+  /* Navigasi bawah */
 
   .mobile-nav {
     position: fixed;
@@ -124,7 +161,7 @@
     align-items: center;
     justify-content: space-around;
     border-top: 1px solid var(--border-bright);
-    background: rgba(12, 21, 34, 0.96);
+    background: rgba(12,21,34,.96);
     backdrop-filter: blur(22px);
   }
 
@@ -159,17 +196,24 @@
     place-items: center;
     border: 3px solid #111d2d;
     border-radius: 17px;
-    background: linear-gradient(145deg, #48aaff, #1261d8);
+    background: linear-gradient(145deg,#48aaff,#1261d8);
     color: white;
     font-size: 23px;
     box-shadow: var(--shadow-blue);
   }
 }
 
+/* HP kecil */
+
 @media (max-width: 390px) {
   .content-area {
     padding-right: 10px;
     padding-left: 10px;
+  }
+
+  .dashboard-grid {
+    gap: 10px;
+    margin-bottom: 16px;
   }
 
   .stat-card {
@@ -180,12 +224,58 @@
   .stat-icon {
     width: 32px;
     height: 32px;
+    flex-basis: 32px;
   }
 
-  .stat-info strong {
+  .stat-info > strong {
     font-size: 19px;
   }
+
+  .dashboard-lower-grid {
+    gap: 14px;
+  }
+
+  .dash-panel {
+    padding: 15px !important;
+  }
+
+  .dashboard-unit-grid {
+    gap: 8px;
+  }
+
+  .dashboard-unit-card {
+    padding: 10px;
+  }
+
+  .condition-table-header,
+  .condition-table-row {
+    grid-template-columns: minmax(0,1fr) 65px 65px;
+    gap: 5px;
+    padding: 11px 9px;
+  }
+
+  .condition-name {
+    font-size: 11px;
+  }
+
+  .condition-table-header {
+    font-size: 10px;
+  }
+
+  .dashboard-schedule-summary {
+    gap: 6px;
+  }
+
+  .dashboard-schedule-summary > div {
+    padding: 9px 7px;
+  }
+
+  .dashboard-schedule-summary span {
+    font-size: 9px;
+  }
 }
+
+/* HP landscape */
 
 @media (max-height: 500px) and (orientation: landscape) {
   .mobile-nav {
