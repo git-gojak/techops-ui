@@ -392,13 +392,18 @@
     const lower = $(".dashboard-lower-grid", page);
     if (!lower) return;
 
-    // Pertahankan kartu yang sudah ada. Jangan mengganti seluruh
-    // lower grid karena kartu Monitoring Unit dan Aktivitas sudah ada.
+    lower.innerHTML = `
+      <article class="glass-card dash-panel">
+        <div class="card-heading">
+          <div>
+            <h3>Monitoring Perangkat per Unit</h3>
+            <p>Jumlah komputer dan printer pada setiap unit</p>
+          </div>
+        </div>
+        <div id="unitMonitoring"></div>
+      </article>
 
-    if (!$("#dashboardSchedules", lower)) {
-      const card = document.createElement("article");
-      card.className = "glass-card dash-panel";
-      card.innerHTML = `
+      <article class="glass-card dash-panel">
         <div class="card-heading">
           <div>
             <h3>Monitoring Jadwal Maintenance</h3>
@@ -409,24 +414,19 @@
           </div>
         </div>
         <div id="dashboardSchedules"></div>
-      `;
+      </article>
 
-      const activityCard = $("#latestMaintenance", lower)
-        ?.closest(".glass-card");
+      <article class="glass-card dash-panel">
+        <div class="card-heading">
+          <div>
+            <h3>Aktivitas Maintenance Terbaru</h3>
+            <p>Lima aktivitas komputer dan printer paling baru</p>
+          </div>
+        </div>
+        <div id="latestMaintenance"></div>
+      </article>
 
-      if (activityCard) {
-        lower.insertBefore(card, activityCard);
-      } else {
-        lower.appendChild(card);
-      }
-    }
-
-    // Kartu Kondisi Perangkat tetap tersedia seperti perilaku
-    // dashboard sebelumnya, tanpa membangun ulang kartu lain.
-    if (!$("#dashboardConditions", lower)) {
-      const card = document.createElement("article");
-      card.className = "glass-card dash-panel";
-      card.innerHTML = `
+      <article class="glass-card dash-panel">
         <div class="card-heading">
           <div>
             <h3>Kondisi Perangkat</h3>
@@ -434,9 +434,8 @@
           </div>
         </div>
         <div id="dashboardConditions"></div>
-      `;
-      lower.appendChild(card);
-    }
+      </article>
+    `;
   }
 
   // =======================================================
@@ -485,7 +484,7 @@
   }
 
   // =======================================================
-  // MONITORING UNIT - DIPERTAHANKAN
+  // MONITORING UNIT
   // =======================================================
 
   function renderUnits() {
@@ -553,69 +552,24 @@
 
   // =======================================================
   // PENCARIAN DATA INVENTARIS
-  // Khusus kebutuhan dua kartu Maintenance
   // =======================================================
-
-  function fieldValue(row, names) {
-    for (const name of names) {
-      const value = row?.[name];
-
-      if (
-        value !== undefined &&
-        value !== null &&
-        String(value).trim() !== ""
-      ) {
-        return String(value).trim();
-      }
-    }
-
-    return "";
-  }
 
   function inventoryDevices() {
     return [
       ...state.computers.map(row => ({
         type: "komputer",
-
-        serial: fieldValue(row, [
-          "serial", "Serial", "sn_asset", "SN Asset",
-          "asset_serial_id", "Asset/Serial ID"
-        ]),
-
-        name: fieldValue(row, [
-          "komputer", "Computer Name",
-          "computer_name", "nama_aset"
-        ]),
-
-        model: fieldValue(row, [
-          "model", "Model", "model_aset", "Model Aset"
-        ]),
-
-        merek: fieldValue(row, [
-          "manufacturer", "Manufacturer",
-          "merek", "Merek"
-        ])
+        serial: row.serial || "",
+        name: row.komputer || "",
+        model: row.model || row.Model || "",
+        merek: row.manufacturer || row.merek || row.Merek || ""
       })),
 
       ...state.printers.map(row => ({
         type: "printer",
-
-        serial: fieldValue(row, [
-          "serial", "Serial", "sn_asset", "SN Asset",
-          "asset_serial_id", "Asset/Serial ID"
-        ]),
-
-        name: fieldValue(row, [
-          "unit", "nama_aset", "Nama Aset", "printer"
-        ]),
-
-        model: fieldValue(row, [
-          "model", "Model", "model_aset", "Model Aset"
-        ]),
-
-        merek: fieldValue(row, [
-          "merek", "Merek", "manufacturer", "Manufacturer"
-        ])
+        serial: row.serial || "",
+        name: row.unit || "",
+        model: row.model || row.Model || "",
+        merek: row.merek || row.Merek || row.manufacturer || ""
       }))
     ];
   }
@@ -636,9 +590,7 @@
         device.name
       );
 
-      if (serialKey) {
-        map.set(serialKey, device);
-      }
+      if (serialKey) map.set(serialKey, device);
 
       if (nameKey && !map.has(nameKey)) {
         map.set(nameKey, device);
@@ -649,30 +601,24 @@
   }
 
   function findInventoryDevice(row, map) {
-    const type = typeOf(fieldValue(row, [
-      "jenis_aset", "Jenis Aset",
-      "jenis aset", "tipe_aset"
-    ]));
-
+    const type = typeOf(row?.jenis_aset);
     if (!type) return null;
 
-    const serial = fieldValue(row, [
-      "serial", "Serial", "sn_asset", "SN Asset",
-      "asset_serial_id", "Asset/Serial ID"
-    ]);
-
-    const name = fieldValue(row, [
-      "nama_aset", "Nama Aset", "komputer",
-      "Computer Name", "unit", "nama_perangkat"
-    ]);
-
-    const serialKey = keyOf(type, serial, "");
+    const serialKey = keyOf(
+      type,
+      row?.serial,
+      ""
+    );
 
     if (serialKey && map.has(serialKey)) {
       return map.get(serialKey);
     }
 
-    const nameKey = keyOf(type, "", name);
+    const nameKey = keyOf(
+      type,
+      "",
+      row?.nama_aset
+    );
 
     if (nameKey && map.has(nameKey)) {
       return map.get(nameKey);
@@ -684,10 +630,12 @@
   function getDeviceModel(row, map) {
     const inventory = findInventoryDevice(row, map);
 
-    return fieldValue(row, [
-      "model", "Model", "model_aset", "Model Aset",
-      "model_perangkat", "Model Perangkat"
-    ]) || inventory?.model || "";
+    return String(
+      row?.model ||
+      row?.Model ||
+      inventory?.model ||
+      ""
+    ).trim();
   }
 
   // =======================================================
@@ -710,28 +658,16 @@
       ? `
         <div class="dashboard-activity-list">
           ${rows.map(({ row, date }) => {
-            const type = typeOf(fieldValue(row, [
-              "jenis_aset", "Jenis Aset",
-              "jenis aset", "tipe_aset"
-            ]));
+            const type = typeOf(row.jenis_aset);
 
-            const device = findInventoryDevice(row, map);
-
-            const rawName = fieldValue(row, [
-              "nama_aset", "Nama Aset", "komputer",
-              "Computer Name", "unit", "nama_perangkat"
-            ]) || device?.name || "";
-
-            // Nama komputer disensor untuk publik.
-            // Admin tetap melihat nama lengkap.
             const name = type === "komputer"
-              ? maskComputer(rawName || "Komputer")
-              : (rawName || "Printer");
+              ? maskComputer(row.nama_aset)
+              : (row.nama_aset || "Printer");
 
             const rawModel = getDeviceModel(row, map);
 
-            // Model komputer disensor untuk publik.
-            // Model printer tetap terlihat untuk publik.
+            // Hanya model komputer yang disensor.
+            // Model printer ditampilkan apa adanya.
             const model = !rawModel
               ? "Model tidak tersedia"
               : type === "komputer"
@@ -822,59 +758,6 @@
   }
 
   // =======================================================
-  // PERAWATAN TERBARU PER PERANGKAT UNTUK JADWAL
-  // Menggunakan Waktu Dibuat sebagai acuan utama.
-  // =======================================================
-
-  function scheduleDeviceKey(row, map) {
-    const type = typeOf(fieldValue(row, [
-      "jenis_aset", "Jenis Aset",
-      "jenis aset", "tipe_aset"
-    ]));
-
-    if (!type) return "";
-
-    const device = findInventoryDevice(row, map);
-
-    const serial = fieldValue(row, [
-      "serial", "Serial", "sn_asset", "SN Asset",
-      "asset_serial_id", "Asset/Serial ID"
-    ]) || device?.serial || "";
-
-    const name = fieldValue(row, [
-      "nama_aset", "Nama Aset", "komputer",
-      "Computer Name", "unit", "nama_perangkat"
-    ]) || device?.name || "";
-
-    const identity = String(serial || name).trim().toUpperCase();
-    return identity ? type + "|" + identity : "";
-  }
-
-  function latestCareForSchedule(map) {
-    const latest = new Map();
-
-    state.maintenance
-      .filter(row => activityType(row) === "perawatan")
-      .map(row => ({
-        row,
-        key: scheduleDeviceKey(row, map),
-        timestamp:
-          dateOf(row["Waktu Dibuat"]) ||
-          dateOf(row.Tanggal) ||
-          dateOf(activityDate(row))
-      }))
-      .filter(item => item.key && item.timestamp)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .forEach(item => {
-        if (!latest.has(item.key)) {
-          latest.set(item.key, item.row);
-        }
-      });
-
-    return [...latest.values()];
-  }
-
-  // =======================================================
   // MONITORING JADWAL MAINTENANCE
   // =======================================================
 
@@ -885,59 +768,42 @@
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
 
-    const schedules = latestCareForSchedule(map)
+    const latestCare = latestMaintenanceMap(row =>
+      activityType(row) === "perawatan"
+    );
+
+    const schedules = [...latestCare.values()]
       .map(row => ({
         row,
-        date: dateOf(fieldValue(row, [
-          "jadwal", "Jadwal",
-          "tanggal_jadwal", "Tanggal Jadwal"
-        ]))
+        date: dateOf(row.jadwal)
       }))
       .filter(item => item.date)
       .sort((a, b) => a.date - b.date);
 
-    const late = schedules.filter(item => {
-      const date = new Date(item.date);
-      date.setHours(0, 0, 0, 0);
-      return date < today;
-    });
+    const late = schedules.filter(
+      item => item.date < today
+    );
 
-    const soon = schedules.filter(item => {
-      const date = new Date(item.date);
-      date.setHours(0, 0, 0, 0);
-      return date >= today && date <= limit;
-    });
+    const soon = schedules.filter(
+      item => item.date >= today && item.date <= limit
+    );
 
-    const later = schedules.filter(item => {
-      const date = new Date(item.date);
-      date.setHours(0, 0, 0, 0);
-      return date > limit;
-    });
+    const later = schedules.filter(
+      item => item.date > limit
+    );
 
     const list = schedules
       .slice(0, 8)
       .map(({ row, date }) => {
-        const type = typeOf(fieldValue(row, [
-          "jenis_aset", "Jenis Aset",
-          "jenis aset", "tipe_aset"
-        ]));
-
+        const type = typeOf(row.jenis_aset);
         const device = findInventoryDevice(row, map);
-        const rawModel = getDeviceModel(row, map);
 
-        const rawSerial = fieldValue(row, [
-          "serial", "Serial", "sn_asset", "SN Asset",
-          "asset_serial_id", "Asset/Serial ID"
-        ]) || device?.serial || "";
-
-        // Komputer: nama, model, dan serial disensor untuk publik.
         if (type === "komputer") {
           const computerName = device?.name ||
-            fieldValue(row, [
-              "nama_aset", "Nama Aset", "komputer",
-              "Computer Name", "nama_perangkat"
-            ]) ||
+            row.nama_aset ||
             "Komputer";
+
+          const rawModel = getDeviceModel(row, map);
 
           const model = rawModel
             ? maskComputerModel(rawModel)
@@ -946,11 +812,16 @@
           return `
             <div class="dashboard-schedule-item">
               <div>
-                <strong>${esc(maskComputer(computerName))}</strong>
+                <strong>
+                  ${esc(maskComputer(computerName))}
+                </strong>
 
                 <small>
-                  Model: ${esc(model)}
-                  · Serial: ${esc(maskSerial(rawSerial))}
+                  Computer Name
+                  · Model: ${esc(model)}
+                  · Serial: ${esc(maskSerial(
+                    device?.serial || row.serial
+                  ))}
                 </small>
               </div>
 
@@ -959,21 +830,18 @@
           `;
         }
 
-        // Printer: merek dan model terlihat, serial disensor.
         const printerUnit = device?.name ||
-          fieldValue(row, [
-            "nama_aset", "Nama Aset", "unit", "nama_perangkat"
-          ]) ||
+          row.nama_aset ||
           "Printer";
 
         const printerBrand = device?.merek ||
-          fieldValue(row, [
-            "merek", "Merek", "manufacturer"
-          ]) ||
+          row.merek ||
+          row.Merek ||
           "Merek tidak tersedia";
 
-        const printerModel = rawModel ||
-          "Model tidak tersedia";
+        const printerSerial = device?.serial ||
+          row.serial ||
+          "";
 
         return `
           <div class="dashboard-schedule-item">
@@ -982,8 +850,7 @@
 
               <small>
                 Merek: ${esc(printerBrand)}
-                · Model: ${esc(printerModel)}
-                · Serial: ${esc(maskSerial(rawSerial))}
+                · Serial: ${esc(maskSerial(printerSerial))}
               </small>
             </div>
 
@@ -1034,7 +901,7 @@
   }
 
   // =======================================================
-  // KONDISI PERANGKAT - DIPERTAHANKAN
+  // KONDISI PERANGKAT
   // =======================================================
 
   function renderConditions() {
@@ -1176,10 +1043,11 @@
       "Terjadi kesalahan saat mengambil data."
     );
 
-    // Pesan error hanya mengubah dua kartu Maintenance.
     [
+      "#unitMonitoring",
       "#dashboardSchedules",
-      "#latestMaintenance"
+      "#latestMaintenance",
+      "#dashboardConditions"
     ].forEach(selector => {
       const element = $(selector);
 
