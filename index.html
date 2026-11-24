@@ -313,25 +313,17 @@
         </div>
 
       </section>
+        
+<!-- MAINTENANCE -->
+<section class="page-section" id="page-maintenance">
 
-      <!-- MAINTENANCE -->
-      <section class="page-section" id="page-maintenance">
+  <div id="maintenanceRoot">
+    <div class="maintenance-loading">
+      Halaman Maintenance siap dimuat.
+    </div>
+  </div>
 
-        <div class="page-placeholder">
-          <span class="placeholder-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M14.7 6.3a5 5 0 0 0-6.4 6.4L3 18l3 3 5.3-5.3a5 5 0 0 0 6.4-6.4L14 12l-2-2z"/>
-            </svg>
-          </span>
-
-          <h2>Maintenance</h2>
-          <p>
-            Modul maintenance akan diintegrasikan pada batch berikutnya.
-          </p>
-        </div>
-
-      </section>
-
+</section>
       <!-- KONEKSI -->
       <section class="page-section" id="page-connectivity">
 
@@ -513,7 +505,13 @@
 <script src="js/auth.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/inventory.js"></script>
+  
 
+<!-- QR SCANNER -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<!-- MAINTENANCE -->
+<script src="js/maintenance.js"></script>
 <!-- PWA SERVICE WORKER -->
 <script>
   if ("serviceWorker" in navigator && location.protocol === "https:") {
