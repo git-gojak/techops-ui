@@ -160,9 +160,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, true);
 
-  // QR sementara, menunggu integrasi modul QR.
+    // Tombol QR tengah untuk publik dan Admin.
   mobileQrButton?.addEventListener("click", () => {
-    alert("Modul QR Scanner akan diintegrasikan pada tahap berikutnya.");
+    if (window.MaintenancePage?.openScanner) {
+      window.MaintenancePage.openScanner();
+      return;
+    }
+
+    alert("Modul QR belum siap. Silakan muat ulang halaman.");
   });
 
   // Perbarui tampilan saat status autentikasi berubah.
