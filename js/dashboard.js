@@ -719,6 +719,7 @@ const pagination = allRows.length
           const type = typeOf(row.jenis_aset);
           const isComputer = type === "komputer";
 
+          
           const name = isComputer && !adminView
             ? "Komputer"
             : (
@@ -726,17 +727,13 @@ const pagination = allRows.length
                 (type === "printer" ? "Printer" : "Komputer")
               );
 
-          const model = isComputer && !adminView
-            ? ""
-            : (
-                getDeviceModel(row, map) ||
-                "Model tidak tersedia"
-              );
+          // Model dan serial publik sudah disensor oleh Backend.
+          // Tampilkan nilai yang diterima dari Backend apa adanya.
+          const model =
+            getDeviceModel(row, map) ||
+            "Model tidak tersedia";
 
-          const serial = isComputer && !adminView
-            ? ""
-            : (row.serial || "");
-
+          const serial = row.serial || "";
           const activity =
             row.jenis_kegiatan ||
             row.kegiatan ||
