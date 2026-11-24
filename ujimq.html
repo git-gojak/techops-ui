@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uji Sensor Maintenance & QR Info</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:Arial,sans-serif;
+  background:#f4f6f8;
+  color:#17202a;
+  padding:16px;
+  margin:0
+}
+main{
+  max-width:850px;
+  margin:auto;
+  background:#fff;
+  padding:22px;
+  border-radius:14px
+}
+h2{margin-top:0}
+h3{margin-top:0}
+.section{
+  border:1px solid #e1e6eb;
+  border-radius:12px;
+  padding:18px;
+  margin-top:20px
+}
+button{
+  padding:12px 16px;
+  background:#1769aa;
+  color:white;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:14px
+}
+button:disabled{opacity:.6;cursor:wait}
+input{
+  width:100%;
+  padding:12px;
+  border:1px solid #ccd3da;
+  border-radius:8px;
+  margin:8px 0 12px;
+  font-size:15px
+}
+.status{
+  background:#eef3f7;
+  padding:12px;
+  border-radius:8px;
+  margin-top:12px;
+  white-space:pre-wrap
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:14px
+}
+th,td{
+  text-align:left;
+  padding:10px 7px;
+  border-bottom:1px solid #e2e5e9;
+  font-size:13px
+}
+th{background:#f7f9fb}
+.ok{color:#087443;font-weight:bold}
+.warn{color:#a15c00;font-weight:bold}
+.bad{color:#b42318;font-weight:bold}
+.note{
+  color:#667085;
+  font-size:12px;
+  line-height:1.6;
+  margin-top:18px
+}
+.summary{
+  background:#f7f9fb;
+  padding:12px;
+  border-radius:8px;
+  margin-top:12px
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<h2>Uji Sensor Maintenance & QR Info</h2>
+<p>
+Pengujian perbandingan respons API Publik dan Admin.
+Nilai asli perangkat tidak ditampilkan.
+</p>
+
+<div class="section">
+  <h3>1. Uji Maintenance</h3>
+  <p>Menguji sensor Serial dan Nama Aset pada data Maintenance.</p>
+  <button id="btnMaintenance" onclick="ujiMaintenance()">
+    Mulai Uji Maintenance
+  </button>
+  <div id="statusMaintenance" class="status">
+    Siap melakukan pengujian.
+  </div>
+  <div id="hasilMaintenance"></div>
+</div>
+
+<div class="section">
+  <h3>2. Uji QR Info</h3>
+  <p>Masukkan serial komputer atau printer yang terdaftar.</p>
+  <input
+    id="qrSerial"
+    type="text"
+    placeholder="Masukkan Serial / isi QR perangkat"
+  >
+  <button id="btnQR" onclick="ujiQR()">
+    Mulai Uji QR Info
+  </button>
+  <div id="statusQR" class="status">
+    Menunggu serial perangkat.
+  </div>
+  <div id="hasilQR"></div>
+</div>
+
+<p class="note">
+  Pengujian hanya membaca API. Tidak membuat, mengubah, atau menghapus
+  data inventaris maupun Maintenance. Hasil tidak menampilkan nilai
+  serial atau informasi asli perangkat.
+</p>
+
+</main>
+
+<script src="./api.js"></script>
+
+<script>
+function ambilBaris(data){
+  let value=data;
+
+  for(let i=0;i<5;i++){
+    if(Array.isArray(value)) return value;
+
+    if(value && Array.isArray(value.data)){
+      value=value.data;
+      continue;
+    }
+
+    if(value && Array.isArray(value.items)){
+      value=value.items;
+      continue;
+    }
+
+    if(value && Array.isArray(value.rows)){
+      value=value.rows;
+      continue;
+    }
+
+    break;
+  }
+
+  return [];
+}
+
+function kosong(value){
+  return value===undefined ||
+    value===null ||
+    String(value).trim()==="";
+}
+
+function tersensor(value){
+  return !kosong(value) && String(value).includes("*");
+}
+
+function bandingkan(pub,admin,key){
+  let sama=0;
+  let berbeda=0;
+  let kosongCount=0;
+  let sensorPublik=0;
+  let sensorAdmin=0;
+
+  const total=Math.min(pub.length,admin.length);
+
+  for(let i=0;i<total;i++){
+    const a=pub[i]?.[key];
+    const b=admin[i]?.[key];
+
+    if(kosong(a)||kosong(b)){
+      kosongCount++;
+      continue;
+    }
+
+    if(tersensor(a)) sensorPublik++;
+    if(tersensor(b)) sensorAdmin++;
+
+    if(String(a)===String(b)){
+      sama++;
+    }else{
+      berbeda++;
+    }
+  }
+
+  return {
+    sama,
+    berbeda,
+    kosong:kosongCount,
+    sensorPublik,
+    sensorAdmin
+  };
+}
+
+function buatTabel(fields){
+  let html=`
+    <table>
+      <thead>
+        <tr>
+          <th>Kolom</th>
+          <th>Publik tersensor</th>
+          <th>Admin tersensor</th>
+          <th>Berbeda</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  fields.forEach(item=>{
+    html+=`
+      <tr>
+        <td>${item.label}</td>
+        <td>${item.sensorPublik}</td>
+        <td>${item.sensorAdmin}</td>
+        <td>${item.berbeda}</td>
+      </tr>
+    `;
+  });
+
+  return html+"</tbody></table>";
+}
+
+async function validasiAdmin(){
+  if(!window.TechOpsAPI){
+    throw new Error("API tidak termuat.");
+  }
+
+  const valid=await TechOpsAPI.validateSession();
+
+  if(valid!==true){
+    throw new Error(
+      "Sesi Admin tidak valid atau koneksi validasi bermasalah. Silakan login ulang dan coba lagi."
+    );
+  }
+}
+
+/* =========================================
+   UJI MAINTENANCE
+========================================= */
+
+async function ujiMaintenance(){
+  const btn=document.getElementById("btnMaintenance");
+  const status=document.getElementById("statusMaintenance");
+  const hasil=document.getElementById("hasilMaintenance");
+
+  btn.disabled=true;
+  hasil.innerHTML="";
+
+  try{
+    status.textContent="Memvalidasi sesi Admin...";
+    await validasiAdmin();
+
+    status.textContent="Mengambil data Maintenance Publik...";
+
+    const publicData=await TechOpsAPI.getPublic(
+      "maintenance.list",
+      {}
+    );
+
+    status.textContent="Mengambil data Maintenance Admin...";
+
+    const adminData=await TechOpsAPI.get(
+      "maintenance.list",
+      {}
+    );
+
+    const pub=ambilBaris(publicData);
+    const adm=ambilBaris(adminData);
+
+    if(!pub.length || !adm.length){
+      throw new Error(
+        "Data Maintenance kosong atau format respons belum dikenali."
+      );
+    }
+
+    const total=Math.min(pub.length,adm.length);
+
+    const fields=[
+      ["Serial","serial"],
+      ["Nama Aset","nama_aset"]
+    ];
+
+    let rows=[];
+    let totalPublic=0;
+    let totalAdmin=0;
+
+    fields.forEach(([label,key])=>{
+      const r=bandingkan(pub,adm,key);
+
+      rows.push({
+        label,
+        ...r
+      });
+
+      totalPublic+=r.sensorPublik;
+      totalAdmin+=r.sensorAdmin;
+    });
+
+    hasil.innerHTML=`
+      <div class="summary">
+        <b>Data Publik:</b> ${pub.length}<br>
+        <b>Data Admin:</b> ${adm.length}<br>
+        <b>Data dibandingkan:</b> ${total}
+      </div>
+      ${buatTabel(rows)}
+      <div class="summary">
+        Total nilai tersensor pada Publik: <b>${totalPublic}</b><br>
+        Total nilai tersensor pada Admin: <b>${totalAdmin}</b>
+      </div>
+      ${
+        totalPublic>0 && totalAdmin===0
+        ? '<p class="ok">Indikasi sensor Publik ditemukan. Admin tidak menunjukkan tanda sensor.</p>'
+        : totalAdmin>0
+        ? '<p class="bad">PERLU DIPERIKSA: respons Admin masih menunjukkan tanda sensor.</p>'
+        : '<p class="warn">Belum ditemukan tanda sensor pada data Publik. Periksa kembali data dan aturan sensor.</p>'
+      }
+      <p class="note">
+        Catatan: perbandingan berdasarkan posisi baris.
+        Nama Aset komputer dan printer memiliki aturan sensor berbeda.
+        Hasil ini merupakan pemeriksaan indikatif, bukan bukti menyeluruh.
+      </p>
+    `;
+
+    status.textContent="Pengujian Maintenance selesai.";
+
+  }catch(e){
+    status.textContent="Uji gagal: "+(e.message||String(e));
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+/* =========================================
+   UJI QR INFO
+========================================= */
+
+function bandingkanObjek(pub,admin){
+  const jenis=String(
+    admin?.jenis_aset || pub?.jenis_aset || ""
+  ).toLowerCase();
+
+  const p=pub?.perangkat;
+  const a=admin?.perangkat;
+
+  if(!p || !a){
+    throw new Error(
+      "Struktur data perangkat pada respons QR tidak dikenali."
+    );
+  }
+
+  let fields;
+
+  if(jenis==="komputer"){
+    fields=[
+      ["Nama Komputer",["komputer","nama_komputer"]],
+      ["Model",["model"]],
+      ["Serial",["serial"]],
+      ["Pengguna",["pengguna"]]
+    ];
+  }else if(jenis==="printer"){
+    fields=[
+      ["Serial",["serial"]]
+    ];
+  }else{
+    throw new Error(
+      "Jenis aset QR tidak dikenali."
+    );
+  }
+
+  let rows=[];
+  let totalPublic=0;
+  let totalAdmin=0;
+
+  fields.forEach(([label,keys])=>{
+    const key=keys.find(k=>
+      p[k]!==undefined || a[k]!==undefined
+    );
+
+    if(!key) return;
+
+    const r=bandingkan([p],[a],key);
+
+    rows.push({
+      label,
+      ...r
+    });
+
+    totalPublic+=r.sensorPublik;
+    totalAdmin+=r.sensorAdmin;
+  });
+
+  return {
+    jenis,
+    rows,
+    totalPublic,
+    totalAdmin
+  };
+}
+
+async function ujiQR(){
+  const btn=document.getElementById("btnQR");
+  const status=document.getElementById("statusQR");
+  const hasil=document.getElementById("hasilQR");
+
+  const qr=document.getElementById("qrSerial").value.trim();
+
+  btn.disabled=true;
+  hasil.innerHTML="";
+
+  try{
+    if(!qr){
+      throw new Error("Masukkan serial atau isi QR terlebih dahulu.");
+    }
+
+    await validasiAdmin();
+
+    status.textContent="Mengambil data QR Publik...";
+
+    const publicData=await TechOpsAPI.getPublic(
+      "qr.info",
+      {qr}
+    );
+
+    status.textContent="Mengambil data QR Admin...";
+
+    const adminData=await TechOpsAPI.get(
+      "qr.info",
+      {qr}
+    );
+
+    if(
+      !publicData ||
+      publicData.success!==true ||
+      !adminData ||
+      adminData.success!==true
+    ){
+      throw new Error(
+        "Data QR tidak ditemukan atau respons API tidak valid."
+      );
+    }
+
+    const r=bandingkanObjek(publicData,adminData);
+
+    hasil.innerHTML=`
+      <div class="summary">
+        <b>Jenis Aset:</b> ${r.jenis}<br>
+        <b>Data Publik:</b> ditemukan<br>
+        <b>Data Admin:</b> ditemukan
+      </div>
+      ${buatTabel(r.rows)}
+      <div class="summary">
+        Total nilai tersensor pada Publik: <b>${r.totalPublic}</b><br>
+        Total nilai tersensor pada Admin: <b>${r.totalAdmin}</b>
+      </div>
+      ${
+        r.totalPublic>0 && r.totalAdmin===0
+        ? '<p class="ok">Indikasi sensor QR Publik ditemukan. Admin tidak menunjukkan tanda sensor.</p>'
+        : r.totalAdmin>0
+        ? '<p class="bad">PERLU DIPERIKSA: respons QR Admin masih menunjukkan tanda sensor.</p>'
+        : '<p class="warn">Belum ditemukan tanda sensor pada data QR Publik.</p>'
+      }
+      <p class="note">
+        Pengujian tidak menampilkan serial atau nilai asli perangkat.
+        Hanya ringkasan hasil perbandingan yang ditampilkan.
+      </p>
+    `;
+
+    status.textContent="Pengujian QR Info selesai.";
+
+  }catch(e){
+    status.textContent="Uji gagal: "+(e.message||String(e));
+  }finally{
+    btn.disabled=false;
+  }
+}
+</script>
+
+</body>
+</html>
