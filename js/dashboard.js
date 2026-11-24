@@ -172,8 +172,15 @@
     return t && id ? `${t}|${id}` : "";
   }
 function maintenanceDeviceKey(type, serial, name) {
-  return keyOf(type, serial, name);
+  const t = typeOf(type);
+  const s = String(serial || "").trim().toUpperCase();
+  const n = String(name || "").trim().toUpperCase();
+
+  if (!t || (!s && !n)) return "";
+
+  return JSON.stringify([t, s, n]);
 }
+   
   function activityType(row) {
     return String(
       row?.jenis_kegiatan || row?.kegiatan || ""
@@ -1072,11 +1079,11 @@ async function loadData() {
     ];
 
     devices.forEach(device => {
-      const key = keyOf(
-        device.type,
-        device.serial,
-        device.name
-      );
+      const key = maintenanceDeviceKey(
+  device.type,
+  device.serial,
+  device.name
+);
 
       const condition = String(
         latest.get(key)?.kondisi || ""
