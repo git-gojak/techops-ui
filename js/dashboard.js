@@ -651,7 +651,7 @@ function renderActivities(map) {
   
 const pagination = allRows.length
   ? `
-    <div class="dashboard-condition-footer">
+  <div class="dashboard-condition-footer flex-between">
       <small>
         Menampilkan ${startIndex + 1}–${endIndex}
         dari ${allRows.length} aktivitas
