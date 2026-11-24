@@ -790,34 +790,39 @@
             </div>
           `;
         }
-
-        const printerUnit = device?.name ||
-          row.nama_aset ||
-          "Printer";
-
-        const printerBrand = device?.merek ||
-          row.merek ||
-          row.Merek ||
-          "Merek tidak tersedia";
-
-        const printerSerial = device?.serial ||
-          row.serial ||
-          "";
-
-        return `
-          <div class="dashboard-schedule-item">
-            <div>
-              <strong>${esc(printerUnit)}</strong>
-
-              <small>
-                Merek: ${esc(printerBrand)}
-                · Serial: ${esc(printerSerial || "-")}
-              </small>
-            </div>
-
-            <time>${esc(fmtDate(date))}</time>
+       
+      const printerUnit = device?.name ||
+        row.nama_aset ||
+        "Printer";
+      
+      const printerBrand = device?.merek ||
+        row.merek ||
+        row.Merek ||
+        "Merek tidak tersedia";
+      
+      const printerModel = device?.model ||
+        row.model ||
+        row.Model ||
+        "Model tidak tersedia";
+      
+      const printerSerial = device?.serial ||
+        row.serial ||
+        "-";
+      
+      return `
+        <div class="dashboard-schedule-item">
+          <div>
+            <strong>${esc(printerUnit)}</strong>
+      
+            <small>
+              ${esc(printerBrand)} - ${esc(printerModel)} - ${esc(printerSerial)}
+            </small>
           </div>
-        `;
+      
+          <time>${esc(fmtDate(date))}</time>
+        </div>
+      `;
+
       })
       .join("");
 
