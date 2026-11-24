@@ -41,6 +41,14 @@
   justify-content: space-between;
   margin: 30px 0 16px;
 }
+/* Utility: elemen kiri dan kanan dalam satu baris */
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap !important;
+  gap: 8px;
+}
 
 .section-heading p,
 .card-heading p {
