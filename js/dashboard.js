@@ -741,11 +741,23 @@ async function loadData() {
 
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
+// DIAGNOSTIK SEMENTARA
+const totalMaintenanceRows = maintenanceRows.length;
 
-    const latestCare = latestMaintenanceMap(
-      row => activityType(row) === "perawatan",
-      maintenanceRows
-    );
+const careRows = maintenanceRows.filter(
+  row => activityType(row) === "perawatan"
+);
+
+const careWithDate = careRows.filter(
+  row => dateOf(activityDate(row))
+).length;
+
+const latestCare = latestMaintenanceMap(
+  row => activityType(row) === "perawatan",
+  maintenanceRows
+);
+
+const uniqueDevices = latestCare.size;
 
     // Satu catatan perawatan terbaru untuk setiap perangkat.
     // Jadwal diurutkan berdasarkan tanggal paling dekat.
@@ -998,6 +1010,14 @@ async function loadData() {
           <strong>${later.length}</strong>
           <span>Terjadwal</span>
         </div>
+      </div>
+        <div style="margin:10px 0;padding:9px;border:1px dashed #aaa;border-radius:8px;font-size:12px;line-height:1.8">
+        <strong>Diagnostik Jadwal (sementara)</strong><br>
+        Data Maintenance: <b>${totalMaintenanceRows}</b><br>
+        Catatan Perawatan: <b>${careRows.length}</b><br>
+        Perawatan dengan tanggal: <b>${careWithDate}</b><br>
+        Perangkat unik: <b>${uniqueDevices}</b><br>
+        Jadwal valid: <b>${schedules.length}</b>
       </div>
 
       ${
