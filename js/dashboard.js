@@ -453,8 +453,46 @@
   // MONITORING UNIT
   // =======================================================
 
+  
+  // =======================================================
+  // MONITORING UNIT
+  // =======================================================
+
   function renderUnits() {
     const map = new Map();
+
+    // Ambil kode unit komputer dari field yang tersedia.
+    // Pengguna hanya menjadi fallback jika nilainya belum disensor.
+    function getComputerUnit(row) {
+      const candidates = [
+        row?.kode_unit,
+        row?.kodeUnit,
+        row?.unit,
+        row?.Unit
+      ];
+
+      for (const candidate of candidates) {
+        const value = String(candidate || "").trim();
+
+        if (value && !value.includes("*")) {
+          return value.split("-")[0].trim();
+        }
+      }
+
+      const pengguna = String(
+        row?.pengguna || row?.Pengguna || ""
+      ).trim();
+
+      if (
+        pengguna &&
+        !pengguna.includes("*") &&
+        pengguna.includes("-")
+      ) {
+        return pengguna.split("-")[0].trim();
+      }
+
+      return "";
+    }
 
     function add(raw, type) {
       const value = String(raw || "").trim();
@@ -478,23 +516,28 @@
       map.get(label)[type]++;
     }
 
+    // Hitung komputer.
     state.computers
       .filter(row => !archived(row))
       .forEach(row => {
-        add(row.kode_unit, "computers");
+        add(getComputerUnit(row), "computers");
       });
 
+    // Hitung printer seperti sebelumnya.
     state.printers
       .filter(row => !archived(row))
       .forEach(row => {
-        add(row.unit, "printers");
+        add(row.unit || row.Unit, "printers");
       });
 
     const rows = [...map.values()].sort(
       (a, b) => a.label.localeCompare(b.label, "id")
     );
 
-    $("#unitMonitoring").innerHTML = rows.length
+    const container = $("#unitMonitoring");
+    if (!container) return;
+
+    container.innerHTML = rows.length
       ? `
         <div class="dashboard-unit-grid">
           ${rows.map(unit => `
