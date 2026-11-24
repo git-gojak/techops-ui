@@ -614,11 +614,15 @@ async function loadData() {
    function getDeviceModel(row, map) {
   const inventory = findInventoryDevice(row, map);
   const type = typeOf(row?.jenis_aset);
-
+/*
   if (type === "komputer" && inventory?.model) {
     return String(inventory.model).trim();
   }
-
+*/
+      if (type === "komputer") {
+  return String(inventory?.model || "").trim();
+}
+      
   return String(
     row?.model ||
     row?.Model ||
