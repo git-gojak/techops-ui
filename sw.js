@@ -1,5 +1,4 @@
 
-//const CACHE_NAME = "gojak-techops-v1";
 const CACHE_NAME = "gojak-techops-ui-v2";
 
 const APP_FILES = [
@@ -56,7 +55,7 @@ self.addEventListener("activate", event => {
 });
 
 // =====================================================
-// FETCH
+// FETCH - NETWORK FIRST
 // =====================================================
 
 self.addEventListener("fetch", event => {
@@ -70,8 +69,11 @@ self.addEventListener("fetch", event => {
   // atau permintaan ke domain eksternal.
   if (url.origin !== self.location.origin) return;
 
-  // Navigasi halaman: utamakan jaringan,
-  // gunakan cache jika sedang offline.
+  // ---------------------------------------------------
+  // NAVIGASI HALAMAN
+  // Network First, cache sebagai cadangan.
+  // ---------------------------------------------------
+
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -87,32 +89,33 @@ self.addEventListener("fetch", event => {
         })
         .catch(() =>
           caches.match("./index.html")
+            .then(cached => cached || Response.error())
         )
     );
 
     return;
   }
 
-  // File lokal: cache terlebih dahulu.
+  // ---------------------------------------------------
+  // FILE LOKAL: CSS, JS, ICON, DAN FILE APLIKASI
+  // Network First, cache sebagai cadangan.
+  // ---------------------------------------------------
+
   event.respondWith(
-    caches.match(request)
-      .then(cached => {
-        if (cached) return cached;
+    fetch(request)
+      .then(response => {
+        if (response && response.ok) {
+          const copy = response.clone();
 
-        return fetch(request).then(response => {
-          if (
-            response &&
-            response.ok &&
-            response.type === "basic"
-          ) {
-            const copy = response.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => cache.put(request, copy));
+        }
 
-            caches.open(CACHE_NAME)
-              .then(cache => cache.put(request, copy));
-          }
-
-          return response;
-        });
+        return response;
       })
+      .catch(() =>
+        caches.match(request)
+          .then(cached => cached || Response.error())
+      )
   );
 });
