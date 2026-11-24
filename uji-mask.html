@@ -1,0 +1,141 @@
+
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uji Sensor Backend - GoJak TechOps</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;margin:0;padding:18px;background:#f4f6f8;color:#17202a}
+main{max-width:680px;margin:0 auto;background:#fff;padding:20px;border-radius:14px}
+h2{font-size:20px;margin:0 0 8px}
+p{line-height:1.5;color:#52606d}
+button{width:100%;padding:14px;border:0;border-radius:9px;background:#1769aa;color:white;font-size:16px;font-weight:600}
+button:disabled{opacity:.6}
+#status{margin:16px 0;padding:12px;border-radius:9px;background:#eef3f7;white-space:pre-wrap}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{text-align:left;padding:11px 8px;border-bottom:1px solid #e6e9ed;font-size:14px}
+th{background:#f7f9fb}
+.ok{color:#087443;font-weight:700}
+.warn{color:#9a5700;font-weight:700}
+small{display:block;margin-top:16px;color:#667085;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+<h2>Uji Sensor Backend</h2>
+<p>Halaman sementara untuk membandingkan respons komputer publik dan Admin. Nilai asli komputer tidak ditampilkan.</p>
+<button id="run">Mulai Uji</button>
+<div id="status">Siap. Pastikan sudah login sebagai Admin di GoJak TechOps.</div>
+<div id="result"></div>
+<small>Uji ini hanya membaca data melalui API. Tidak mengubah inventaris atau Backend GAS.</small>
+</main>
+
+<script src="./api.js"></script>
+<script>
+(function(){
+  const button=document.getElementById("run");
+  const status=document.getElementById("status");
+  const result=document.getElementById("result");
+
+  const fields=[
+    ["Nama komputer","komputer"],
+    ["Model","model"],
+    ["Serial","serial"]
+  ];
+
+  function rows(data){
+    if(Array.isArray(data)) return data;
+    if(Array.isArray(data && data.items)) return data.items;
+    if(Array.isArray(data && data.data)) return data.data;
+    return [];
+  }
+
+  function esc(value){
+    return String(value).replace(/[&<>"']/g,function(c){
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
+    });
+  }
+
+  button.addEventListener("click",async function(){
+    button.disabled=true;
+    result.innerHTML="";
+    status.textContent="Memeriksa sesi Admin...";
+
+    try{
+      if(!window.TechOpsAPI){
+        throw new Error("API TechOps belum termuat. Muat ulang halaman.");
+      }
+
+      const valid=await TechOpsAPI.validateSession();
+
+      if(valid!==true){
+        throw new Error(
+          valid===false
+          ? "Sesi Admin tidak valid. Login ulang di halaman utama."
+          : "Validasi sesi belum mendapat jawaban. Periksa koneksi."
+        );
+      }
+
+      status.textContent="Sesi Admin valid. Mengambil data...";
+
+      const pair=await Promise.all([
+        TechOpsAPI.getPublic("computers.list",{includeArchived:false}),
+        TechOpsAPI.get("computers.list",{includeArchived:false})
+      ]);
+
+      const pub=rows(pair[0]);
+      const adm=rows(pair[1]);
+
+      if(!pub.length || !adm.length){
+        throw new Error("Data komputer kosong atau format respons tidak dikenali.");
+      }
+
+      const p=pub[0];
+      const a=adm[0];
+
+      let html="<p><b>Jumlah data:</b> Publik "+pub.length+
+        " · Admin "+adm.length+"</p>";
+
+      html+="<table><thead><tr><th>Field</th><th>Hasil</th></tr></thead><tbody>";
+
+      fields.forEach(function(field){
+        const pv=p[field[1]];
+        const av=a[field[1]];
+        let label,cls;
+
+        if(pv===undefined || av===undefined ||
+           pv===null || av===null ||
+           String(pv)==="" || String(av)===""){
+          label="Tidak dapat dibandingkan";
+          cls="warn";
+        }else if(String(pv)!==String(av)){
+          label="Berbeda — sensor terindikasi aktif";
+          cls="ok";
+        }else{
+          label="Sama — perlu pemeriksaan";
+          cls="warn";
+        }
+
+        html+="<tr><td>"+esc(field[0])+"</td>"+
+          "<td class='"+cls+"'>"+label+"</td></tr>";
+      });
+
+      html+="</tbody></table>";
+      html+="<p class='ok'>Uji selesai. Nilai asli tidak ditampilkan.</p>";
+
+      result.innerHTML=html;
+      status.textContent="Berhasil mengambil kedua respons backend.";
+
+    }catch(error){
+      status.textContent="Uji belum berhasil: "+
+        (error && error.message ? error.message : String(error));
+    }finally{
+      button.disabled=false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
