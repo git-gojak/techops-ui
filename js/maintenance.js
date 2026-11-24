@@ -581,11 +581,6 @@
   // =======================================================
 
   function openScanner() {
-    if (!isAdmin()) {
-      toast("Fitur Scan QR hanya dapat digunakan Admin.");
-      return;
-    }
-
     selectedDevice = null;
 
     const content = `
@@ -717,14 +712,22 @@
         qr: String(qrText || "").trim()
       });
 
-      if (
-        !result ||
-        result.success === false ||
-        !result.perangkat
-      ) {
+      if (!result || result.success === false) {
         throw new Error(
           result?.message ||
           "Perangkat tidak ditemukan dalam inventaris."
+        );
+      }
+
+      const device =
+        result.perangkat ||
+        result.device ||
+        result.data ||
+        {};
+
+      if (!Object.keys(device).length) {
+        throw new Error(
+          "Data perangkat tidak ditemukan."
         );
       }
 
@@ -736,17 +739,13 @@
         assetType !== "komputer" &&
         assetType !== "printer"
       ) {
-        throw new Error(
-          "Jenis perangkat tidak dikenali."
-        );
+        throw new Error("Jenis perangkat tidak dikenali.");
       }
 
-      const device = result.perangkat;
+      const isComputer = assetType === "komputer";
 
       selectedDevice = {
-        type: assetType === "komputer"
-          ? "Komputer"
-          : "Printer",
+        type: isComputer ? "Komputer" : "Printer",
 
         serial: getValue(device, [
           "serial",
@@ -757,7 +756,7 @@
           "Serial Number"
         ]),
 
-        name: assetType === "komputer"
+        name: isComputer
           ? getValue(device, [
               "komputer",
               "Computer Name",
@@ -771,10 +770,7 @@
                 "manufacturer",
                 "Manufacturer"
               ]),
-              getValue(device, [
-                "model",
-                "Model"
-              ])
+              getValue(device, ["model", "Model"])
             ].filter(Boolean).join(" "),
 
         manufacturer: getValue(device, [
@@ -783,22 +779,24 @@
           "Manufacturer"
         ]),
 
-        model: getValue(device, [
-          "model",
-          "Model"
-        ]),
+        model: getValue(device, ["model", "Model"]),
 
         pengguna: getValue(device, [
           "pengguna",
           "Pengguna"
         ]),
 
-        unit: getValue(device, [
-          "unit",
-          "Unit"
-        ])
+        unit: getValue(device, ["unit", "Unit"])
       };
 
+      // Publik hanya melihat informasi dan riwayat.
+      // Data publik sudah disensor oleh backend.
+      if (!isAdmin()) {
+        showPublicDeviceInfo(result, device, isComputer);
+        return;
+      }
+
+      // Admin memerlukan serial untuk pencatatan Maintenance.
       if (!selectedDevice.serial) {
         throw new Error(
           "Serial perangkat tidak ditemukan."
@@ -833,6 +831,120 @@
     }
   }
 
+  // =======================================================
+  // INFORMASI PERANGKAT UNTUK PUBLIK
+  // =======================================================
+
+  function showPublicDeviceInfo(result, device, isComputer) {
+    const read = (keys) => {
+      const value = getValue(device, keys);
+      return value === undefined || value === null || value === ""
+        ? "-"
+        : String(value);
+    };
+
+    const fields = isComputer
+      ? [
+          ["Tahun Perolehan", ["tahun", "Tahun Perolehan"]],
+          ["Computer Name", ["komputer", "Computer Name"]],
+          ["Merek", ["merek", "Manufacturer", "manufacturer"]],
+          ["Model", ["model", "Model"]],
+          ["Serial", ["serial", "Asset/Serial ID", "asset_id"]],
+          ["Processor", ["cpu", "CPU"]],
+          ["Core", ["core", "Core"]],
+          ["Thread", ["thread", "Thread"]],
+          ["RAM", ["ram", "RAM"]],
+          ["Storage", ["storage", "Storage"]],
+          ["GPU", ["gpu", "GPU"]],
+          ["Sistem Operasi", ["os", "OS"]],
+          ["Pengguna", ["pengguna", "Pengguna"]],
+          ["Status", ["status", "Status Perubahan"]]
+        ]
+      : [
+          ["Serial", ["serial", "sn_asset", "Serial Number"]],
+          ["Unit", ["unit", "Unit"]],
+          ["Merek", ["merek", "Manufacturer", "manufacturer"]],
+          ["Model", ["model", "Model"]],
+          ["Tinta", ["tinta", "Tinta"]],
+          ["FTP", ["ftp", "FTP"]],
+          ["MP", ["mp", "MP"]],
+          ["Status", ["status", "Status"]]
+        ];
+
+    const detailRows = fields.map(([label, keys]) => `
+      <div class="maintenance-detail-field">
+        <small>${escapeHTML(label)}</small>
+        <strong>${escapeHTML(read(keys))}</strong>
+      </div>
+    `).join("");
+
+    const history = Array.isArray(result.riwayat)
+      ? result.riwayat
+      : [];
+
+    const historyContent = history.length
+      ? history.map(item => `
+          <div class="maintenance-detail-field">
+            <small>
+              ${escapeHTML(String(
+                getValue(item, ["Tanggal", "tanggal", "created_at"]) || "-"
+              ))}
+            </small>
+            <strong>
+              ${escapeHTML(String(
+                getValue(item, ["jenis_kegiatan", "kegiatan", "aktivitas"]) || "-"
+              ))}
+            </strong>
+            <div>
+              ${escapeHTML(String(
+                getValue(item, ["kondisi", "Kondisi"]) || "-"
+              ))}
+            </div>
+            <div>
+              ${escapeHTML(String(
+                getValue(item, ["keterangan", "Keterangan", "catatan"]) || "-"
+              ))}
+            </div>
+            <small>
+              ${escapeHTML(String(
+                getValue(item, ["teknisi", "Teknisi"]) || "-"
+              ))}
+            </small>
+          </div>
+        `).join("")
+      : `<p>Belum ada riwayat Maintenance.</p>`;
+
+    const content = `
+      <div class="maintenance-public-device">
+
+        <h3>Informasi ${isComputer ? "Komputer" : "Printer"}</h3>
+
+        <div class="maintenance-device-details">
+          ${detailRows}
+        </div>
+
+        <h3>Riwayat Maintenance</h3>
+
+        <div class="maintenance-public-history">
+          ${historyContent}
+        </div>
+
+        <button
+          type="button"
+          class="maintenance-button"
+          id="maintenanceScanAgain"
+        >
+          Scan Perangkat Lain
+        </button>
+
+      </div>
+    `;
+
+    showModal("Informasi Perangkat", content);
+
+    $("#maintenanceScanAgain")
+      ?.addEventListener("click", openScanner);
+  }
   // =======================================================
   // KONFIRMASI IDENTITAS PERANGKAT
   // =======================================================
