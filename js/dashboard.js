@@ -1,7 +1,7 @@
 
 /* =========================================================
    GOJAK TECHOPS
-   DASHBOARD - INTEGRASI PUBLIC SANITIZER BACKEND
+   DASHBOARD - PUBLIC DATA PROTECTION
    ========================================================= */
 
 (function () {
@@ -14,14 +14,10 @@
     computers: [],
     printers: [],
     maintenance: [],
-    archiveCounts: {
-      computers: 0,
-      printers: 0
-    },
+    archiveCounts: { computers: 0, printers: 0 },
     loading: false
   };
 
-  // Halaman Monitoring Jadwal Maintenance
   let schedulePage = 0;
 
   // =======================================================
@@ -62,12 +58,9 @@
     };
 
     return `
-      <svg viewBox="0 0 24 24"
-        width="21" height="21"
-        fill="none" stroke="currentColor"
-        stroke-width="1.7"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+      <svg viewBox="0 0 24 24" width="21" height="21"
+        fill="none" stroke="currentColor" stroke-width="1.7"
+        stroke-linecap="round" stroke-linejoin="round"
         aria-hidden="true">
         ${paths[name] || paths.computer}
       </svg>
@@ -83,10 +76,7 @@
 
   function dateOf(value) {
     if (!value) return null;
-
-    if (value instanceof Date) {
-      return isNaN(value) ? null : value;
-    }
+    if (value instanceof Date) return isNaN(value) ? null : value;
 
     const s = String(value).trim();
     if (!s) return null;
@@ -120,7 +110,6 @@
   function yearOf(value) {
     const s = String(value ?? "").trim();
     const m = s.match(/^(19|20)\d{2}$/);
-
     if (m) return Number(m[0]);
 
     const d = dateOf(value);
@@ -161,14 +150,11 @@
     }
 
     if (s === "printer") return "printer";
-
     return "";
   }
 
   function archived(row) {
-    return String(row?.status || "")
-      .trim()
-      .toLowerCase() === "arsip";
+    return String(row?.status || "").trim().toLowerCase() === "arsip";
   }
 
   function activityDate(row) {
@@ -177,10 +163,7 @@
 
   function keyOf(type, serial, name) {
     const t = typeOf(type);
-    const id = String(serial || name || "")
-      .trim()
-      .toUpperCase();
-
+    const id = String(serial || name || "").trim().toUpperCase();
     return t && id ? `${t}|${id}` : "";
   }
 
@@ -204,9 +187,23 @@
     const label = $(".dashboard-connection-label");
 
     if (label) {
-      label.textContent = online
-        ? "Online"
-        : "Tidak terhubung";
+      label.textContent = online ? "Online" : "Tidak terhubung";
+    }
+  }
+
+  // =======================================================
+  // KONTROL DATA PUBLIK / ADMIN
+  // =======================================================
+
+  function isDashboardAdmin() {
+    try {
+      return Boolean(
+        window.TechOpsAPI &&
+        typeof TechOpsAPI.isAuthenticated === "function" &&
+        TechOpsAPI.isAuthenticated()
+      );
+    } catch (error) {
+      return false;
     }
   }
 
@@ -242,29 +239,21 @@
       throw new Error("TechOpsAPI belum tersedia.");
     }
 
-    const includeArchived =
-      TechOpsAPI.isAuthenticated();
+    const includeArchived = TechOpsAPI.isAuthenticated();
 
     const result = await Promise.all([
       timeout(
-        TechOpsAPI.get("computers.list", {
-          includeArchived
-        }),
+        TechOpsAPI.get("computers.list", { includeArchived }),
         "Data komputer"
       ),
-
       timeout(
-        TechOpsAPI.get("printers.list", {
-          includeArchived
-        }),
+        TechOpsAPI.get("printers.list", { includeArchived }),
         "Data printer"
       ),
-
       timeout(
         TechOpsAPI.get("maintenance.list"),
         "Data maintenance"
       ),
-
       timeout(
         TechOpsAPI.get("inventory.archiveCounts"),
         "Data arsip"
@@ -296,9 +285,7 @@
     if (grid) {
       grid.innerHTML = `
         <article class="stat-card dash-stat computer">
-          <div class="stat-icon blue">
-            ${iconSvg("computer")}
-          </div>
+          <div class="stat-icon blue">${iconSvg("computer")}</div>
           <div class="stat-info">
             <span>Total Komputer</span>
             <strong id="totalComputers">—</strong>
@@ -311,9 +298,7 @@
         </article>
 
         <article class="stat-card dash-stat printer">
-          <div class="stat-icon teal">
-            ${iconSvg("printer")}
-          </div>
+          <div class="stat-icon teal">${iconSvg("printer")}</div>
           <div class="stat-info">
             <span>Total Printer</span>
             <strong id="totalPrinters">—</strong>
@@ -326,9 +311,7 @@
         </article>
 
         <article class="stat-card dash-stat maintenance">
-          <div class="stat-icon purple">
-            ${iconSvg("maintenance")}
-          </div>
+          <div class="stat-icon purple">${iconSvg("maintenance")}</div>
           <div class="stat-info">
             <span>Total Maintenance</span>
             <strong id="totalMaintenance">—</strong>
@@ -341,14 +324,10 @@
         </article>
 
         <article class="stat-card dash-stat connection">
-          <div class="stat-icon green">
-            ${iconSvg("connection")}
-          </div>
+          <div class="stat-icon green">${iconSvg("connection")}</div>
           <div class="stat-info">
             <span>Koneksi</span>
-            <strong class="dashboard-connection-label">
-              Memeriksa...
-            </strong>
+            <strong class="dashboard-connection-label">Memeriksa...</strong>
             <small>Google Apps Script</small>
           </div>
         </article>
@@ -373,10 +352,7 @@
         <div class="card-heading">
           <div>
             <h3>Monitoring Jadwal Maintenance</h3>
-            <p>
-              Jadwal berdasarkan catatan perawatan
-              terbaru setiap perangkat
-            </p>
+            <p>Jadwal berdasarkan catatan perawatan terbaru setiap perangkat</p>
           </div>
         </div>
         <div id="dashboardSchedules"></div>
@@ -409,14 +385,8 @@
   // =======================================================
 
   function renderStats() {
-    const computers = state.computers.filter(
-      row => !archived(row)
-    );
-
-    const printers = state.printers.filter(
-      row => !archived(row)
-    );
-
+    const computers = state.computers.filter(row => !archived(row));
+    const printers = state.printers.filter(row => !archived(row));
     const maintenance = state.maintenance;
     const year = new Date().getFullYear();
 
@@ -430,21 +400,14 @@
     $("#printerAcquired").textContent =
       printers.filter(row => yearOf(row.ftp) === year).length;
 
-    $("#computerArchived").textContent =
-      state.archiveCounts.computers;
-
-    $("#printerArchived").textContent =
-      state.archiveCounts.printers;
+    $("#computerArchived").textContent = state.archiveCounts.computers;
+    $("#printerArchived").textContent = state.archiveCounts.printers;
 
     $("#totalCare").textContent =
-      maintenance.filter(row =>
-        activityType(row) === "perawatan"
-      ).length;
+      maintenance.filter(row => activityType(row) === "perawatan").length;
 
     $("#totalRepair").textContent =
-      maintenance.filter(row =>
-        activityType(row) === "perbaikan"
-      ).length;
+      maintenance.filter(row => activityType(row) === "perbaikan").length;
 
     setOnline(true);
   }
@@ -453,16 +416,9 @@
   // MONITORING UNIT
   // =======================================================
 
-  
-  // =======================================================
-  // MONITORING UNIT
-  // =======================================================
-
   function renderUnits() {
     const map = new Map();
 
-    // Ambil kode unit komputer dari field yang tersedia.
-    // Pengguna hanya menjadi fallback jika nilainya belum disensor.
     function getComputerUnit(row) {
       const candidates = [
         row?.kode_unit,
@@ -516,19 +472,13 @@
       map.get(label)[type]++;
     }
 
-    // Hitung komputer.
     state.computers
       .filter(row => !archived(row))
-      .forEach(row => {
-        add(getComputerUnit(row), "computers");
-      });
+      .forEach(row => add(getComputerUnit(row), "computers"));
 
-    // Hitung printer seperti sebelumnya.
     state.printers
       .filter(row => !archived(row))
-      .forEach(row => {
-        add(row.unit || row.Unit, "printers");
-      });
+      .forEach(row => add(row.unit || row.Unit, "printers"));
 
     const rows = [...map.values()].sort(
       (a, b) => a.label.localeCompare(b.label, "id")
@@ -558,9 +508,7 @@
         </div>
       `
       : `
-        <div class="dashboard-empty">
-          Belum ada data unit.
-        </div>
+        <div class="dashboard-empty">Belum ada data unit.</div>
       `;
   }
 
@@ -592,17 +540,8 @@
     const map = new Map();
 
     inventoryDevices().forEach(device => {
-      const serialKey = keyOf(
-        device.type,
-        device.serial,
-        ""
-      );
-
-      const nameKey = keyOf(
-        device.type,
-        "",
-        device.name
-      );
+      const serialKey = keyOf(device.type, device.serial, "");
+      const nameKey = keyOf(device.type, "", device.name);
 
       if (serialKey) map.set(serialKey, device);
 
@@ -618,21 +557,13 @@
     const type = typeOf(row?.jenis_aset);
     if (!type) return null;
 
-    const serialKey = keyOf(
-      type,
-      row?.serial,
-      ""
-    );
+    const serialKey = keyOf(type, row?.serial, "");
 
     if (serialKey && map.has(serialKey)) {
       return map.get(serialKey);
     }
 
-    const nameKey = keyOf(
-      type,
-      "",
-      row?.nama_aset
-    );
+    const nameKey = keyOf(type, "", row?.nama_aset);
 
     if (nameKey && map.has(nameKey)) {
       return map.get(nameKey);
@@ -668,46 +599,54 @@
       )
       .slice(0, 5);
 
+    const adminView = isDashboardAdmin();
+
     $("#latestMaintenance").innerHTML = rows.length
       ? `
         <div class="dashboard-activity-list">
           ${rows.map(({ row, date }) => {
             const type = typeOf(row.jenis_aset);
+            const isComputer = type === "komputer";
 
-            const name = row.nama_aset ||
-              (type === "printer" ? "Printer" : "Komputer");
+            const name = isComputer && !adminView
+              ? "Komputer"
+              : (
+                  row.nama_aset ||
+                  (type === "printer" ? "Printer" : "Komputer")
+                );
 
-            const model = getDeviceModel(row, map) ||
-              "Model tidak tersedia";
+            const model = isComputer && !adminView
+              ? ""
+              : (getDeviceModel(row, map) || "Model tidak tersedia");
+
+            const serial = isComputer && !adminView
+              ? ""
+              : (row.serial || "");
 
             const activity =
               row.jenis_kegiatan ||
               row.kegiatan ||
               "Maintenance";
 
+            const detail = [
+              model,
+              serial
+            ].filter(Boolean).map(esc).join(" · ");
+
             return `
               <div class="dashboard-activity-item">
                 <span class="dashboard-activity-icon ${type}">
-                  ${iconSvg(
-                    type === "printer" ? "printer" : "computer"
-                  )}
+                  ${iconSvg(type === "printer" ? "printer" : "computer")}
                 </span>
 
                 <div class="dashboard-activity-info">
                   <strong>${esc(name)}</strong>
-
-                  <span>
-                    ${esc(model)}
-                    ·
-                    ${esc(row.serial || "-")}
-                  </span>
-
+                  ${detail ? `<span>${detail}</span>` : ""}
                   <small>
                     ${esc(activity)}
                     ·
                     ${esc(row.kondisi || "Kondisi belum diisi")}
                   </small>
-
                   <time>${esc(fmtDateTime(date))}</time>
                 </div>
               </div>
@@ -791,23 +730,17 @@
       .filter(item => item.date)
       .sort((a, b) => a.date - b.date);
 
-    const late = schedules.filter(
-      item => item.date < today
-    );
+    const late = schedules.filter(item => item.date < today);
 
     const soon = schedules.filter(
       item => item.date >= today && item.date <= limit
     );
 
-    const later = schedules.filter(
-      item => item.date > limit
-    );
+    const later = schedules.filter(item => item.date > limit);
 
-    // Pagination tetap 10 data per halaman.
     const perPage = 10;
     const totalPages = Math.ceil(schedules.length / perPage);
 
-    // Pastikan halaman tetap valid setelah data diperbarui.
     schedulePage = Math.min(
       schedulePage,
       Math.max(0, totalPages - 1)
@@ -819,40 +752,35 @@
       schedules.length
     );
 
-    const visibleSchedules = schedules.slice(
-      startIndex,
-      endIndex
-    );
+    const visibleSchedules = schedules.slice(startIndex, endIndex);
+    const adminView = isDashboardAdmin();
 
     const list = visibleSchedules.map(({ row, date }) => {
       const type = typeOf(row.jenis_aset);
       const device = findInventoryDevice(row, map);
 
       if (type === "komputer") {
-        const computerName = device?.name ||
-          row.nama_aset ||
-          "Komputer";
+        const computerName = adminView
+          ? (device?.name || row.nama_aset || "Komputer")
+          : "Komputer";
 
-        const brand = device?.merek ||
-          row.manufacturer ||
-          row.merek ||
-          row.Merek ||
-          "Merek tidak tersedia";
-
-        const model = getDeviceModel(row, map) ||
-          "Model tidak tersedia";
-
-        const serial = device?.serial ||
-          row.serial ||
-          "-";
+        const computerDetail = adminView
+          ? [
+              device?.merek ||
+                row.manufacturer ||
+                row.merek ||
+                row.Merek ||
+                "Merek tidak tersedia",
+              getDeviceModel(row, map) || "Model tidak tersedia",
+              device?.serial || row.serial || "-"
+            ].map(esc).join(" - ")
+          : "Spesifikasi disembunyikan untuk publik";
 
         return `
           <div class="dashboard-schedule-item">
             <div>
               <strong>${esc(computerName)}</strong>
-              <small>
-                ${esc(brand)} - ${esc(model)} - ${esc(serial)}
-              </small>
+              <small>${computerDetail}</small>
             </div>
             <time>${esc(fmtDate(date))}</time>
           </div>
@@ -908,12 +836,9 @@
               ${schedulePage === 0 ? "disabled" : ""}
               style="width:34px;height:34px;border:1px solid var(--border-color,#ddd);border-radius:8px;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:${schedulePage === 0 ? "0.4" : "1"};">
 
-              <svg viewBox="0 0 24 24"
-                width="18" height="18"
-                fill="none" stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+              <svg viewBox="0 0 24 24" width="18" height="18"
+                fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"
                 aria-hidden="true">
                 <path d="m15 18-6-6 6-6"/>
               </svg>
@@ -927,12 +852,9 @@
               ${schedulePage >= totalPages - 1 ? "disabled" : ""}
               style="width:34px;height:34px;border:1px solid var(--border-color,#ddd);border-radius:8px;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:${schedulePage >= totalPages - 1 ? "0.4" : "1"};">
 
-              <svg viewBox="0 0 24 24"
-                width="18" height="18"
-                fill="none" stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+              <svg viewBox="0 0 24 24" width="18" height="18"
+                fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"
                 aria-hidden="true">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
@@ -941,11 +863,7 @@
         </div>
       `
       : schedules.length
-        ? `
-          <small class="dashboard-more">
-            ${schedules.length} jadwal
-          </small>
-        `
+        ? `<small class="dashboard-more">${schedules.length} jadwal</small>`
         : "";
 
     $("#dashboardSchedules").innerHTML = `
@@ -979,7 +897,6 @@
       ${pagination}
     `;
 
-    // Tombol halaman sebelumnya.
     $("#schedulePrev")?.addEventListener("click", () => {
       if (schedulePage > 0) {
         schedulePage--;
@@ -987,7 +904,6 @@
       }
     });
 
-    // Tombol halaman berikutnya.
     $("#scheduleNext")?.addEventListener("click", () => {
       if (schedulePage < totalPages - 1) {
         schedulePage++;
@@ -1060,11 +976,8 @@
       groups[device.type][category]++;
     });
 
-    const computerArchive =
-      Number(state.archiveCounts.computers || 0);
-
-    const printerArchive =
-      Number(state.archiveCounts.printers || 0);
+    const computerArchive = Number(state.archiveCounts.computers || 0);
+    const printerArchive = Number(state.archiveCounts.printers || 0);
 
     groups.komputer.bad += computerArchive;
     groups.printer.bad += printerArchive;
@@ -1088,14 +1001,8 @@
       <div class="dashboard-condition-table">
         <div class="condition-table-header">
           <span>Kondisi</span>
-          <strong>
-            ${iconSvg("computer")}
-            Komputer
-          </strong>
-          <strong>
-            ${iconSvg("printer")}
-            Printer
-          </strong>
+          <strong>${iconSvg("computer")} Komputer</strong>
+          <strong>${iconSvg("printer")} Printer</strong>
         </div>
 
         ${rows.map(item => `
@@ -1104,7 +1011,6 @@
               <i class="condition-indicator ${item.key}"></i>
               ${item.label}
             </span>
-
             <strong>${groups.komputer[item.key]}</strong>
             <strong>${groups.printer[item.key]}</strong>
           </div>
@@ -1114,14 +1020,11 @@
       <div class="dashboard-condition-footer">
         <span>
           <b>${iconSvg("computer")}</b>
-          Komputer: ${komputerAktif} aktif
-          · ${computerArchive} arsip
+          Komputer: ${komputerAktif} aktif · ${computerArchive} arsip
         </span>
-
         <span>
           <b>${iconSvg("printer")}</b>
-          Printer: ${printerAktif} aktif
-          · ${printerArchive} arsip
+          Printer: ${printerAktif} aktif · ${printerArchive} arsip
         </span>
       </div>
     `;
@@ -1133,8 +1036,7 @@
 
   function renderError(error) {
     const message = esc(
-      error?.message ||
-      "Terjadi kesalahan saat mengambil data."
+      error?.message || "Terjadi kesalahan saat mengambil data."
     );
 
     [
