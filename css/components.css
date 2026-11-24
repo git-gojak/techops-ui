@@ -108,11 +108,7 @@
   font-size: 38px;
 }
 
-/* =========================================================
-   PAGINATION — KOMPONEN GLOBAL
-   Digunakan bersama oleh halaman yang membutuhkan pagination.
-   ========================================================= */
-
+/* PAGINATION GLOBAL */
 .pagination-controls {
   display: flex;
   align-items: center;
@@ -149,5 +145,4 @@
   width: 18px;
   height: 18px;
 }
-
 
