@@ -828,11 +828,9 @@
 
         // Model dari computers.list.
         // Nilai sensor publik sudah disiapkan Backend.
-        const computerModel =
-          device?.model ||
-          row.model ||
-          row.Model ||
-          "Model tidak tersedia";
+       const computerModel =
+        device?.model ||
+        "Model tidak tersedia";
 
         // Serial dari Maintenance API.
         // Nilai sensor tidak diubah oleh Frontend.
