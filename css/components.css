@@ -107,3 +107,47 @@
   color: var(--blue-light);
   font-size: 38px;
 }
+
+/* =========================================================
+   PAGINATION — KOMPONEN GLOBAL
+   Digunakan bersama oleh halaman yang membutuhkan pagination.
+   ========================================================= */
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-button {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.pagination-button:hover:not(:disabled) {
+  border-color: var(--blue-light);
+  color: var(--blue-light);
+}
+
+.pagination-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+
