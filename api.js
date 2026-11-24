@@ -1,4 +1,3 @@
-
 (function () {
   "use strict";
 
@@ -18,24 +17,26 @@
   let bridgeWindow = null;
   let bridgeOrigin = "";
 
-const SESSION_STORAGE_KEY = "GOJAK_TECHOPS_SESSION";
+  const SESSION_STORAGE_KEY = "GOJAK_TECHOPS_SESSION";
 
-let sessionId = "";
-try {
-  sessionId = localStorage.getItem(SESSION_STORAGE_KEY) || "";
-} catch (error) {
-  console.warn("Tidak dapat membaca sesi Admin:", error);
-}
-/*
-try {
-  sessionId = sessionStorage.getItem(SESSION_STORAGE_KEY) || "";
-} catch (error) {
-  console.warn("Tidak dapat membaca sesi Admin:", error);
-}
-*/
+  let sessionId = "";
 
-let user = null;
-let requestCounter = 0;
+  try {
+    sessionId = localStorage.getItem(SESSION_STORAGE_KEY) || "";
+  } catch (error) {
+    console.warn("Tidak dapat membaca sesi Admin:", error);
+  }
+
+  /*
+  try {
+    sessionId = sessionStorage.getItem(SESSION_STORAGE_KEY) || "";
+  } catch (error) {
+    console.warn("Tidak dapat membaca sesi Admin:", error);
+  }
+  */
+
+  let user = null;
+  let requestCounter = 0;
 
   const pendingRequests = new Map();
   const authListeners = [];
@@ -59,25 +60,26 @@ let requestCounter = 0;
   }
 
   function clearSession() {
-  sessionId = "";
-  user = null;
+    sessionId = "";
+    user = null;
 
-  try {
-    localStorage.removeItem(SESSION_STORAGE_KEY);
-    //sessionStorage.removeItem(SESSION_STORAGE_KEY);
-  } catch (error) {
-    console.warn("Tidak dapat menghapus sesi Admin:", error);
-  }
-  notifyAuthChange();
+    try {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      //sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch (error) {
+      console.warn("Tidak dapat menghapus sesi Admin:", error);
+    }
+
+    notifyAuthChange();
   }
 
   // Sinkronisasi session antar-tab browser
   window.addEventListener("storage", function (event) {
     if (event.key !== SESSION_STORAGE_KEY) return;
-  
+
     sessionId = event.newValue || "";
     user = null;
-  
+
     notifyAuthChange();
   });
 
@@ -288,26 +290,26 @@ let requestCounter = 0;
 
     const loginStartedAt = performance.now();
 
-let result;
+    let result;
 
-try {
-  result = await send("LOGIN", { pin: pin });
+    try {
+      result = await send("LOGIN", { pin: pin });
 
-  console.info(
-    "WAKTU RESPONS LOGIN:",
-    ((performance.now() - loginStartedAt) / 1000).toFixed(2),
-    "detik"
-  );
+      console.info(
+        "WAKTU RESPONS LOGIN:",
+        ((performance.now() - loginStartedAt) / 1000).toFixed(2),
+        "detik"
+      );
 
-} catch (error) {
-  console.info(
-    "WAKTU LOGIN GAGAL:",
-    ((performance.now() - loginStartedAt) / 1000).toFixed(2),
-    "detik"
-  );
+    } catch (error) {
+      console.info(
+        "WAKTU LOGIN GAGAL:",
+        ((performance.now() - loginStartedAt) / 1000).toFixed(2),
+        "detik"
+      );
 
-  throw error;
-}
+      throw error;
+    }
 
     if (!result || !result.success || !result.sessionId) {
       throw new Error(
@@ -315,19 +317,19 @@ try {
       );
     }
 
-sessionId = result.sessionId;
+    sessionId = result.sessionId;
 
-try {
-  localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-  //sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-} catch (error) {
-  console.warn("Tidak dapat menyimpan sesi Admin:", error);
-}
+    try {
+      localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+      //sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    } catch (error) {
+      console.warn("Tidak dapat menyimpan sesi Admin:", error);
+    }
 
-user = result.user || {
-  nama: "Admin",
-  role: "Admin"
-};
+    user = result.user || {
+      nama: "Admin",
+      role: "Admin"
+    };
 
     notifyAuthChange();
 
@@ -355,9 +357,6 @@ user = result.user || {
     return result;
   }
 
-  /* VALIDASI SESSION */
-
-  
   /* VALIDASI SESSION */
 
   async function validateSession() {
@@ -395,7 +394,6 @@ user = result.user || {
       return null;
     }
   }
-
 
   /* LOGOUT ADMIN */
 
@@ -483,6 +481,34 @@ user = result.user || {
     return result.data;
   }
 
+  /*
+   * REQUEST DATA PUBLIK
+   * Selalu mengirim sessionId kosong agar Backend
+   * memproses permintaan sebagai akses publik.
+   * Tidak mengubah sesi Admin yang tersimpan.
+   */
+
+  async function requestPublic(action, payload) {
+    const result = await send("API_REQUEST", {
+      sessionId: "",
+      action: action,
+      payload: payload || {}
+    });
+
+    if (!result || result.success === false) {
+      throw new Error(
+        result?.message || "Permintaan data publik gagal."
+      );
+    }
+
+    return result;
+  }
+
+  async function getPublic(action, params) {
+    const result = await requestPublic(action, params || {});
+    return result.data;
+  }
+
   /* STATUS AUTHENTIKASI */
 
   function isAuthenticated() {
@@ -504,6 +530,8 @@ user = result.user || {
   window.TechOpsAPI = {
     get: get,
     request: request,
+    getPublic: getPublic,
+    requestPublic: requestPublic,
     login: login,
     initializePin: initializePin,
     validateSession: validateSession,
@@ -513,7 +541,7 @@ user = result.user || {
     getUser: getUser,
     onAuthChange: onAuthChange
   };
-  
+
   /* PERSIAPAN KONEKSI AUTHBRIDGE */
 
   function warmupBridge() {
@@ -538,6 +566,5 @@ user = result.user || {
   }
 
   warmupBridge();
-
 
 })();
