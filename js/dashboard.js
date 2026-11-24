@@ -737,7 +737,7 @@ async function loadData() {
 
   // =======================================================
   // MONITORING JADWAL MAINTENANCE
-  // 10 DATA PER HALAMAN + NAVIGASI IKON
+  // 5 DATA PER HALAMAN + NAVIGASI IKON
   // =======================================================
 
   function renderSchedules(
@@ -749,23 +749,6 @@ async function loadData() {
 
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
-// DIAGNOSTIK SEMENTARA
-const totalMaintenanceRows = maintenanceRows.length;
-
-const careRows = maintenanceRows.filter(
-  row => activityType(row) === "perawatan"
-);
-
-const careWithDate = careRows.filter(
-  row => dateOf(activityDate(row))
-).length;
-
-const latestCare = latestMaintenanceMap(
-  row => activityType(row) === "perawatan",
-  maintenanceRows
-);
-
-const uniqueDevices = latestCare.size;
 
     // Satu catatan perawatan terbaru untuk setiap perangkat.
     // Jadwal diurutkan berdasarkan tanggal paling dekat.
@@ -787,7 +770,7 @@ const uniqueDevices = latestCare.size;
     const later = schedules.filter(item => item.date > limit);
 
     // Pagination.
-    const perPage = 10;
+    const perPage = 5;
     const totalPages = Math.ceil(schedules.length / perPage);
 
     schedulePage = Math.min(
@@ -1018,14 +1001,6 @@ const uniqueDevices = latestCare.size;
           <strong>${later.length}</strong>
           <span>Terjadwal</span>
         </div>
-      </div>
-        <div style="margin:10px 0;padding:9px;border:1px dashed #aaa;border-radius:8px;font-size:12px;line-height:1.8">
-        <strong>Diagnostik Jadwal (sementara)</strong><br>
-        Data Maintenance: <b>${totalMaintenanceRows}</b><br>
-        Catatan Perawatan: <b>${careRows.length}</b><br>
-        Perawatan dengan tanggal: <b>${careWithDate}</b><br>
-        Perangkat unik: <b>${uniqueDevices}</b><br>
-        Jadwal valid: <b>${schedules.length}</b>
       </div>
 
       ${
