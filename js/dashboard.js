@@ -21,6 +21,9 @@
     loading: false
   };
 
+  // Halaman Monitoring Jadwal Maintenance
+  let schedulePage = 0;
+
   // =======================================================
   // UTILITAS
   // =======================================================
@@ -475,9 +478,6 @@
       map.get(label)[type]++;
     }
 
-    // Backend harus mengirim kode_unit yang aman untuk publik.
-    // Jangan mengambil kode unit dari pengguna karena
-    // field pengguna sudah disensor oleh PublicSanitizer.
     state.computers
       .filter(row => !archived(row))
       .forEach(row => {
@@ -631,7 +631,6 @@
           ${rows.map(({ row, date }) => {
             const type = typeOf(row.jenis_aset);
 
-            // Data sudah disensor oleh backend untuk publik.
             const name = row.nama_aset ||
               (type === "printer" ? "Printer" : "Komputer");
 
@@ -727,6 +726,7 @@
 
   // =======================================================
   // MONITORING JADWAL MAINTENANCE
+  // 10 DATA PER HALAMAN + NAVIGASI IKON
   // =======================================================
 
   function renderSchedules(map) {
@@ -760,71 +760,150 @@
       item => item.date > limit
     );
 
-    const list = schedules
-      .slice(0, 8)
-      .map(({ row, date }) => {
-        const type = typeOf(row.jenis_aset);
-        const device = findInventoryDevice(row, map);
+    // Pagination tetap 10 data per halaman.
+    const perPage = 10;
+    const totalPages = Math.ceil(schedules.length / perPage);
 
-        if (type === "komputer") {
-          const computerName = device?.name ||
-            row.nama_aset ||
-            "Komputer";
+    // Pastikan halaman tetap valid setelah data diperbarui.
+    schedulePage = Math.min(
+      schedulePage,
+      Math.max(0, totalPages - 1)
+    );
 
-          const model = getDeviceModel(row, map) ||
-            "Model tidak tersedia";
+    const startIndex = schedulePage * perPage;
+    const endIndex = Math.min(
+      startIndex + perPage,
+      schedules.length
+    );
 
-          return `
-            <div class="dashboard-schedule-item">
-              <div>
-                <strong>${esc(computerName)}</strong>
+    const visibleSchedules = schedules.slice(
+      startIndex,
+      endIndex
+    );
 
-                <small>
-                  Computer Name
-                  · Model: ${esc(model)}
-                  · Serial: ${esc(device?.serial || row.serial || "-")}
-                </small>
-              </div>
+    const list = visibleSchedules.map(({ row, date }) => {
+      const type = typeOf(row.jenis_aset);
+      const device = findInventoryDevice(row, map);
 
-              <time>${esc(fmtDate(date))}</time>
+      if (type === "komputer") {
+        const computerName = device?.name ||
+          row.nama_aset ||
+          "Komputer";
+
+        const brand = device?.merek ||
+          row.manufacturer ||
+          row.merek ||
+          row.Merek ||
+          "Merek tidak tersedia";
+
+        const model = getDeviceModel(row, map) ||
+          "Model tidak tersedia";
+
+        const serial = device?.serial ||
+          row.serial ||
+          "-";
+
+        return `
+          <div class="dashboard-schedule-item">
+            <div>
+              <strong>${esc(computerName)}</strong>
+              <small>
+                ${esc(brand)} - ${esc(model)} - ${esc(serial)}
+              </small>
             </div>
-          `;
-        }
-       
+            <time>${esc(fmtDate(date))}</time>
+          </div>
+        `;
+      }
+
       const printerUnit = device?.name ||
         row.nama_aset ||
         "Printer";
-      
+
       const printerBrand = device?.merek ||
         row.merek ||
         row.Merek ||
         "Merek tidak tersedia";
-      
+
       const printerModel = device?.model ||
         row.model ||
         row.Model ||
         "Model tidak tersedia";
-      
+
       const printerSerial = device?.serial ||
         row.serial ||
         "-";
-      
+
       return `
         <div class="dashboard-schedule-item">
           <div>
             <strong>${esc(printerUnit)}</strong>
-      
             <small>
               ${esc(printerBrand)} - ${esc(printerModel)} - ${esc(printerSerial)}
             </small>
           </div>
-      
           <time>${esc(fmtDate(date))}</time>
         </div>
       `;
+    }).join("");
 
-      })
-      .join("");
+    const pagination = totalPages > 1
+      ? `
+        <div class="dashboard-schedule-pagination"
+          style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+
+          <small style="color:var(--text-secondary,#888);">
+            ${startIndex + 1}–${endIndex} dari ${schedules.length} jadwal
+          </small>
+
+          <div style="display:flex;gap:8px;">
+            <button
+              type="button"
+              id="schedulePrev"
+              aria-label="Halaman sebelumnya"
+              title="Sebelumnya"
+              ${schedulePage === 0 ? "disabled" : ""}
+              style="width:34px;height:34px;border:1px solid var(--border-color,#ddd);border-radius:8px;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:${schedulePage === 0 ? "0.4" : "1"};">
+
+              <svg viewBox="0 0 24 24"
+                width="18" height="18"
+                fill="none" stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              id="scheduleNext"
+              aria-label="Halaman berikutnya"
+              title="Berikutnya"
+              ${schedulePage >= totalPages - 1 ? "disabled" : ""}
+              style="width:34px;height:34px;border:1px solid var(--border-color,#ddd);border-radius:8px;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:${schedulePage >= totalPages - 1 ? "0.4" : "1"};">
+
+              <svg viewBox="0 0 24 24"
+                width="18" height="18"
+                fill="none" stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `
+      : schedules.length
+        ? `
+          <small class="dashboard-more">
+            ${schedules.length} jadwal
+          </small>
+        `
+        : "";
 
     $("#dashboardSchedules").innerHTML = `
       <div class="dashboard-schedule-summary">
@@ -854,16 +933,24 @@
           `
       }
 
-      ${
-        schedules.length > 8
-          ? `
-            <small class="dashboard-more">
-              Menampilkan 8 dari ${schedules.length} jadwal.
-            </small>
-          `
-          : ""
-      }
+      ${pagination}
     `;
+
+    // Tombol halaman sebelumnya.
+    $("#schedulePrev")?.addEventListener("click", () => {
+      if (schedulePage > 0) {
+        schedulePage--;
+        renderSchedules(map);
+      }
+    });
+
+    // Tombol halaman berikutnya.
+    $("#scheduleNext")?.addEventListener("click", () => {
+      if (schedulePage < totalPages - 1) {
+        schedulePage++;
+        renderSchedules(map);
+      }
+    });
   }
 
   // =======================================================
