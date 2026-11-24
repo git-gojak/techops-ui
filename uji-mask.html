@@ -7,29 +7,64 @@
 <title>Uji Sensor Backend - GoJak TechOps</title>
 <style>
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;margin:0;padding:18px;background:#f4f6f8;color:#17202a}
-main{max-width:680px;margin:0 auto;background:#fff;padding:20px;border-radius:14px}
+body{
+  font-family:Arial,sans-serif;
+  margin:0;padding:18px;
+  background:#f4f6f8;color:#17202a
+}
+main{
+  max-width:680px;margin:0 auto;
+  background:#fff;padding:20px;
+  border-radius:14px
+}
 h2{font-size:20px;margin:0 0 8px}
 p{line-height:1.5;color:#52606d}
-button{width:100%;padding:14px;border:0;border-radius:9px;background:#1769aa;color:white;font-size:16px;font-weight:600}
+button{
+  width:100%;padding:14px;border:0;
+  border-radius:9px;background:#1769aa;
+  color:white;font-size:16px;font-weight:600
+}
 button:disabled{opacity:.6}
-#status{margin:16px 0;padding:12px;border-radius:9px;background:#eef3f7;white-space:pre-wrap}
+#status{
+  margin:16px 0;padding:12px;
+  border-radius:9px;background:#eef3f7;
+  white-space:pre-wrap;line-height:1.5
+}
 table{width:100%;border-collapse:collapse;margin-top:12px}
-th,td{text-align:left;padding:11px 8px;border-bottom:1px solid #e6e9ed;font-size:14px}
+th,td{
+  text-align:left;padding:11px 8px;
+  border-bottom:1px solid #e6e9ed;
+  font-size:13px
+}
 th{background:#f7f9fb}
 .ok{color:#087443;font-weight:700}
 .warn{color:#9a5700;font-weight:700}
-small{display:block;margin-top:16px;color:#667085;line-height:1.5}
+small{
+  display:block;margin-top:16px;
+  color:#667085;line-height:1.5
+}
 </style>
 </head>
 <body>
 <main>
-<h2>Uji Sensor Backend</h2>
-<p>Halaman sementara untuk membandingkan respons komputer publik dan Admin. Nilai asli komputer tidak ditampilkan.</p>
-<button id="run">Mulai Uji</button>
-<div id="status">Siap. Pastikan sudah login sebagai Admin di GoJak TechOps.</div>
-<div id="result"></div>
-<small>Uji ini hanya membaca data melalui API. Tidak mengubah inventaris atau Backend GAS.</small>
+  <h2>Uji Sensor Backend</h2>
+  <p>
+    Membandingkan seluruh data komputer dari respons Publik
+    dan Admin. Nilai asli perangkat tidak ditampilkan.
+  </p>
+
+  <button id="run">Mulai Uji Seluruh Data</button>
+
+  <div id="status">
+    Siap. Pastikan sudah login sebagai Admin di GoJak TechOps.
+  </div>
+
+  <div id="result"></div>
+
+  <small>
+    Uji ini hanya membaca data melalui API.
+    Tidak mengubah inventaris maupun Backend GAS.
+  </small>
 </main>
 
 <script src="./api.js"></script>
@@ -54,8 +89,41 @@ small{display:block;margin-top:16px;color:#667085;line-height:1.5}
 
   function esc(value){
     return String(value).replace(/[&<>"']/g,function(c){
-      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
+      return {
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+      }[c];
     });
+  }
+
+  function compareField(publicRows,adminRows,key){
+    let same=0;
+    let different=0;
+    let empty=0;
+
+    const total=Math.min(publicRows.length,adminRows.length);
+
+    for(let i=0;i<total;i++){
+      const pv=publicRows[i][key];
+      const av=adminRows[i][key];
+
+      if(
+        pv===undefined || av===undefined ||
+        pv===null || av===null ||
+        String(pv)==="" || String(av)===""
+      ){
+        empty++;
+      }else if(String(pv)!==String(av)){
+        different++;
+      }else{
+        same++;
+      }
+    }
+
+    return {same,different,empty,total};
   }
 
   button.addEventListener("click",async function(){
@@ -74,11 +142,11 @@ small{display:block;margin-top:16px;color:#667085;line-height:1.5}
         throw new Error(
           valid===false
           ? "Sesi Admin tidak valid. Login ulang di halaman utama."
-          : "Validasi sesi belum mendapat jawaban. Periksa koneksi."
+          : "Validasi sesi belum mendapat jawaban."
         );
       }
 
-      status.textContent="Sesi Admin valid. Mengambil data...";
+      status.textContent="Sesi valid. Mengambil seluruh data komputer...";
 
       const pair=await Promise.all([
         TechOpsAPI.getPublic("computers.list",{includeArchived:false}),
@@ -89,44 +157,53 @@ small{display:block;margin-top:16px;color:#667085;line-height:1.5}
       const adm=rows(pair[1]);
 
       if(!pub.length || !adm.length){
-        throw new Error("Data komputer kosong atau format respons tidak dikenali.");
+        throw new Error(
+          "Data komputer kosong atau format respons tidak dikenali."
+        );
       }
 
-      const p=pub[0];
-      const a=adm[0];
+      const totalPublic=pub.length;
+      const totalAdmin=adm.length;
+      const totalCompare=Math.min(totalPublic,totalAdmin);
 
-      let html="<p><b>Jumlah data:</b> Publik "+pub.length+
-        " · Admin "+adm.length+"</p>";
+      let html="<p><b>Jumlah data Publik:</b> "+totalPublic+
+        "<br><b>Jumlah data Admin:</b> "+totalAdmin+
+        "<br><b>Data yang dibandingkan:</b> "+totalCompare+"</p>";
 
-      html+="<table><thead><tr><th>Field</th><th>Hasil</th></tr></thead><tbody>";
+      if(totalPublic!==totalAdmin){
+        html+="<p class='warn'>Jumlah data Publik dan Admin berbeda. "+
+          "Hanya pasangan baris yang tersedia di kedua respons yang dibandingkan.</p>";
+      }
+
+      html+="<table><thead><tr>"+
+        "<th>Field</th><th>Sama</th>"+
+        "<th>Berbeda</th><th>Kosong</th>"+
+        "</tr></thead><tbody>";
 
       fields.forEach(function(field){
-        const pv=p[field[1]];
-        const av=a[field[1]];
-        let label,cls;
+        const r=compareField(pub,adm,field[1]);
 
-        if(pv===undefined || av===undefined ||
-           pv===null || av===null ||
-           String(pv)==="" || String(av)===""){
-          label="Tidak dapat dibandingkan";
-          cls="warn";
-        }else if(String(pv)!==String(av)){
-          label="Berbeda — sensor terindikasi aktif";
-          cls="ok";
-        }else{
-          label="Sama — perlu pemeriksaan";
-          cls="warn";
-        }
+        const cls=r.different>0?"ok":"warn";
 
-        html+="<tr><td>"+esc(field[0])+"</td>"+
-          "<td class='"+cls+"'>"+label+"</td></tr>";
+        html+="<tr>"+
+          "<td>"+esc(field[0])+"</td>"+
+          "<td>"+r.same+"</td>"+
+          "<td class='"+cls+"'>"+r.different+"</td>"+
+          "<td>"+r.empty+"</td>"+
+          "</tr>";
       });
 
       html+="</tbody></table>";
-      html+="<p class='ok'>Uji selesai. Nilai asli tidak ditampilkan.</p>";
+
+      html+="<p class='ok'>Perbandingan seluruh pasangan data selesai.</p>";
+
+      html+="<p>Catatan: perbandingan dilakukan berdasarkan urutan "+
+        "baris dari kedua respons, bukan berdasarkan nilai serial.</p>";
 
       result.innerHTML=html;
-      status.textContent="Berhasil mengambil kedua respons backend.";
+
+      status.textContent=
+        "Berhasil mengambil dan membandingkan respons Publik dan Admin.";
 
     }catch(error){
       status.textContent="Uji belum berhasil: "+
