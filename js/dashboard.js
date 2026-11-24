@@ -171,7 +171,15 @@
     const id = String(serial || name || "").trim().toUpperCase();
     return t && id ? `${t}|${id}` : "";
   }
+function maintenanceDeviceKey(type, serial, name) {
+  const t = typeOf(type);
+  const s = String(serial || "").trim().toUpperCase();
+  const n = String(name || "").trim().toUpperCase();
 
+  if (!t || (!s && !n)) return "";
+
+  return JSON.stringify([t, s, n]);
+}
   function activityType(row) {
     return String(
       row?.jenis_kegiatan || row?.kegiatan || ""
@@ -713,11 +721,11 @@ async function loadData() {
         );
       })
       .forEach(({ row }) => {
-        const key = keyOf(
-          row.jenis_aset,
-          row.serial,
-          row.nama_aset
-        );
+       const key = maintenanceDeviceKey(
+  row.jenis_aset,
+  row.serial,
+  row.nama_aset
+);
 
         if (key && !map.has(key)) {
           map.set(key, row);
