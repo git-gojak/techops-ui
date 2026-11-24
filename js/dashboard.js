@@ -24,6 +24,7 @@
   };
 
   let schedulePage = 0;
+  let activityPage = 0;
 
   // =======================================================
   // UTILITAS
@@ -614,79 +615,192 @@ async function loadData() {
   // AKTIVITAS MAINTENANCE TERBARU
   // =======================================================
 
-  function renderActivities(map) {
-    const rows = state.maintenance
-      .map(row => ({
-        row,
-        date: dateOf(activityDate(row))
-      }))
-      .sort((a, b) =>
-        (b.date?.getTime() || 0) -
-        (a.date?.getTime() || 0)
-      )
-      .slice(0, 5);
+  
+function renderActivities(map) {
+  // Ambil maksimal 25 aktivitas terbaru.
+  const allRows = state.maintenance
+    .map(row => ({
+      row,
+      date: dateOf(activityDate(row))
+    }))
+    .sort((a, b) =>
+      (b.date?.getTime() || 0) -
+      (a.date?.getTime() || 0)
+    )
+    .slice(0, 25);
 
-    const adminView = isDashboardAdmin();
+  // Pagination: 5 aktivitas per halaman.
+  const perPage = 5;
+  const totalPages = Math.ceil(allRows.length / perPage);
 
-    $("#latestMaintenance").innerHTML = rows.length
-      ? `
-        <div class="dashboard-activity-list">
-          ${rows.map(({ row, date }) => {
-            const type = typeOf(row.jenis_aset);
-            const isComputer = type === "komputer";
+  activityPage = Math.min(
+    activityPage,
+    Math.max(0, totalPages - 1)
+  );
 
-            const name = isComputer && !adminView
-              ? "Komputer"
-              : (
-                  row.nama_aset ||
-                  (type === "printer" ? "Printer" : "Komputer")
-                );
+  const startIndex = activityPage * perPage;
+  const endIndex = Math.min(
+    startIndex + perPage,
+    allRows.length
+  );
 
-            const model = isComputer && !adminView
-              ? ""
-              : (getDeviceModel(row, map) || "Model tidak tersedia");
+  const rows = allRows.slice(startIndex, endIndex);
 
-            const serial = isComputer && !adminView
-              ? ""
-              : (row.serial || "");
+  const adminView = isDashboardAdmin();
 
-            const activity =
-              row.jenis_kegiatan ||
-              row.kegiatan ||
-              "Maintenance";
+  // Informasi halaman dan tombol navigasi.
+  const pagination = allRows.length
+    ? `
+      <div>
+        <small>
+          Menampilkan ${startIndex + 1}–${endIndex}
+          dari ${allRows.length} aktivitas
+        </small>
 
-            const detail = [
-              model,
-              serial
-            ].filter(Boolean).map(esc).join(" · ");
+        ${
+          totalPages > 1
+            ? `
+              <button
+                type="button"
+                class="icon-button"
+                id="activityPrev"
+                aria-label="Halaman sebelumnya"
+                title="Sebelumnya"
+                ${activityPage === 0 ? "disabled" : ""}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
 
-            return `
-              <div class="dashboard-activity-item">
-                <span class="dashboard-activity-icon ${type}">
-                  ${iconSvg(type === "printer" ? "printer" : "computer")}
-                </span>
+              <button
+                type="button"
+                class="icon-button"
+                id="activityNext"
+                aria-label="Halaman berikutnya"
+                title="Berikutnya"
+                ${activityPage >= totalPages - 1 ? "disabled" : ""}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
+            `
+            : ""
+        }
+      </div>
+    `
+    : "";
 
-                <div class="dashboard-activity-info">
-                  <strong>${esc(name)}</strong>
-                  ${detail ? `<span>${detail}</span>` : ""}
-                  <small>
-                    ${esc(activity)}
-                    ·
-                    ${esc(row.kondisi || "Kondisi belum diisi")}
-                  </small>
-                  <time>${esc(fmtDateTime(date))}</time>
-                </div>
+  const container = $("#latestMaintenance");
+  if (!container) return;
+
+  container.innerHTML = rows.length
+    ? `
+      <div class="dashboard-activity-list">
+        ${rows.map(({ row, date }) => {
+          const type = typeOf(row.jenis_aset);
+          const isComputer = type === "komputer";
+
+          const name = isComputer && !adminView
+            ? "Komputer"
+            : (
+                row.nama_aset ||
+                (type === "printer" ? "Printer" : "Komputer")
+              );
+
+          const model = isComputer && !adminView
+            ? ""
+            : (
+                getDeviceModel(row, map) ||
+                "Model tidak tersedia"
+              );
+
+          const serial = isComputer && !adminView
+            ? ""
+            : (row.serial || "");
+
+          const activity =
+            row.jenis_kegiatan ||
+            row.kegiatan ||
+            "Maintenance";
+
+          const detail = [
+            model,
+            serial
+          ]
+            .filter(Boolean)
+            .map(esc)
+            .join(" · ");
+
+          return `
+            <div class="dashboard-activity-item">
+              <span class="dashboard-activity-icon ${type}">
+                ${iconSvg(type === "printer" ? "printer" : "computer")}
+              </span>
+
+              <div class="dashboard-activity-info">
+                <strong>${esc(name)}</strong>
+                ${detail ? `<span>${detail}</span>` : ""}
+
+                <small>
+                  ${esc(activity)}
+                  ·
+                  ${esc(row.kondisi || "Kondisi belum diisi")}
+                </small>
+
+                <time>${esc(fmtDateTime(date))}</time>
               </div>
-            `;
-          }).join("")}
-        </div>
-      `
-      : `
-        <div class="dashboard-empty">
-          Belum ada aktivitas Maintenance.
-        </div>
-      `;
-  }
+            </div>
+          `;
+        }).join("")}
+      </div>
+
+      ${pagination}
+    `
+    : `
+      <div class="dashboard-empty">
+        Belum ada aktivitas Maintenance.
+      </div>
+    `;
+
+  // Navigasi halaman sebelumnya.
+  $("#activityPrev")?.addEventListener("click", () => {
+    if (activityPage > 0) {
+      activityPage--;
+      renderActivities(map);
+    }
+  });
+
+  // Navigasi halaman berikutnya.
+  $("#activityNext")?.addEventListener("click", () => {
+    if (activityPage < totalPages - 1) {
+      activityPage++;
+      renderActivities(map);
+    }
+  });
+}
+
 
   // =======================================================
   // CATATAN MAINTENANCE TERBARU PER PERANGKAT
