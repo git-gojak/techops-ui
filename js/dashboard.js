@@ -649,9 +649,10 @@ function renderActivities(map) {
 
   // Informasi halaman dan tombol navigasi.
   
+
 const pagination = allRows.length
   ? `
-  <div class="dashboard-condition-footer flex-between">
+    <div class="dashboard-condition-footer flex-between">
       <small>
         Menampilkan ${startIndex + 1}–${endIndex}
         dari ${allRows.length} aktivitas
@@ -660,22 +661,44 @@ const pagination = allRows.length
       ${
         totalPages > 1
           ? `
-            <div style="display:flex;gap:8px;">
+            <div class="pagination-controls">
               <button
                 type="button"
-                class="icon-button"
+                class="pagination-button"
                 id="activityPrev"
-                aria-label="Sebelumnya"
+                aria-label="Halaman sebelumnya"
+                title="Sebelumnya"
                 ${activityPage === 0 ? "disabled" : ""}
-              >‹</button>
+              >
+                <svg viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
 
               <button
                 type="button"
-                class="icon-button"
+                class="pagination-button"
                 id="activityNext"
-                aria-label="Berikutnya"
+                aria-label="Halaman berikutnya"
+                title="Berikutnya"
                 ${activityPage >= totalPages - 1 ? "disabled" : ""}
-              >›</button>
+              >
+                <svg viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
             </div>
           `
           : ""
@@ -683,6 +706,7 @@ const pagination = allRows.length
     </div>
   `
   : "";
+
 
 
   const container = $("#latestMaintenance");
@@ -985,94 +1009,57 @@ const pagination = allRows.length
     }).join("");
 
     // Informasi jumlah jadwal dan navigasi halaman.
-    const pagination = schedules.length
-      ? `
-        <div class="dashboard-schedule-pagination"
-          style="
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            margin-top:14px;
-          ">
+    
+const pagination = allRows.length
+  ? `
+    <div class="dashboard-condition-footer flex-between">
+      <small>
+        Menampilkan ${startIndex + 1}–${endIndex}
+        dari ${allRows.length} aktivitas
+      </small>
 
-          <small style="color:var(--text-secondary,#888);">
-            Menampilkan ${startIndex + 1}–${endIndex}
-            dari ${schedules.length} jadwal
-          </small>
+      ${
+        totalPages > 1
+          ? `
+            <div class="pagination-controls">
+              <button
+                type="button"
+                class="pagination-button"
+                id="activityPrev"
+                aria-label="Halaman sebelumnya"
+                title="Sebelumnya"
+                ${activityPage === 0 ? "disabled" : ""}
+              >
+                <svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
 
-          ${
-            totalPages > 1
-              ? `
-                <div style="display:flex;gap:8px;">
-                  <button
-                    type="button"
-                    id="schedulePrev"
-                    aria-label="Halaman sebelumnya"
-                    title="Sebelumnya"
-                    ${schedulePage === 0 ? "disabled" : ""}
-                    style="
-                      width:34px;
-                      height:34px;
-                      border:1px solid var(--border-color,#ddd);
-                      border-radius:8px;
-                      background:transparent;
-                      color:inherit;
-                      display:flex;
-                      align-items:center;
-                      justify-content:center;
-                      cursor:pointer;
-                      opacity:${schedulePage === 0 ? "0.4" : "1"};
-                    ">
-                    <svg viewBox="0 0 24 24"
-                      width="18" height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true">
-                      <path d="m15 18-6-6 6-6"/>
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    id="scheduleNext"
-                    aria-label="Halaman berikutnya"
-                    title="Berikutnya"
-                    ${schedulePage >= totalPages - 1 ? "disabled" : ""}
-                    style="
-                      width:34px;
-                      height:34px;
-                      border:1px solid var(--border-color,#ddd);
-                      border-radius:8px;
-                      background:transparent;
-                      color:inherit;
-                      display:flex;
-                      align-items:center;
-                      justify-content:center;
-                      cursor:pointer;
-                      opacity:${schedulePage >= totalPages - 1 ? "0.4" : "1"};
-                    ">
-                    <svg viewBox="0 0 24 24"
-                      width="18" height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true">
-                      <path d="m9 18 6-6-6-6"/>
-                    </svg>
-                  </button>
-                </div>
-              `
-              : ""
-          }
-        </div>
-      `
-      : "";
-
+              <button
+                type="button"
+                class="pagination-button"
+                id="activityNext"
+                aria-label="Halaman berikutnya"
+                title="Berikutnya"
+                ${activityPage >= totalPages - 1 ? "disabled" : ""}
+              >
+                <svg viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
+            </div>
+          `
+          : ""
+      }
+    </div>
+  `
+  : "";
     // Render kartu.
     const container = $("#dashboardSchedules");
     if (!container) return;
