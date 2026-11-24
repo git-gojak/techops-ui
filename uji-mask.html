@@ -12,22 +12,26 @@ button{width:100%;padding:14px;background:#1769aa;color:white;border:0;border-ra
 button:disabled{opacity:.6}
 #status{background:#eef3f7;padding:12px;border-radius:8px;margin:16px 0;white-space:pre-wrap}
 table{width:100%;border-collapse:collapse;margin-top:12px}
-th,td{text-align:left;padding:11px 7px;border-bottom:1px solid #ddd;font-size:13px}
+th,td{text-align:left;padding:9px 5px;border-bottom:1px solid #ddd;font-size:12px}
 .ok{color:#087443;font-weight:bold}
 .warn{color:#a15c00;font-weight:bold}
+.bad{color:#b42318;font-weight:bold}
 small{display:block;color:#667085;margin-top:16px;line-height:1.5}
 </style>
 </head>
 <body>
 <main>
 <h2>Uji Sensor Komputer</h2>
-<p>Membandingkan Nama Komputer, Pengguna, dan Serial antara akses Publik dan Admin. Nilai asli tidak ditampilkan.</p>
+<p>Menguji sensor Nama Komputer, Pengguna, Serial, dan Model pada akses Publik dibandingkan dengan Admin.</p>
 
 <button id="run">Mulai Uji Komputer</button>
 <div id="status">Siap melakukan pengujian.</div>
 <div id="result"></div>
 
-<small>Pengujian hanya membaca API. Tidak mengubah inventaris maupun Backend GAS.</small>
+<small>
+Pengujian hanya membaca API. Tidak mengubah inventaris maupun Backend GAS.
+Nilai asli perangkat tidak ditampilkan.
+</small>
 </main>
 
 <script src="./api.js"></script>
@@ -37,30 +41,72 @@ const statusBox=document.getElementById("status");
 const result=document.getElementById("result");
 
 function getRows(data){
-  if(Array.isArray(data)) return data;
-  if(Array.isArray(data?.items)) return data.items;
-  if(Array.isArray(data?.data)) return data.data;
+  let value=data;
+
+  for(let i=0;i<4;i++){
+    if(Array.isArray(value)) return value;
+
+    if(value && Array.isArray(value.data)){
+      value=value.data;
+      continue;
+    }
+
+    if(value && Array.isArray(value.items)){
+      value=value.items;
+      continue;
+    }
+
+    break;
+  }
+
   return [];
 }
 
+function isEmpty(value){
+  return value===undefined ||
+    value===null ||
+    String(value).trim()==="";
+}
+
+function isMasked(value){
+  return !isEmpty(value) && String(value).includes("*");
+}
+
 function compare(pub,admin,key){
-  let same=0,different=0,empty=0;
+  let same=0;
+  let different=0;
+  let empty=0;
+  let publicMasked=0;
+  let adminMasked=0;
+
   const total=Math.min(pub.length,admin.length);
 
   for(let i=0;i<total;i++){
     const a=pub[i]?.[key];
     const b=admin[i]?.[key];
 
-    if(a===undefined||b===undefined||a===null||b===null||
-       String(a)===""||String(b)===""){
+    if(isEmpty(a)||isEmpty(b)){
       empty++;
-    }else if(String(a)!==String(b)){
-      different++;
-    }else{
+      continue;
+    }
+
+    if(isMasked(a)) publicMasked++;
+    if(isMasked(b)) adminMasked++;
+
+    if(String(a)===String(b)){
       same++;
+    }else{
+      different++;
     }
   }
-  return {same,different,empty};
+
+  return {
+    same,
+    different,
+    empty,
+    publicMasked,
+    adminMasked
+  };
 }
 
 btn.onclick=async()=>{
@@ -69,51 +115,110 @@ btn.onclick=async()=>{
   statusBox.textContent="Memvalidasi sesi Admin...";
 
   try{
-    if(!window.TechOpsAPI) throw Error("API tidak termuat.");
+    if(!window.TechOpsAPI){
+      throw Error("API tidak termuat.");
+    }
 
     const valid=await TechOpsAPI.validateSession();
-    if(valid!==true) throw Error("Sesi Admin tidak valid. Silakan login ulang.");
 
-    statusBox.textContent="Mengambil data komputer Publik dan Admin...";
+    if(valid!==true){
+      throw Error("Sesi Admin tidak valid. Silakan login ulang.");
+    }
 
-    const pair=await Promise.all([
-      TechOpsAPI.getPublic("computers.list",{includeArchived:false}),
-      TechOpsAPI.get("computers.list",{includeArchived:false})
-    ]);
+    statusBox.textContent="Mengambil data Publik...";
 
-    const pub=getRows(pair[0]);
-    const adm=getRows(pair[1]);
+    // Permintaan dilakukan berurutan agar hasil lebih mudah diperiksa.
+    const publicData=await TechOpsAPI.getPublic(
+      "computers.list",
+      {includeArchived:false}
+    );
+
+    statusBox.textContent="Mengambil data Admin...";
+
+    const adminData=await TechOpsAPI.get(
+      "computers.list",
+      {includeArchived:false}
+    );
+
+    const pub=getRows(publicData);
+    const adm=getRows(adminData);
 
     if(!pub.length||!adm.length){
-      throw Error("Data komputer kosong atau format respons tidak dikenali.");
+      throw Error("Data kosong atau format respons tidak dikenali.");
     }
 
     const total=Math.min(pub.length,adm.length);
+
     const fields=[
-      ["Nama Komputer","komputer","Berbeda"],
-      ["Pengguna","pengguna","Sama"],
-      ["Serial","serial","Berbeda"],
-      ["Model","model","Sama"]
+      ["Nama Komputer","komputer"],
+      ["Pengguna","pengguna"],
+      ["Serial","serial"],
+      ["Model","model"]
     ];
 
-    let html="<p><b>Data Publik:</b> "+pub.length+
+    let html=
+      "<p><b>Data Publik:</b> "+pub.length+
       "<br><b>Data Admin:</b> "+adm.length+
       "<br><b>Data dibandingkan:</b> "+total+"</p>";
 
-    html+="<table><thead><tr><th>Kolom</th><th>Sama</th><th>Berbeda</th><th>Kosong</th></tr></thead><tbody>";
+    html+=`
+      <table>
+      <thead>
+      <tr>
+        <th>Kolom</th>
+        <th>Publik disensor</th>
+        <th>Admin disensor</th>
+        <th>Berbeda</th>
+      </tr>
+      </thead>
+      <tbody>
+    `;
+
+    let totalPublicMasked=0;
+    let totalAdminMasked=0;
 
     fields.forEach(([label,key])=>{
       const r=compare(pub,adm,key);
-      html+="<tr><td>"+label+"</td><td>"+r.same+
-        "</td><td class='"+(r.different?"ok":"")+"'>"+r.different+
-        "</td><td>"+r.empty+"</td></tr>";
+
+      totalPublicMasked+=r.publicMasked;
+      totalAdminMasked+=r.adminMasked;
+
+      html+=`
+        <tr>
+          <td>${label}</td>
+          <td>${r.publicMasked}</td>
+          <td>${r.adminMasked}</td>
+          <td>${r.different}</td>
+        </tr>
+      `;
     });
 
     html+="</tbody></table>";
-    html+="<p class='ok'>Perbandingan selesai. Nilai asli tidak ditampilkan.</p>";
+
+    html+=`
+      <p><b>Ringkasan sensor:</b></p>
+      <p>Jumlah nilai tersensor pada Publik: <b>${totalPublicMasked}</b></p>
+      <p>Jumlah nilai tersensor pada Admin: <b>${totalAdminMasked}</b></p>
+    `;
+
+    if(totalPublicMasked>0 && totalAdminMasked===0){
+      html+=`<p class="ok">Akses Publik menunjukkan data tersensor dan Admin tidak menunjukkan tanda sensor.</p>`;
+    }else if(totalAdminMasked>0){
+      html+=`<p class="bad">PERLU DIPERIKSA: masih ditemukan tanda sensor pada respons Admin.</p>`;
+    }else{
+      html+=`<p class="warn">Belum ditemukan tanda sensor pada data Publik. Perlu pemeriksaan lebih lanjut.</p>`;
+    }
+
+    html+=`
+      <p class="warn">
+        Catatan: pengujian ini menghitung tanda sensor (*) dan perbedaan
+        berdasarkan posisi baris. Hasil belum membuktikan seluruh aturan
+        sensor sudah benar.
+      </p>
+    `;
 
     result.innerHTML=html;
-    statusBox.textContent="Berhasil mengambil dan membandingkan data komputer.";
+    statusBox.textContent="Pengujian selesai.";
 
   }catch(e){
     statusBox.textContent="Uji gagal: "+(e.message||String(e));
