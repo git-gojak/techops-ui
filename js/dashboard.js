@@ -599,7 +599,7 @@ async function loadData() {
 
     return null;
   }
-
+/*
   function getDeviceModel(row, map) {
     const inventory = findInventoryDevice(row, map);
 
@@ -610,7 +610,22 @@ async function loadData() {
       ""
     ).trim();
   }
+*/
+   function getDeviceModel(row, map) {
+  const inventory = findInventoryDevice(row, map);
+  const type = typeOf(row?.jenis_aset);
 
+  if (type === "komputer" && inventory?.model) {
+    return String(inventory.model).trim();
+  }
+
+  return String(
+    row?.model ||
+    row?.Model ||
+    inventory?.model ||
+    ""
+  ).trim();
+}
   // =======================================================
   // AKTIVITAS MAINTENANCE TERBARU
   // =======================================================
