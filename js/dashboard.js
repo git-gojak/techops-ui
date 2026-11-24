@@ -645,7 +645,7 @@ function renderActivities(map) {
 
   const rows = allRows.slice(startIndex, endIndex);
 
-  const adminView = isDashboardAdmin();
+  // const adminView = isDashboardAdmin();
 
   // Informasi halaman dan tombol navigasi.
   
@@ -717,15 +717,19 @@ const pagination = allRows.length
       <div class="dashboard-activity-list">
         ${rows.map(({ row, date }) => {
           const type = typeOf(row.jenis_aset);
-          const isComputer = type === "komputer";
+        //  const isComputer = type === "komputer";
 
-          
+          /*
           const name = isComputer && !adminView
             ? "Komputer"
             : (
                 row.nama_aset ||
                 (type === "printer" ? "Printer" : "Komputer")
               );
+           */
+          const name =
+  row.nama_aset ||
+  (type === "printer" ? "Printer" : "Komputer"); 
 
           // Model dan serial publik sudah disensor oleh Backend.
           // Tampilkan nilai yang diterima dari Backend apa adanya.
