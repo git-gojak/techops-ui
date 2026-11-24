@@ -1010,12 +1010,12 @@ const pagination = allRows.length
 
     // Informasi jumlah jadwal dan navigasi halaman.
     
-const pagination = allRows.length
+const pagination = schedules.length
   ? `
-    <div class="dashboard-condition-footer flex-between">
+    <div class="dashboard-schedule-pagination flex-between">
       <small>
         Menampilkan ${startIndex + 1}–${endIndex}
-        dari ${allRows.length} aktivitas
+        dari ${schedules.length} jadwal
       </small>
 
       ${
@@ -1025,10 +1025,10 @@ const pagination = allRows.length
               <button
                 type="button"
                 class="pagination-button"
-                id="activityPrev"
+                id="schedulePrev"
                 aria-label="Halaman sebelumnya"
                 title="Sebelumnya"
-                ${activityPage === 0 ? "disabled" : ""}
+                ${schedulePage === 0 ? "disabled" : ""}
               >
                 <svg viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2"
@@ -1041,10 +1041,10 @@ const pagination = allRows.length
               <button
                 type="button"
                 class="pagination-button"
-                id="activityNext"
+                id="scheduleNext"
                 aria-label="Halaman berikutnya"
                 title="Berikutnya"
-                ${activityPage >= totalPages - 1 ? "disabled" : ""}
+                ${schedulePage >= totalPages - 1 ? "disabled" : ""}
               >
                 <svg viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2"
