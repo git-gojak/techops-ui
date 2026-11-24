@@ -1,7 +1,7 @@
 
 /* =========================================================
    GOJAK TECHOPS
-   DASHBOARD - REVISI DETAIL JADWAL, SENSOR, DAN KONDISI
+   DASHBOARD - INTEGRASI PUBLIC SANITIZER BACKEND
    ========================================================= */
 
 (function () {
@@ -148,45 +148,6 @@
           minute: "2-digit"
         }).format(d)
       : "Waktu tidak tersedia";
-  }
-
-  function isAdmin() {
-    return window.TechOpsAuth?.authenticated === true ||
-      window.TechOpsAPI?.isAuthenticated?.() === true;
-  }
-
-  function maskValue(value) {
-    const s = String(value || "").trim();
-
-    if (!s) return "-";
-    if (isAdmin()) return s;
-
-    return s.length <= 4
-      ? "*".repeat(s.length)
-      : "*".repeat(s.length - 4) + s.slice(-4);
-  }
-
-  function maskSerial(value) {
-    return maskValue(value);
-  }
-
-  function maskComputer(value) {
-    const s = String(value || "").trim();
-
-    if (!s) return "Komputer";
-    if (isAdmin()) return s;
-
-    return s.length <= 4
-      ? "*".repeat(s.length)
-      : s.slice(0, 2) +
-        "*".repeat(s.length - 4) +
-        s.slice(-2);
-  }
-
-  // Model komputer disensor dengan pola yang sama
-  // seperti serial: hanya empat karakter terakhir terlihat.
-  function maskComputerModel(value) {
-    return maskValue(value);
   }
 
   function typeOf(value) {
@@ -496,11 +457,12 @@
       const value = String(raw || "").trim();
       if (!value) return;
 
-      const label = (
-        type === "computers" && value.includes("-")
-          ? value.split("-")[0]
-          : value
-      ).trim().toLocaleUpperCase("id-ID");
+      const label = value
+        .split("-")[0]
+        .trim()
+        .toLocaleUpperCase("id-ID");
+
+      if (!label) return;
 
       if (!map.has(label)) {
         map.set(label, {
@@ -513,13 +475,20 @@
       map.get(label)[type]++;
     }
 
+    // Backend harus mengirim kode_unit yang aman untuk publik.
+    // Jangan mengambil kode unit dari pengguna karena
+    // field pengguna sudah disensor oleh PublicSanitizer.
     state.computers
       .filter(row => !archived(row))
-      .forEach(row => add(row.pengguna, "computers"));
+      .forEach(row => {
+        add(row.kode_unit, "computers");
+      });
 
     state.printers
       .filter(row => !archived(row))
-      .forEach(row => add(row.unit, "printers"));
+      .forEach(row => {
+        add(row.unit, "printers");
+      });
 
     const rows = [...map.values()].sort(
       (a, b) => a.label.localeCompare(b.label, "id")
@@ -593,6 +562,7 @@
       );
 
       if (serialKey) map.set(serialKey, device);
+
       if (nameKey && !map.has(nameKey)) {
         map.set(nameKey, device);
       }
@@ -661,17 +631,12 @@
           ${rows.map(({ row, date }) => {
             const type = typeOf(row.jenis_aset);
 
-            const name = type === "komputer"
-              ? maskComputer(row.nama_aset)
-              : (row.nama_aset || "Printer");
+            // Data sudah disensor oleh backend untuk publik.
+            const name = row.nama_aset ||
+              (type === "printer" ? "Printer" : "Komputer");
 
-            const rawModel = getDeviceModel(row, map) ||
+            const model = getDeviceModel(row, map) ||
               "Model tidak tersedia";
-
-            // Hanya model komputer yang disensor.
-            const model = type === "komputer"
-              ? maskComputerModel(rawModel)
-              : rawModel;
 
             const activity =
               row.jenis_kegiatan ||
@@ -692,7 +657,7 @@
                   <span>
                     ${esc(model)}
                     ·
-                    ${esc(maskSerial(row.serial))}
+                    ${esc(row.serial || "-")}
                   </span>
 
                   <small>
@@ -771,9 +736,6 @@
     const limit = new Date(today);
     limit.setDate(limit.getDate() + 30);
 
-    // Jadwal mengikuti catatan perawatan terbaru:
-    // Tanggal menjadi acuan utama, Waktu Dibuat
-    // menjadi pembanding apabila Tanggal sama.
     const latestCare = latestMaintenanceMap(row =>
       activityType(row) === "perawatan"
     );
@@ -815,16 +777,12 @@
           return `
             <div class="dashboard-schedule-item">
               <div>
-                <strong>
-                  ${esc(maskComputer(computerName))}
-                </strong>
+                <strong>${esc(computerName)}</strong>
 
                 <small>
                   Computer Name
-                  · Model: ${esc(maskComputerModel(model))}
-                  · Serial: ${esc(maskSerial(
-                    device?.serial || row.serial
-                  ))}
+                  · Model: ${esc(model)}
+                  · Serial: ${esc(device?.serial || row.serial || "-")}
                 </small>
               </div>
 
@@ -853,7 +811,7 @@
 
               <small>
                 Merek: ${esc(printerBrand)}
-                · Serial: ${esc(maskSerial(printerSerial))}
+                · Serial: ${esc(printerSerial || "-")}
               </small>
             </div>
 
@@ -973,8 +931,6 @@
     const printerArchive =
       Number(state.archiveCounts.printers || 0);
 
-    // Arsip tetap masuk kategori Rusak
-    // sesuai perilaku Dashboard lama.
     groups.komputer.bad += computerArchive;
     groups.printer.bad += printerArchive;
 
