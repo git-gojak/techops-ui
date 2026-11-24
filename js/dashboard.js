@@ -238,66 +238,51 @@
   // =======================================================
   // MEMUAT DATA
   // =======================================================
-
-  async function loadData() {
-    if (!window.TechOpsAPI) {
-      throw new Error("TechOpsAPI belum tersedia.");
-    }
-
-    const includeArchived = TechOpsAPI.isAuthenticated();
-
-    const result = await Promise.all([
-      // Data dashboard yang sudah digunakan sebelumnya.
-      timeout(
-        TechOpsAPI.get("computers.list", { includeArchived }),
-        "Data komputer"
-      ),
-      timeout(
-        TechOpsAPI.get("printers.list", { includeArchived }),
-        "Data printer"
-      ),
-      timeout(
-        TechOpsAPI.get("maintenance.list"),
-        "Data maintenance"
-      ),
-      timeout(
-        TechOpsAPI.get("inventory.archiveCounts"),
-        "Data arsip"
-      ),
-
-      // Data khusus kartu Monitoring Jadwal Maintenance.
-      // Semua permintaan ini dikirim sebagai akses publik.
-      timeout(
-        TechOpsAPI.getPublic("computers.list", {}),
-        "Data komputer publik"
-      ),
-      timeout(
-        TechOpsAPI.getPublic("printers.list", {}),
-        "Data printer publik"
-      ),
-      timeout(
-        TechOpsAPI.getPublic("maintenance.list", {}),
-        "Data maintenance publik"
-      )
-    ]);
-
-    // Data dashboard reguler.
-    state.computers = arr(result[0]);
-    state.printers = arr(result[1]);
-    state.maintenance = arr(result[2]);
-
-    state.archiveCounts = {
-      computers: Number(result[3]?.computers || 0),
-      printers: Number(result[3]?.printers || 0)
-    };
-
-    // Data publik khusus kartu jadwal.
-    state.scheduleComputers = arr(result[4]);
-    state.schedulePrinters = arr(result[5]);
-    state.scheduleMaintenance = arr(result[6]);
-
-    setOnline(true);
+async function loadData() {
+  if (!window.TechOpsAPI) {
+    throw new Error("TechOpsAPI belum tersedia.");
   }
+
+  const includeArchived = TechOpsAPI.isAuthenticated();
+
+  const result = await Promise.all([
+    timeout(
+      TechOpsAPI.get("computers.list", { includeArchived }),
+      "Data komputer"
+    ),
+    timeout(
+      TechOpsAPI.get("printers.list", { includeArchived }),
+      "Data printer"
+    ),
+    timeout(
+      TechOpsAPI.get("maintenance.list"),
+      "Data maintenance"
+    ),
+    timeout(
+      TechOpsAPI.get("inventory.archiveCounts"),
+      "Data arsip"
+    )
+  ]);
+
+  // Data yang sama digunakan oleh seluruh komponen Dashboard.
+  // Backend menentukan apakah respons berupa data Admin atau publik.
+  state.computers = arr(result[0]);
+  state.printers = arr(result[1]);
+  state.maintenance = arr(result[2]);
+
+  state.archiveCounts = {
+    computers: Number(result[3]?.computers || 0),
+    printers: Number(result[3]?.printers || 0)
+  };
+
+  // Sumber data jadwal mengikuti hak akses yang sama.
+  state.scheduleComputers = state.computers;
+  state.schedulePrinters = state.printers;
+  state.scheduleMaintenance = state.maintenance;
+
+  setOnline(true);
+}
+
 
   // =======================================================
   // STRUKTUR DASHBOARD
@@ -1197,30 +1182,28 @@
   // RENDER DASHBOARD
   // =======================================================
 
-  function render() {
-    ensureLayout();
+ function render() {
+  ensureLayout();
 
-    const map = inventoryMap();
+  const map = inventoryMap();
 
-    // Peta perangkat khusus dari data publik Backend.
-    const publicScheduleMap = inventoryMap(
-      state.scheduleComputers,
-      state.schedulePrinters
-    );
+  // Jadwal menggunakan inventaris sesuai hak akses aktif.
+  const scheduleMap = inventoryMap(
+    state.scheduleComputers,
+    state.schedulePrinters
+  );
 
-    renderStats();
-    renderUnits();
-    renderActivities(map);
+  renderStats();
+  renderUnits();
+  renderActivities(map);
 
-    // Kartu jadwal hanya memakai respons publik Backend.
-    renderSchedules(
-      publicScheduleMap,
-      state.scheduleMaintenance
-    );
+  renderSchedules(
+    scheduleMap,
+    state.scheduleMaintenance
+  );
 
-    renderConditions();
-  }
-
+  renderConditions();
+} 
   // =======================================================
   // REFRESH DATA OTOMATIS
   // =======================================================
