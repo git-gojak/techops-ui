@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "gojak-techops-ui-v2";
+const CACHE_NAME = "gojak-techops-ui-v3";
 
 const APP_FILES = [
   "./",
@@ -23,10 +23,7 @@ const APP_FILES = [
   "./icons/app-icon.svg"
 ];
 
-// =====================================================
 // INSTALL
-// =====================================================
-
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -35,10 +32,7 @@ self.addEventListener("install", event => {
   );
 });
 
-// =====================================================
 // ACTIVATE
-// =====================================================
-
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
@@ -54,10 +48,7 @@ self.addEventListener("activate", event => {
   );
 });
 
-// =====================================================
 // FETCH - NETWORK FIRST
-// =====================================================
-
 self.addEventListener("fetch", event => {
   const request = event.request;
 
@@ -65,15 +56,10 @@ self.addEventListener("fetch", event => {
 
   const url = new URL(request.url);
 
-  // Jangan mengganggu API Google Apps Script
-  // atau permintaan ke domain eksternal.
+  // Jangan mengganggu API eksternal.
   if (url.origin !== self.location.origin) return;
 
-  // ---------------------------------------------------
-  // NAVIGASI HALAMAN
-  // Network First, cache sebagai cadangan.
-  // ---------------------------------------------------
-
+  // Navigasi halaman.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -96,11 +82,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // ---------------------------------------------------
-  // FILE LOKAL: CSS, JS, ICON, DAN FILE APLIKASI
-  // Network First, cache sebagai cadangan.
-  // ---------------------------------------------------
-
+  // File CSS, JS, icon, dan file aplikasi.
   event.respondWith(
     fetch(request)
       .then(response => {
