@@ -172,13 +172,7 @@
     return t && id ? `${t}|${id}` : "";
   }
 function maintenanceDeviceKey(type, serial, name) {
-  const t = typeOf(type);
-  const s = String(serial || "").trim().toUpperCase();
-  const n = String(name || "").trim().toUpperCase();
-
-  if (!t || (!s && !n)) return "";
-
-  return JSON.stringify([t, s, n]);
+  return keyOf(type, serial, name);
 }
   function activityType(row) {
     return String(
