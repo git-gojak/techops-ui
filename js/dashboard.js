@@ -781,23 +781,23 @@
           : (row.nama_aset || "Komputer");
 
         const computerBrand = adminView
-          ? (
-              device?.merek ||
-              row.manufacturer ||
-              row.merek ||
-              row.Merek ||
-              "Merek tidak tersedia"
-            )
-          : (
-              row.manufacturer ||
-              row.merek ||
-              row.Merek ||
-              "Merek tidak tersedia"
-            );
-
-        const computerModel = adminView
-          ? (getDeviceModel(row, map) || "Model tidak tersedia")
-          : (row.model || row.Model || "");
+        ? (
+            device?.merek ||
+            row.manufacturer ||
+            row.merek ||
+            row.Merek ||
+            "Merek tidak tersedia"
+          )
+        : (
+            row.manufacturer ||
+            row.merek ||
+            row.Merek ||
+            "Merek tidak tersedia"
+          );
+      
+      const computerModel = adminView
+        ? (getDeviceModel(row, map) || "Model tidak tersedia")
+        : (row.model || row.Model || "");
 
         const computerSerial = adminView
           ? (device?.serial || row.serial || "-")
