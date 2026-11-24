@@ -614,7 +614,6 @@ async function loadData() {
   // =======================================================
   // AKTIVITAS MAINTENANCE TERBARU
   // =======================================================
-
   
 function renderActivities(map) {
   // Ambil maksimal 25 aktivitas terbaru.
@@ -649,68 +648,42 @@ function renderActivities(map) {
   const adminView = isDashboardAdmin();
 
   // Informasi halaman dan tombol navigasi.
-  const pagination = allRows.length
-    ? `
-      <div>
-        <small>
-          Menampilkan ${startIndex + 1}–${endIndex}
-          dari ${allRows.length} aktivitas
-        </small>
+  
+const pagination = allRows.length
+  ? `
+    <div class="dashboard-condition-footer">
+      <small>
+        Menampilkan ${startIndex + 1}–${endIndex}
+        dari ${allRows.length} aktivitas
+      </small>
 
-        ${
-          totalPages > 1
-            ? `
+      ${
+        totalPages > 1
+          ? `
+            <div style="display:flex;gap:8px;">
               <button
                 type="button"
                 class="icon-button"
                 id="activityPrev"
-                aria-label="Halaman sebelumnya"
-                title="Sebelumnya"
+                aria-label="Sebelumnya"
                 ${activityPage === 0 ? "disabled" : ""}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="18"
-                  height="18"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m15 18-6-6 6-6"/>
-                </svg>
-              </button>
+              >‹</button>
 
               <button
                 type="button"
                 class="icon-button"
                 id="activityNext"
-                aria-label="Halaman berikutnya"
-                title="Berikutnya"
+                aria-label="Berikutnya"
                 ${activityPage >= totalPages - 1 ? "disabled" : ""}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="18"
-                  height="18"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m9 18 6-6-6-6"/>
-                </svg>
-              </button>
-            `
-            : ""
-        }
-      </div>
-    `
-    : "";
+              >›</button>
+            </div>
+          `
+          : ""
+      }
+    </div>
+  `
+  : "";
+
 
   const container = $("#latestMaintenance");
   if (!container) return;
