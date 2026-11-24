@@ -1,0 +1,116 @@
+
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Uji Sensor Printer</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f6f8;color:#17202a;padding:16px}
+main{max-width:680px;margin:auto;background:white;padding:20px;border-radius:14px}
+button{width:100%;padding:14px;background:#1769aa;color:white;border:0;border-radius:9px;font-size:16px}
+button:disabled{opacity:.6}
+#status{background:#eef3f7;padding:12px;border-radius:8px;margin:16px 0;white-space:pre-wrap}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{text-align:left;padding:10px 6px;border-bottom:1px solid #ddd;font-size:13px}
+small{display:block;color:#667085;margin-top:16px;line-height:1.5}
+.ok{color:#087443;font-weight:bold}
+.warn{color:#a15c00;font-weight:bold}
+</style>
+</head>
+<body>
+<main>
+<h2>Uji Sensor Backend Printer</h2>
+<p>Membandingkan seluruh kolom data printer Publik dan Admin. Nilai asli tidak ditampilkan.</p>
+<button id="run">Mulai Uji Printer</button>
+<div id="status">Siap melakukan pengujian.</div>
+<div id="result"></div>
+<small>Pengujian hanya membaca API. Tidak mengubah inventaris atau Backend GAS.</small>
+</main>
+
+<script src="./api.js"></script>
+<script>
+const btn=document.getElementById("run");
+const statusBox=document.getElementById("status");
+const result=document.getElementById("result");
+
+function getRows(data){
+  if(Array.isArray(data)) return data;
+  if(Array.isArray(data?.items)) return data.items;
+  if(Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
+btn.onclick=async()=>{
+  btn.disabled=true;
+  result.innerHTML="";
+  statusBox.textContent="Memvalidasi sesi Admin...";
+
+  try{
+    if(!window.TechOpsAPI) throw Error("API tidak termuat.");
+
+    const valid=await TechOpsAPI.validateSession();
+    if(valid!==true) throw Error("Sesi Admin tidak valid. Login ulang.");
+
+    statusBox.textContent="Mengambil data printer Publik dan Admin...";
+
+    const pair=await Promise.all([
+      TechOpsAPI.getPublic("printers.list",{includeArchived:false}),
+      TechOpsAPI.get("printers.list",{includeArchived:false})
+    ]);
+
+    const pub=getRows(pair[0]);
+    const adm=getRows(pair[1]);
+
+    if(!pub.length || !adm.length){
+      throw Error("Data printer kosong atau format respons tidak dikenali.");
+    }
+
+    const total=Math.min(pub.length,adm.length);
+    const keys=[...new Set(
+      [...pub,...adm].flatMap(row=>Object.keys(row||{}))
+    )];
+
+    let html="<p><b>Data Publik:</b> "+pub.length+
+      "<br><b>Data Admin:</b> "+adm.length+
+      "<br><b>Data dibandingkan:</b> "+total+"</p>";
+
+    html+="<table><thead><tr><th>Kolom</th><th>Sama</th><th>Berbeda</th><th>Kosong</th></tr></thead><tbody>";
+
+    keys.forEach(key=>{
+      let same=0,different=0,empty=0;
+
+      for(let i=0;i<total;i++){
+        const a=pub[i]?.[key];
+        const b=adm[i]?.[key];
+
+        if(a===undefined||b===undefined||a===null||b===null||
+           String(a)===""||String(b)===""){
+          empty++;
+        }else if(String(a)!==String(b)){
+          different++;
+        }else{
+          same++;
+        }
+      }
+
+      html+="<tr><td>"+key.replace(/[&<>"]/g,"")+
+        "</td><td>"+same+"</td><td class='"+(different?"ok":"")+"'>"+
+        different+"</td><td>"+empty+"</td></tr>";
+    });
+
+    html+="</tbody></table>";
+    html+="<p class='ok'>Perbandingan selesai. Nilai asli tidak ditampilkan.</p>";
+
+    result.innerHTML=html;
+    statusBox.textContent="Berhasil mengambil dan membandingkan data printer.";
+
+  }catch(e){
+    statusBox.textContent="Uji gagal: "+(e.message||String(e));
+  }finally{
+    btn.disabled=false;
+  }
+};
+</script>
+</body>
+</html>
