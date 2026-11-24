@@ -711,6 +711,7 @@
   // 10 DATA PER HALAMAN + NAVIGASI IKON
   // =======================================================
 
+
   function renderSchedules(map) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -722,30 +723,17 @@
       activityType(row) === "perawatan"
     );
 
-    // Ambil satu catatan perawatan terbaru untuk setiap perangkat.
+    // Satu catatan perawatan terbaru untuk setiap perangkat.
+    // Jadwal diurutkan berdasarkan tanggal paling dekat.
     const schedules = [...latestCare.values()]
       .map(row => ({
         row,
         date: dateOf(row.jadwal)
       }))
       .filter(item => item.date)
-      .sort((a, b) => {
-        const getPriority = date => {
-          if (date < today) return 0;
-          if (date <= limit) return 1;
-          return 2;
-        };
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-        const priorityA = getPriority(a.date);
-        const priorityB = getPriority(b.date);
-
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-
-        return a.date - b.date;
-      });
-
+    // Ringkasan jadwal.
     const late = schedules.filter(item => item.date < today);
 
     const soon = schedules.filter(
@@ -754,6 +742,7 @@
 
     const later = schedules.filter(item => item.date > limit);
 
+    // Pagination.
     const perPage = 10;
     const totalPages = Math.ceil(schedules.length / perPage);
 
@@ -768,40 +757,63 @@
       schedules.length
     );
 
-    const visibleSchedules = schedules.slice(startIndex, endIndex);
+    const visibleSchedules = schedules.slice(
+      startIndex,
+      endIndex
+    );
+
     const adminView = isDashboardAdmin();
 
+    // Tampilan setiap perangkat.
     const list = visibleSchedules.map(({ row, date }) => {
       const type = typeOf(row.jenis_aset);
       const device = findInventoryDevice(row, map);
 
+      // =========================================
+      // KOMPUTER
+      // =========================================
       if (type === "komputer") {
         const computerName = adminView
-          ? (device?.name || row.nama_aset || "Komputer")
-          : (row.nama_aset || "Komputer");
+          ? (
+              device?.name ||
+              row.nama_aset ||
+              "Komputer"
+            )
+          : (
+              row.nama_aset ||
+              "Komputer"
+            );
 
-        const computerBrand = adminView
-        ? (
-            device?.merek ||
-            row.manufacturer ||
-            row.merek ||
-            row.Merek ||
-            "Merek tidak tersedia"
-          )
-        : (
-            row.manufacturer ||
-            row.merek ||
-            row.Merek ||
-            "Merek tidak tersedia"
-          );
-      
-      const computerModel = adminView
-        ? (getDeviceModel(row, map) || "Model tidak tersedia")
-        : (row.model || row.Model || "");
+        // Merek tetap terlihat untuk publik dan Admin.
+        // Utamakan data inventaris.
+        const computerBrand =
+          device?.merek ||
+          row.manufacturer ||
+          row.merek ||
+          row.Merek ||
+          "Merek tidak tersedia";
 
+        // Model asli hanya terlihat oleh Admin.
+        const computerModel = adminView
+          ? (
+              device?.model ||
+              row.model ||
+              row.Model ||
+              "Model tidak tersedia"
+            )
+          : "[Model disensor]";
+
+        // Serial mengikuti sensor yang sudah diterapkan API.
         const computerSerial = adminView
-          ? (device?.serial || row.serial || "-")
-          : (row.serial || "");
+          ? (
+              device?.serial ||
+              row.serial ||
+              "-"
+            )
+          : (
+              row.serial ||
+              ""
+            );
 
         const computerDetail = [
           computerBrand,
@@ -823,86 +835,144 @@
         `;
       }
 
-      const printerUnit = device?.name ||
-        row.nama_aset ||
-        "Printer";
+      // =========================================
+      // PRINTER
+      // Tidak menggunakan sensor komputer.
+      // =========================================
+      if (type === "printer") {
+        const printerUnit =
+          device?.name ||
+          row.nama_aset ||
+          "Printer";
 
-      const printerBrand = device?.merek ||
-        row.merek ||
-        row.Merek ||
-        "Merek tidak tersedia";
+        const printerBrand =
+          device?.merek ||
+          row.merek ||
+          row.Merek ||
+          row.manufacturer ||
+          "Merek tidak tersedia";
 
-      const printerModel = device?.model ||
-        row.model ||
-        row.Model ||
-        "Model tidak tersedia";
+        const printerModel =
+          device?.model ||
+          row.model ||
+          row.Model ||
+          "Model tidak tersedia";
 
-      const printerSerial = device?.serial ||
-        row.serial ||
-        "-";
+        const printerSerial =
+          device?.serial ||
+          row.serial ||
+          "-";
 
-      return `
-        <div class="dashboard-schedule-item">
-          <div>
-            <strong>${esc(printerUnit)}</strong>
-            <small>
-              ${esc(printerBrand)} - ${esc(printerModel)} - ${esc(printerSerial)}
-            </small>
+        return `
+          <div class="dashboard-schedule-item">
+            <div>
+              <strong>${esc(printerUnit)}</strong>
+              <small>
+                ${esc(printerBrand)} - ${esc(printerModel)} - ${esc(printerSerial)}
+              </small>
+            </div>
+            <time>${esc(fmtDate(date))}</time>
           </div>
-          <time>${esc(fmtDate(date))}</time>
-        </div>
-      `;
+        `;
+      }
+
+      return "";
     }).join("");
 
-    const pagination = totalPages > 1
+    // Informasi jumlah jadwal dan navigasi halaman.
+    const pagination = schedules.length
       ? `
         <div class="dashboard-schedule-pagination"
-          style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+          style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-top:14px;
+          ">
 
           <small style="color:var(--text-secondary,#888);">
-            ${startIndex + 1}–${endIndex} dari ${schedules.length} jadwal
+            Menampilkan ${startIndex + 1}–${endIndex}
+            dari ${schedules.length} jadwal
           </small>
 
-          <div style="display:flex;gap:8px;">
-            <button
-              type="button"
-              id="schedulePrev"
-              aria-label="Halaman sebelumnya"
-              title="Sebelumnya"
-              ${schedulePage === 0 ? "disabled" : ""}
-              style="width:34px;height:34px;border:1px solid var(--border-color,#ddd);border-radius:8px;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:${schedulePage === 0 ? "0.4" : "1"};">
+          ${
+            totalPages > 1
+              ? `
+                <div style="display:flex;gap:8px;">
+                  <button
+                    type="button"
+                    id="schedulePrev"
+                    aria-label="Halaman sebelumnya"
+                    title="Sebelumnya"
+                    ${schedulePage === 0 ? "disabled" : ""}
+                    style="
+                      width:34px;
+                      height:34px;
+                      border:1px solid var(--border-color,#ddd);
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      cursor:pointer;
+                      opacity:${schedulePage === 0 ? "0.4" : "1"};
+                    ">
+                    <svg viewBox="0 0 24 24"
+                      width="18" height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true">
+                      <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                  </button>
 
-              <svg viewBox="0 0 24 24" width="18" height="18"
-                fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round"
-                aria-hidden="true">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
-            </button>
-
-            <button
-              type="button"
-              id="scheduleNext"
-              aria-label="Halaman berikutnya"
-              title="Berikutnya"
-              ${schedulePage >= totalPages - 1 ? "disabled" : ""}
-              style="width:34px;height:34px;border:1px solid var(--border-color,#ddd);border-radius:8px;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:${schedulePage >= totalPages - 1 ? "0.4" : "1"};">
-
-              <svg viewBox="0 0 24 24" width="18" height="18"
-                fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round"
-                aria-hidden="true">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
-            </button>
-          </div>
+                  <button
+                    type="button"
+                    id="scheduleNext"
+                    aria-label="Halaman berikutnya"
+                    title="Berikutnya"
+                    ${schedulePage >= totalPages - 1 ? "disabled" : ""}
+                    style="
+                      width:34px;
+                      height:34px;
+                      border:1px solid var(--border-color,#ddd);
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      cursor:pointer;
+                      opacity:${schedulePage >= totalPages - 1 ? "0.4" : "1"};
+                    ">
+                    <svg viewBox="0 0 24 24"
+                      width="18" height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                  </button>
+                </div>
+              `
+              : ""
+          }
         </div>
       `
-      : schedules.length
-        ? `<small class="dashboard-more">${schedules.length} jadwal</small>`
-        : "";
+      : "";
 
-    $("#dashboardSchedules").innerHTML = `
+    // Render kartu.
+    const container = $("#dashboardSchedules");
+    if (!container) return;
+
+    container.innerHTML = `
       <div class="dashboard-schedule-summary">
         <div class="schedule-overdue">
           <strong>${late.length}</strong>
@@ -933,6 +1003,7 @@
       ${pagination}
     `;
 
+    // Navigasi halaman sebelumnya.
     $("#schedulePrev")?.addEventListener("click", () => {
       if (schedulePage > 0) {
         schedulePage--;
@@ -940,6 +1011,7 @@
       }
     });
 
+    // Navigasi halaman berikutnya.
     $("#scheduleNext")?.addEventListener("click", () => {
       if (schedulePage < totalPages - 1) {
         schedulePage++;
