@@ -751,6 +751,10 @@ async function loadData() {
     limit.setDate(limit.getDate() + 30);
 
     // Satu catatan perawatan terbaru untuk setiap perangkat.
+         const latestCare = latestMaintenanceMap(
+      row => activityType(row) === "perawatan",
+      maintenanceRows
+    );
     // Jadwal diurutkan berdasarkan tanggal paling dekat.
     const schedules = [...latestCare.values()]
       .map(row => ({
