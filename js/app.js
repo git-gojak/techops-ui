@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const navButtons = document.querySelectorAll("[data-page]");
   const sections = document.querySelectorAll(".page-section");
-
+let activePage = "dashboard";
   const pageTitle = document.getElementById("pageTitle");
   const pageSubtitle = document.getElementById("pageSubtitle");
   const sidebar = document.getElementById("sidebar");
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function navigateTo(page) {
     if (!pageTitles[page]) return;
-
+activePage = page;
     sections.forEach(section => {
       section.classList.toggle(
         "active",
@@ -96,10 +96,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     closeSidebar();
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
+// Beri tahu modul bahwa halaman aktif telah berubah.
+document.dispatchEvent(
+  new CustomEvent("techops:pagechange", {
+    detail: { page: activePage }
+  })
+);
+
+window.scrollTo({
+  top: 0,
+  behavior: "smooth"
+});
   }
 
   function closeSidebar() {
@@ -175,11 +182,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // API navigasi dan proteksi untuk modul lain.
   window.TechOps = {
-    navigateTo,
-    isAdmin,
-    requireAdmin,
-    refreshAdminUI
-  };
+  navigateTo,
+  getActivePage: () => activePage,
+  isAdmin,
+  requireAdmin,
+  refreshAdminUI
+};
 
   // Sinkronisasi tampilan awal.
   refreshAdminUI();
