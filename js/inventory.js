@@ -625,25 +625,55 @@
   }
 
   function initialize() {
-    renderPage("computers");
-    renderPage("printers");
+  // Siapkan struktur kedua halaman.
+  // Tidak mengambil data keduanya sekaligus.
+  renderPage("computers");
+  renderPage("printers");
 
-    load("computers");
-    load("printers");
+  refreshAdminButtons();
 
-    refreshAdminButtons();
+  // Memuat hanya halaman inventaris yang sedang aktif.
+  function loadActivePage() {
+    const page = window.TechOps?.getActivePage?.();
 
-    document.addEventListener("techops:authchange", () => {
-      refreshAdminButtons();
+    if (page === "computers") {
       load("computers");
-      load("printers");
-    });
+    }
 
-    document.addEventListener("techops:admin-ui-updated", () => {
-      refreshAdminButtons();
-      drawTable("computers");
-      drawTable("printers");
-    });
+    if (page === "printers") {
+      load("printers");
+    }
+  }
+
+  // Saat pengguna membuka Komputer atau Printer.
+  document.addEventListener("techops:pagechange", event => {
+    const page = event.detail?.page;
+
+    if (page === "computers") {
+      load("computers");
+    }
+
+    if (page === "printers") {
+      load("printers");
+    }
+  });
+
+  // Login/logout hanya memuat ulang halaman inventaris aktif.
+  document.addEventListener("techops:authchange", () => {
+    refreshAdminButtons();
+    loadActivePage();
+  });
+
+  // Perubahan tampilan khusus Admin tetap dipertahankan.
+  document.addEventListener("techops:admin-ui-updated", () => {
+    refreshAdminButtons();
+    drawTable("computers");
+    drawTable("printers");
+  });
+
+  // Jika halaman awal diatur ke Komputer atau Printer,
+  // muat halaman tersebut saja.
+  loadActivePage();
   }
 
   document.addEventListener("DOMContentLoaded", initialize);
