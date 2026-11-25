@@ -901,3 +901,41 @@
 .maintenance-field[hidden] {
   display: none !important;
 }
+
+/* =========================================================
+   INVENTORY TABLE — SORTABLE COLUMN
+   Komputer, Printer, dan Maintenance
+   ========================================================= */
+
+.inventory-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.inventory-sort-button:hover {
+  color: var(--blue-light);
+}
+
+.inventory-sort-button:focus-visible {
+  outline: 2px solid var(--blue-light);
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.inventory-sort-indicator {
+  min-width: 12px;
+  color: var(--blue-light);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
