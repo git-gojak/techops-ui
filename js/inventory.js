@@ -859,154 +859,26 @@
   }
 
   // =======================================================
-  // DETAIL INVENTARIS
+  // DETAIL INVENTARIS — MODE BACA SAJA
   // =======================================================
 
   function showDetail(type, row) {
-    const status = String(row.status || "Aktif");
-    const archived = status.toLowerCase() === "arsip";
-
-    const title = type === "computers"
-      ? row.komputer || "Detail Komputer"
-      : row.unit || "Detail Printer";
-
-    const subtitle = [
-      row.merek || "",
-      row.model || ""
-    ].filter(Boolean).join(" · ") || "Informasi perangkat";
-
-    function detailField(key) {
-      const value = getValue(type, row, key);
-
-      const display = (
-        value === null ||
-        value === undefined ||
-        String(value).trim() === ""
-      ) ? "-" : value;
-
-      return `
-        <div class="maintenance-detail-field">
-          ${inventoryIcon(key)}
-          <strong>${escape(display)}</strong>
-        </div>
-      `;
-    }
-
-    function detailSection(sectionTitle, keys) {
-      return `
-        <section class="maintenance-form-section">
-
-          <div class="maintenance-form-section-title">
-            <h3>${escape(sectionTitle)}</h3>
-          </div>
-
-          <div class="maintenance-detail-grid">
-            ${keys.map(detailField).join("")}
-          </div>
-
-        </section>
-      `;
-    }
-
-    const heading = `
-      <div class="maintenance-confirmation-heading">
-        <div>
-          <strong>${escape(subtitle)}</strong>
-        </div>
-
-        <span class="inventory-status ${archived ? "archived" : "active"}">
-          ${escape(status)}
-        </span>
-      </div>
-    `;
-
-    let details = "";
-
-    if (type === "computers") {
-      details = `
-        ${detailSection(
-          "Identitas Perangkat",
-          [
-            "tahun",
-            "serial"
-          ]
-        )}
-
-        ${detailSection(
-          "Spesifikasi Hardware",
-          [
-            "cpu",
-            "core",
-            "thread",
-            "ram",
-            "storage",
-            "gpu"
-          ]
-        )}
-
-        ${detailSection(
-          "Sistem dan Pengguna",
-          [
-            "os",
-            "pengguna"
-          ]
-        )}
-
-        ${detailSection(
-          "Informasi Pemeliharaan",
-          [
-            "scan_terakhir",
-            "perubahan"
-          ]
-        )}
-      `;
-
-    } else {
-      details = `
-        ${detailSection(
-          "Identitas Perangkat",
-          [
-            "serial",
-            "tinta"
-          ]
-        )}
-
-        ${detailSection(
-          "Informasi Masa Pakai",
-          [
-            "ftp",
-            "mp"
-          ]
-        )}
-      `;
-    }
-
-    openModal(
-      title,
-      `
-        <div class="inventory-detail">
-
-          ${heading}
-
-          ${details}
-
-        </div>
-      `
-    );
+    openForm(type, row, true);
   }
 
   // =======================================================
   // FORM TAMBAH DAN EDIT
   // =======================================================
 
-  function openForm(type, row = null) {
-    if (!isAdmin()) {
+  function openForm(type, row = null, readonlyMode = false) {
+    if (!readonlyMode && !isAdmin()) {
       alert("Silakan login sebagai Admin.");
       return;
     }
 
     const config = CONFIG[type];
     const editing = !!row;
+    const viewing = readonlyMode === true;
 
     const fieldsByKey = new Map(
       config.fields.map(field => [field[0], field])
@@ -1026,6 +898,7 @@
       }
 
       const readonly = editing && key === "serial";
+      const disabled = viewing;
 
       return `
         <label class="maintenance-field ${fullWidth ? "maintenance-field-wide" : ""}">
@@ -1042,6 +915,7 @@
             value="${escape(value)}"
             ${config.required.includes(key) ? "required" : ""}
             ${readonly ? "readonly" : ""}
+            ${disabled ? "disabled" : ""}
             ${inputType === "number" ? 'min="0" step="1"' : ""}
             autocomplete="off">
 
@@ -1130,9 +1004,11 @@
     }
 
     const overlay = openModal(
-      editing
-        ? `Edit ${type === "computers" ? "Komputer" : "Printer"}`
-        : `Tambah ${type === "computers" ? "Komputer" : "Printer"}`,
+      viewing
+        ? `Detail ${type === "computers" ? "Komputer" : "Printer"}`
+        : editing
+          ? `Edit ${type === "computers" ? "Komputer" : "Printer"}`
+          : `Tambah ${type === "computers" ? "Komputer" : "Printer"}`,
 
       `
         <form class="inventory-form maintenance-form">
@@ -1150,14 +1026,16 @@
               type="button"
               class="inventory-button"
               data-cancel>
-              Batal
+              ${viewing ? "Tutup" : "Batal"}
             </button>
 
-            <button
-              type="submit"
-              class="inventory-button inventory-primary">
-              ${editing ? "Simpan Perubahan" : "Simpan Data"}
-            </button>
+            ${viewing ? "" : `
+              <button
+                type="submit"
+                class="inventory-button inventory-primary">
+                ${editing ? "Simpan Perubahan" : "Simpan Data"}
+              </button>
+            `}
 
           </div>
 
@@ -1178,6 +1056,9 @@
     }
 
     $("[data-cancel]", overlay).onclick = closeModal;
+
+    // Detail hanya untuk membaca, tidak boleh menyimpan.
+    if (viewing) return;
 
     form.addEventListener("submit", async event => {
       event.preventDefault();
