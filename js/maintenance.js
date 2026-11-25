@@ -12,7 +12,6 @@
   const $ = (selector, root = document) =>
     root.querySelector(selector);
 
-  
   let pageSize = 10;
   let selectedDevice = null;
   let qrScanner = null;
@@ -21,6 +20,7 @@
   let currentPage = 1;
   let lastUpdated = null;
   let initialized = false;
+  let dataLoaded = false;
 
   // =======================================================
   // UTILITAS
@@ -116,7 +116,6 @@
 
   // =======================================================
   // MASKING DATA PUBLIK
-  // Mengikuti aturan masking modul lama.
   // =======================================================
 
   function maskSerial(value) {
@@ -232,295 +231,287 @@
   // HALAMAN MAINTENANCE
   // =======================================================
 
-  
-function render() {
-  const root = getRoot();
+  function render() {
+    const root = getRoot();
 
-  if (!root) {
-    console.error("Area #maintenanceRoot tidak ditemukan.");
-    return;
-  }
-
-  const rows = Array.isArray(window.TechOpsMaintenanceData)
-    ? window.TechOpsMaintenanceData
-    : [];
-
-  root.innerHTML = `
-    <div class="inventory-page">
-
-      <div class="inventory-heading">
-        <div>
-          <span class="inventory-eyebrow">MANAJEMEN PERANGKAT</span>
-          <h2>Riwayat Maintenance</h2>
-          <p>
-            Catatan perawatan dan perbaikan komputer maupun printer.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          class="inventory-button"
-          id="maintenanceRefresh">
-          ↻ Perbarui
-        </button>
-      </div>
-
-      <div class="inventory-toolbar">
-        <input
-          type="search"
-          id="maintenanceSearch"
-          class="inventory-search"
-          placeholder="Cari perangkat, serial, kegiatan, teknisi..."
-          value="${escapeHTML(currentQuery)}"
-          aria-label="Cari riwayat Maintenance"
-          autocomplete="off">
-
-        ${isAdmin() ? `
-          <button
-            type="button"
-            class="inventory-button inventory-primary"
-            id="scanMaintenanceQR">
-            ▦ Scan QR
-          </button>
-        ` : ""}
-      </div>
-
-      <div class="inventory-summary" id="maintenanceSummary">
-        <span>Total riwayat: <strong>${rows.length}</strong></span>
-        <span>Hasil pencarian: <strong>—</strong></span>
-        <span>Data diperbarui: <strong>Belum tersedia</strong></span>
-      </div>
-
-      <div class="inventory-table-wrap">
-        <table class="inventory-table">
-          <thead>
-            <tr>
-              <th>No.</th>
-              <th>Tanggal</th>
-              <th>Jenis</th>
-              <th>Nama Perangkat</th>
-              <th>Serial</th>
-              <th>Kegiatan</th>
-              <th>Keterangan</th>
-              <th>Kondisi</th>
-              <th>Penanganan</th>
-            </tr>
-          </thead>
-
-          <tbody id="maintenanceTableBody">
-            <tr>
-              <td colspan="9">Memuat data Maintenance...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="inventory-footer">
-        <span id="maintenancePageInfo">Menyiapkan data...</span>
-
-        <div class="inventory-pagination">
-          <select
-            id="maintenancePageSize"
-            aria-label="Jumlah data per halaman">
-            <option value="10" ${pageSize === 10 ? "selected" : ""}>10 data</option>
-            <option value="20" ${pageSize === 20 ? "selected" : ""}>20 data</option>
-            <option value="50" ${pageSize === 50 ? "selected" : ""}>50 data</option>
-            <option value="all" ${pageSize === "all" ? "selected" : ""}>Semua</option>
-          </select>
-
-          <button
-            type="button"
-            class="inventory-button"
-            id="maintenancePrev"
-            aria-label="Halaman sebelumnya">
-            ‹
-          </button>
-
-          <button
-            type="button"
-            class="inventory-button"
-            id="maintenanceNext"
-            aria-label="Halaman berikutnya">
-            ›
-          </button>
-        </div>
-      </div>
-
-    </div>
-  `;
-
-  $("#maintenanceRefresh")?.addEventListener("click", refresh);
-
-  $("#maintenanceSearch")?.addEventListener("input", event => {
-    currentQuery = event.target.value;
-    currentPage = 1;
-    drawTable();
-  });
-
-  $("#scanMaintenanceQR")?.addEventListener("click", openScanner);
-
-  $("#maintenancePageSize")?.addEventListener("change", event => {
-    pageSize = event.target.value === "all"
-      ? "all"
-      : Number(event.target.value);
-
-    currentPage = 1;
-    drawTable();
-  });
-
-  $("#maintenancePrev")?.addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage--;
-      drawTable();
+    if (!root) {
+      console.error("Area #maintenanceRoot tidak ditemukan.");
+      return;
     }
-  });
 
-  $("#maintenanceNext")?.addEventListener("click", () => {
-    currentPage++;
+    const rows = Array.isArray(window.TechOpsMaintenanceData)
+      ? window.TechOpsMaintenanceData
+      : [];
+
+    root.innerHTML = `
+      <div class="inventory-page">
+
+        <div class="inventory-heading">
+          <div>
+            <span class="inventory-eyebrow">MANAJEMEN PERANGKAT</span>
+            <h2>Riwayat Maintenance</h2>
+            <p>
+              Catatan perawatan dan perbaikan komputer maupun printer.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="inventory-button"
+            id="maintenanceRefresh">
+            ↻ Perbarui
+          </button>
+        </div>
+
+        <div class="inventory-toolbar">
+          <input
+            type="search"
+            id="maintenanceSearch"
+            class="inventory-search"
+            placeholder="Cari perangkat, serial, kegiatan, teknisi..."
+            value="${escapeHTML(currentQuery)}"
+            aria-label="Cari riwayat Maintenance"
+            autocomplete="off">
+
+          ${isAdmin() ? `
+            <button
+              type="button"
+              class="inventory-button inventory-primary"
+              id="scanMaintenanceQR">
+              ▦ Scan QR
+            </button>
+          ` : ""}
+        </div>
+
+        <div class="inventory-summary" id="maintenanceSummary">
+          <span>Total riwayat: <strong>${rows.length}</strong></span>
+          <span>Hasil pencarian: <strong>—</strong></span>
+          <span>Data diperbarui: <strong>Belum tersedia</strong></span>
+        </div>
+
+        <div class="inventory-table-wrap">
+          <table class="inventory-table">
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Tanggal</th>
+                <th>Jenis</th>
+                <th>Nama Perangkat</th>
+                <th>Serial</th>
+                <th>Kegiatan</th>
+                <th>Keterangan</th>
+                <th>Kondisi</th>
+                <th>Penanganan</th>
+              </tr>
+            </thead>
+
+            <tbody id="maintenanceTableBody">
+              <tr>
+                <td colspan="9">Memuat data Maintenance...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="inventory-footer">
+          <span id="maintenancePageInfo">Menyiapkan data...</span>
+
+          <div class="inventory-pagination">
+            <select
+              id="maintenancePageSize"
+              aria-label="Jumlah data per halaman">
+              <option value="10" ${pageSize === 10 ? "selected" : ""}>10 data</option>
+              <option value="20" ${pageSize === 20 ? "selected" : ""}>20 data</option>
+              <option value="50" ${pageSize === 50 ? "selected" : ""}>50 data</option>
+              <option value="all" ${pageSize === "all" ? "selected" : ""}>Semua</option>
+            </select>
+
+            <button
+              type="button"
+              class="inventory-button"
+              id="maintenancePrev"
+              aria-label="Halaman sebelumnya">
+              ‹
+            </button>
+
+            <button
+              type="button"
+              class="inventory-button"
+              id="maintenanceNext"
+              aria-label="Halaman berikutnya">
+              ›
+            </button>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    $("#maintenanceRefresh")?.addEventListener("click", refresh);
+
+    $("#maintenanceSearch")?.addEventListener("input", event => {
+      currentQuery = event.target.value;
+      currentPage = 1;
+      drawTable();
+    });
+
+    $("#scanMaintenanceQR")?.addEventListener("click", openScanner);
+
+    $("#maintenancePageSize")?.addEventListener("change", event => {
+      pageSize = event.target.value === "all"
+        ? "all"
+        : Number(event.target.value);
+
+      currentPage = 1;
+      drawTable();
+    });
+
+    $("#maintenancePrev")?.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        drawTable();
+      }
+    });
+
+    $("#maintenanceNext")?.addEventListener("click", () => {
+      currentPage++;
+      drawTable();
+    });
+
     drawTable();
-  });
-
-  drawTable();
-  iconRefresh();
-}
-
+    iconRefresh();
+  }
 
   // =======================================================
   // TABEL RIWAYAT
   // =======================================================
 
- 
-function drawTable() {
-  const body = $("#maintenanceTableBody");
-  if (!body) return;
+  function drawTable() {
+    const body = $("#maintenanceTableBody");
+    if (!body) return;
 
-  const all = Array.isArray(window.TechOpsMaintenanceData)
-    ? window.TechOpsMaintenanceData
-    : [];
+    const all = Array.isArray(window.TechOpsMaintenanceData)
+      ? window.TechOpsMaintenanceData
+      : [];
 
-  const query = String(currentQuery || "").toLowerCase().trim();
+    const query = String(currentQuery || "").toLowerCase().trim();
 
-  const filteredRows = all.filter(row => [
-    "Tanggal",
-    "jenis_aset",
-    "nama_aset",
-    "serial",
-    "kegiatan",
-    "jenis_kegiatan",
-    "kondisi",
-    "keterangan",
-    "teknisi",
-    "jadwal"
-  ].some(key =>
-    String(row[key] ?? "").toLowerCase().includes(query)
-  ));
+    const filteredRows = all.filter(row => [
+      "Tanggal",
+      "jenis_aset",
+      "nama_aset",
+      "serial",
+      "kegiatan",
+      "jenis_kegiatan",
+      "kondisi",
+      "keterangan",
+      "teknisi",
+      "jadwal"
+    ].some(key =>
+      String(row[key] ?? "").toLowerCase().includes(query)
+    ));
 
-  const size = pageSize === "all"
-    ? Math.max(filteredRows.length, 1)
-    : pageSize;
+    const size = pageSize === "all"
+      ? Math.max(filteredRows.length, 1)
+      : pageSize;
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredRows.length / size)
-  );
+    const totalPages = Math.max(
+      1,
+      Math.ceil(filteredRows.length / size)
+    );
 
-  currentPage = Math.min(
-    Math.max(currentPage, 1),
-    totalPages
-  );
+    currentPage = Math.min(
+      Math.max(currentPage, 1),
+      totalPages
+    );
 
-  const startIndex = (currentPage - 1) * size;
+    const startIndex = (currentPage - 1) * size;
 
-  const visibleRows = filteredRows.slice(
-    startIndex,
-    startIndex + size
-  );
+    const visibleRows = filteredRows.slice(
+      startIndex,
+      startIndex + size
+    );
 
-  const endIndex = startIndex + visibleRows.length;
+    const endIndex = startIndex + visibleRows.length;
 
-  // Ringkasan data
-  const updatedLabel = lastUpdated
-    ? new Intl.DateTimeFormat("id-ID", {
-        dateStyle: "medium",
-        timeStyle: "short"
-      }).format(new Date(lastUpdated))
-    : "Belum tersedia";
+    const updatedLabel = lastUpdated
+      ? new Intl.DateTimeFormat("id-ID", {
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(new Date(lastUpdated))
+      : "Belum tersedia";
 
-  const summary = $("#maintenanceSummary");
+    const summary = $("#maintenanceSummary");
 
-  if (summary) {
-    summary.innerHTML = `
-      <span>Total riwayat: <strong>${all.length}</strong></span>
-      <span>Hasil pencarian: <strong>${filteredRows.length}</strong></span>
-      <span>Data diperbarui: <strong>${escapeHTML(updatedLabel)}</strong></span>
-    `;
-  }
+    if (summary) {
+      summary.innerHTML = `
+        <span>Total riwayat: <strong>${all.length}</strong></span>
+        <span>Hasil pencarian: <strong>${filteredRows.length}</strong></span>
+        <span>Data diperbarui: <strong>${escapeHTML(updatedLabel)}</strong></span>
+      `;
+    }
 
-  // Isi tabel
-  if (!visibleRows.length) {
-    body.innerHTML = `
-      <tr>
-        <td colspan="9">Tidak ada riwayat Maintenance yang cocok.</td>
-      </tr>
-    `;
-  } else {
-    body.innerHTML = visibleRows.map((row, index) => {
-      const isPrinter =
-        String(row.jenis_aset || "").toLowerCase() === "printer";
-
-      return `
+    if (!visibleRows.length) {
+      body.innerHTML = `
         <tr>
-          <td>${startIndex + index + 1}</td>
-
-          <td>${escapeHTML(formatDate(row.Tanggal))}</td>
-
-          <td>${escapeHTML(row.jenis_aset || "-")}</td>
-
-          <td>
-            ${escapeHTML(
-              isPrinter
-                ? row.nama_aset || "-"
-                : maskComputerName(row.nama_aset)
-            )}
-          </td>
-
-          <td>${escapeHTML(maskSerial(row.serial))}</td>
-
-          <td>
-            ${escapeHTML(
-              row.jenis_kegiatan ||
-              row.kegiatan ||
-              "-"
-            )}
-          </td>
-
-          <td>${escapeHTML(row.keterangan || "-")}</td>
-
-          <td>${escapeHTML(row.kondisi || "-")}</td>
-
-          <td>${escapeHTML(row.teknisi || "-")}</td>
+          <td colspan="9">Tidak ada riwayat Maintenance yang cocok.</td>
         </tr>
       `;
-    }).join("");
+    } else {
+      body.innerHTML = visibleRows.map((row, index) => {
+        const isPrinter =
+          String(row.jenis_aset || "").toLowerCase() === "printer";
+
+        return `
+          <tr>
+            <td>${startIndex + index + 1}</td>
+
+            <td>${escapeHTML(formatDate(row.Tanggal))}</td>
+
+            <td>${escapeHTML(row.jenis_aset || "-")}</td>
+
+            <td>
+              ${escapeHTML(
+                isPrinter
+                  ? row.nama_aset || "-"
+                  : maskComputerName(row.nama_aset)
+              )}
+            </td>
+
+            <td>${escapeHTML(maskSerial(row.serial))}</td>
+
+            <td>
+              ${escapeHTML(
+                row.jenis_kegiatan ||
+                row.kegiatan ||
+                "-"
+              )}
+            </td>
+
+            <td>${escapeHTML(row.keterangan || "-")}</td>
+
+            <td>${escapeHTML(row.kondisi || "-")}</td>
+
+            <td>${escapeHTML(row.teknisi || "-")}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    const pageInfo = $("#maintenancePageInfo");
+
+    if (pageInfo) {
+      pageInfo.textContent = filteredRows.length
+        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${filteredRows.length} riwayat`
+        : "Tidak ada data";
+    }
+
+    const prev = $("#maintenancePrev");
+    const next = $("#maintenanceNext");
+
+    if (prev) prev.disabled = currentPage <= 1;
+    if (next) next.disabled = currentPage >= totalPages;
   }
-
-  // Informasi halaman
-  const pageInfo = $("#maintenancePageInfo");
-
-  if (pageInfo) {
-    pageInfo.textContent = filteredRows.length
-      ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${filteredRows.length} riwayat`
-      : "Tidak ada data";
-  }
-
-  // Tombol navigasi
-  const prev = $("#maintenancePrev");
-  const next = $("#maintenanceNext");
-
-  if (prev) prev.disabled = currentPage <= 1;
-  if (next) next.disabled = currentPage >= totalPages;
-}
-
 
   // =======================================================
   // QR SCANNER
@@ -552,10 +543,7 @@ function drawTable() {
       </div>
     `;
 
-    showModal(
-      "Scan QR Perangkat",
-      content
-    );
+    showModal("Scan QR Perangkat", content);
 
     startScanner();
   }
@@ -568,7 +556,6 @@ function drawTable() {
     if (!window.Html5Qrcode) {
       message.textContent =
         "Library QR Scanner tidak ditemukan. Periksa koneksi internet.";
-
       return;
     }
 
@@ -577,9 +564,7 @@ function drawTable() {
     scannerStarting = true;
 
     try {
-      qrScanner = new Html5Qrcode(
-        "maintenanceQrReader"
-      );
+      qrScanner = new Html5Qrcode("maintenanceQrReader");
 
       await qrScanner.start(
         { facingMode: "environment" },
@@ -596,9 +581,7 @@ function drawTable() {
 
           await stopScanner();
 
-          const currentMessage = $(
-            "#maintenanceScanMessage"
-          );
+          const currentMessage = $("#maintenanceScanMessage");
 
           if (currentMessage) {
             currentMessage.textContent =
@@ -672,9 +655,7 @@ function drawTable() {
         {};
 
       if (!Object.keys(device).length) {
-        throw new Error(
-          "Data perangkat tidak ditemukan."
-        );
+        throw new Error("Data perangkat tidak ditemukan.");
       }
 
       const assetType = String(
@@ -735,18 +716,13 @@ function drawTable() {
         unit: getValue(device, ["unit", "Unit"])
       };
 
-      // Publik hanya melihat informasi dan riwayat.
-      // Data publik sudah disensor oleh backend.
       if (!isAdmin()) {
         showPublicDeviceInfo(result, device, isComputer);
         return;
       }
 
-      // Admin memerlukan serial untuk pencatatan Maintenance.
       if (!selectedDevice.serial) {
-        throw new Error(
-          "Serial perangkat tidak ditemukan."
-        );
+        throw new Error("Serial perangkat tidak ditemukan.");
       }
 
       showDeviceConfirmation();
@@ -891,6 +867,7 @@ function drawTable() {
     $("#maintenanceScanAgain")
       ?.addEventListener("click", openScanner);
   }
+
   // =======================================================
   // KONFIRMASI IDENTITAS PERANGKAT
   // =======================================================
@@ -973,10 +950,7 @@ function drawTable() {
       </div>
     `;
 
-    showModal(
-      "Konfirmasi Perangkat",
-      content
-    );
+    showModal("Konfirmasi Perangkat", content);
 
     $("#maintenanceRescan")
       ?.addEventListener("click", openScanner);
@@ -1331,10 +1305,7 @@ function drawTable() {
       });
     });
 
-    form.addEventListener(
-      "submit",
-      submitMaintenance
-    );
+    form.addEventListener("submit", submitMaintenance);
   }
 
   // =======================================================
@@ -1346,10 +1317,7 @@ function drawTable() {
       'input[name="maintenanceActivity"]:checked'
     )?.value;
 
-    const wrapper = $(
-      "#maintenanceRepairTypeWrap"
-    );
-
+    const wrapper = $("#maintenanceRepairTypeWrap");
     const notes = $("#maintenanceNotes");
 
     const repairTypes = document.querySelectorAll(
@@ -1504,10 +1472,7 @@ function drawTable() {
       }
 
     } catch (error) {
-      console.error(
-        "Maintenance create gagal:",
-        error
-      );
+      console.error("Maintenance create gagal:", error);
 
       showFormMessage(
         error?.message ||
@@ -1521,10 +1486,8 @@ function drawTable() {
       return;
     }
 
-    // Penyimpanan berhasil.
     closeModal();
 
-    // Muat ulang riwayat dari backend.
     try {
       await refresh();
 
@@ -1537,8 +1500,7 @@ function drawTable() {
 
     render();
 
-    // Pertahankan perilaku lama:
-    // scanner dibuka kembali untuk perangkat berikutnya.
+    // Scanner dibuka kembali untuk perangkat berikutnya.
     openScanner();
   }
 
@@ -1547,10 +1509,7 @@ function drawTable() {
     if (!target) return;
 
     target.textContent = message;
-    target.classList.toggle(
-      "error",
-      !!isError
-    );
+    target.classList.toggle("error", !!isError);
   }
 
   // =======================================================
@@ -1581,10 +1540,7 @@ function drawTable() {
       ? 6
       : 3;
 
-    output.value = addMonthsClamped(
-      dateValue,
-      months
-    );
+    output.value = addMonthsClamped(dateValue, months);
   }
 
   function addMonthsClamped(value, months) {
@@ -1627,11 +1583,12 @@ function drawTable() {
 
     const result = await api().get("maintenance.list");
 
-    window.TechOpsMaintenanceData =
-      normalizeArray(result);
+    // Data baru disimpan setelah API berhasil.
+    const rows = normalizeArray(result);
 
+    window.TechOpsMaintenanceData = rows;
     lastUpdated = new Date();
-
+    dataLoaded = true;
     currentPage = 1;
 
     if (getRoot()) {
@@ -1645,16 +1602,22 @@ function drawTable() {
   // INISIALISASI DAN NAVIGASI
   // =======================================================
 
-  async function openPage() {
+  async function openPage(forceRefresh = false) {
     if (!initialized) {
       initialized = true;
 
-      window.TechOpsMaintenanceData = [];
-
-      render();
+      if (!Array.isArray(window.TechOpsMaintenanceData)) {
+        window.TechOpsMaintenanceData = [];
+      }
     }
 
     const root = getRoot();
+
+    // Jika data sudah ada, tampilkan cache tanpa memanggil API.
+    if (dataLoaded && !forceRefresh) {
+      render();
+      return;
+    }
 
     if (root) {
       root.innerHTML = `
@@ -1668,10 +1631,7 @@ function drawTable() {
       await refresh();
 
     } catch (error) {
-      console.error(
-        "Maintenance load:",
-        error
-      );
+      console.error("Maintenance load:", error);
 
       if (root) {
         root.innerHTML = `
@@ -1692,11 +1652,12 @@ function drawTable() {
         `;
 
         $("#maintenanceRetry")
-          ?.addEventListener("click", openPage);
+          ?.addEventListener("click", () => openPage(true));
       }
     }
   }
 
+  // Navigasi ke halaman Maintenance.
   document.addEventListener("click", event => {
     const nav = event.target.closest(
       '[data-page="maintenance"]'
@@ -1704,23 +1665,15 @@ function drawTable() {
 
     if (!nav) return;
 
-    // Beri kesempatan navigasi utama mengganti section dahulu.
-    setTimeout(openPage, 0);
+    setTimeout(() => openPage(), 0);
   });
 
-  document.addEventListener(
-    "techops:authchange",
-    () => {
-      if ($("#page-maintenance")?.classList.contains("active")) {
-        if (initialized) {
-          render();
-        }
-
-        // Ambil ulang data agar masking mengikuti hak akses.
-        openPage();
-      }
+  // Login/logout: ambil ulang data agar masking mengikuti hak akses.
+  document.addEventListener("techops:authchange", () => {
+    if ($("#page-maintenance")?.classList.contains("active")) {
+      openPage(true);
     }
-  );
+  });
 
   // Tutup modal dengan tombol Escape.
   document.addEventListener("keydown", event => {
