@@ -65,7 +65,7 @@
     query: { computers: "", printers: "" },
     page: { computers: 1, printers: 1 },
     pageSize: 10,
-    busy: false
+    busy: false,
     requestId: {
       computers: 0,
       printers: 0
@@ -744,19 +744,6 @@
 
     loadActivePage();
   }
-
-  // Saat pengguna membuka Komputer atau Printer.
-  document.addEventListener("techops:pagechange", event => {
-    const page = event.detail?.page;
-
-    if (page === "computers") {
-      load("computers");
-    }
-
-    if (page === "printers") {
-      load("printers");
-    }
-  });
 
   // Login/logout hanya memuat ulang halaman inventaris aktif.
   document.addEventListener("techops:authchange", () => {
