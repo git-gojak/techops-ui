@@ -74,6 +74,8 @@
   .welcome-panel {
     min-height: 145px;
     padding: 22px 19px;
+    margin-bottom:16px;
+   
   }
 
   .welcome-panel h2 {
