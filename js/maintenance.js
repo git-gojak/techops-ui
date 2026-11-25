@@ -520,16 +520,11 @@
   // QR SCANNER
   // =======================================================
 
-  function openScanner() {
+    function openScanner() {
     selectedDevice = null;
 
     const content = `
       <div class="maintenance-scanner-content">
-
-        <p>
-          Arahkan kamera belakang HP ke QR Code komputer
-          atau printer.
-        </p>
 
         <div
           id="maintenanceQrReader"
@@ -540,19 +535,35 @@
           id="maintenanceScanMessage"
           class="maintenance-scan-message"
         >
-          Menyiapkan kamera...
+          <svg
+            class="maintenance-scan-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M4 7V5a1 1 0 0 1 1-1h2m10 0h2a1 1 0 0 1 1 1v2M4 17v2a1 1 0 0 0 1 1h2m10 0h2a1 1 0 0 0 1-1v-2"
+            />
+            <path
+              d="M8 9h8v6H8z"
+            />
+            <circle cx="12" cy="12" r="1.5"/>
+          </svg>
+
+          <span id="maintenanceScanMessageText">
+            Menyiapkan kamera...
+          </span>
         </div>
 
       </div>
     `;
 
-    showModal("Scan QR Perangkat", content);
+    showModal("Scan QR Perangkat", content, true);
 
     startScanner();
   }
 
-  async function startScanner() {
-    const message = $("#maintenanceScanMessage");
+    async function startScanner() {
+    const message = $("#maintenanceScanMessageText");
 
     if (!message) return;
 
@@ -584,7 +595,8 @@
 
           await stopScanner();
 
-          const currentMessage = $("#maintenanceScanMessage");
+          const currentMessage =
+            $("#maintenanceScanMessageText");
 
           if (currentMessage) {
             currentMessage.textContent =
@@ -596,16 +608,21 @@
         () => {}
       );
 
-      if ($("#maintenanceScanMessage")) {
-        message.textContent =
-          "Kamera aktif. Silakan scan QR perangkat.";
+      const currentMessage =
+        $("#maintenanceScanMessageText");
+
+      if (currentMessage) {
+        currentMessage.textContent = "Kamera aktif.";
       }
 
     } catch (error) {
       console.error("Maintenance QR scanner:", error);
 
-      if ($("#maintenanceScanMessage")) {
-        message.textContent =
+      const currentMessage =
+        $("#maintenanceScanMessageText");
+
+      if (currentMessage) {
+        currentMessage.textContent =
           "Kamera tidak dapat dibuka. Periksa izin kamera browser.";
       }
 
@@ -1224,11 +1241,13 @@
   // MODAL
   // =======================================================
 
-  function showModal(title, content) {
+  function showModal(title, content, isScanner = false) {
     closeModal();
 
     const backdrop = document.createElement("div");
-    backdrop.className = "maintenance-modal-backdrop";
+    backdrop.className =
+      "maintenance-modal-backdrop" +
+      (isScanner ? " maintenance-scanner-modal" : "");
     backdrop.id = "maintenanceModal";
 
     backdrop.innerHTML = `
@@ -1240,14 +1259,15 @@
       >
 
         <header class="maintenance-modal-header">
-
-          <div>
-            <small>GOJAK TECHOPS · ASSET MANAGEMENT</small>
-            <h2 id="maintenanceModalTitle">
-              ${escapeHTML(title)}
-            </h2>
-          </div>
-
+         
+         <div>
+           ${isScanner ? "" : '<small>GOJAK TECHOPS · ASSET MANAGEMENT</small>'}
+         
+           <h2 id="maintenanceModalTitle">
+             ${escapeHTML(title)}
+           </h2>
+         </div>
+         
           <button
             type="button"
             class="maintenance-modal-close"
