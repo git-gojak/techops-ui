@@ -773,177 +773,409 @@
   // DETAIL
   // =======================================================
 
-  function showDetail(type, row) {
-    const config = CONFIG[type];
+function inventoryIcon(key) {
+  const aliases = {
+    tahun: "calendar",
+    komputer: "monitor",
+    merek: "package",
+    model: "box",
+    serial: "barcode",
+    cpu: "cpu",
+    core: "layers",
+    thread: "network",
+    ram: "memory",
+    storage: "storage",
+    gpu: "monitor",
+    os: "window",
+    pengguna: "user",
+    scan_terakhir: "scan",
+    perubahan: "history",
+    status: "shield",
+    unit: "printer",
+    tinta: "droplet",
+    ftp: "calendar",
+    mp: "clock",
+    printer: "printer"
+  };
 
-    const details = config.fields.map(([key, label]) => `
+  const shapes = {
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+    monitor: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    barcode: '<path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14"/>',
+    package: '<path d="m12 3 9 5-9 5-9-5 9-5zM3 8v9l9 5 9-5V8M12 13v9"/>',
+    box: '<path d="M4 7 12 3l8 4v10l-8 4-8-4zM4 7l8 5 8-5M12 12v9"/>',
+    cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 9h6v6H9zM9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+    layers: '<path d="m12 3 9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/>',
+    network: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="m11 7-5 9m7-9 5 9M7 18h10"/>',
+    memory: '<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7v10M11 7v10M15 7v10M6 17v3M10 17v3M14 17v3M18 17v3"/>',
+    storage: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18M7 17h.01M11 17h.01"/>',
+    window: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 6.5h.01M11 6.5h.01"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    scan: '<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M4 12h16"/>',
+    history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+    shield: '<path d="M12 3 20 6v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/>',
+    printer: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/>',
+    droplet: '<path d="M12 3s7 8 7 13a7 7 0 0 1-14 0c0-5 7-13 7-13z"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>'
+  };
+
+  const colors = {
+    calendar: "--blue-light",
+    monitor: "--blue-light",
+    barcode: "--purple",
+    package: "--purple",
+    box: "--teal",
+    cpu: "--blue-light",
+    layers: "--purple",
+    network: "--teal",
+    memory: "--green",
+    storage: "--yellow",
+    window: "--blue-light",
+    user: "--green",
+    scan: "--purple",
+    history: "--yellow",
+    shield: "--green",
+    printer: "--blue-light",
+    droplet: "--teal",
+    clock: "--yellow"
+  };
+
+  const icon = aliases[key] || key;
+  const shape = shapes[icon] || shapes.monitor;
+
+  return `
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(${colors[icon] || "--blue-light"})"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true">
+      ${shape}
+    </svg>
+  `;
+}
+
+
+  
+function showDetail(type, row) {
+  const status = String(row.status || "Aktif");
+  const archived = status.toLowerCase() === "arsip";
+
+  function detailCard(icon, value) {
+    const display = (
+      value === null ||
+      value === undefined ||
+      String(value).trim() === ""
+    ) ? "-" : value;
+
+    return `
       <div class="inventory-detail-item">
-        <small>${escape(label)}</small>
-        <strong>${escape(getValue(type, row, key))}</strong>
+        ${inventoryIcon(icon)}
+        <strong>${escape(display)}</strong>
       </div>
-    `).join("");
-
-    openModal(
-      `Detail ${type === "computers" ? "Komputer" : "Printer"}`,
-      `<div class="inventory-detail-grid">${details}</div>`
-    );
+    `;
   }
+
+  const subtitle = [
+    row.merek || "",
+    row.model || ""
+  ].filter(Boolean).join(" · ") || "-";
+
+  const heading = `
+    <div class="inventory-detail-item">
+      ${inventoryIcon("merek")}
+      <strong>${escape(subtitle)}</strong>
+      <span class="inventory-status ${archived ? "archived" : "active"}">
+        ${escape(status)}
+      </span>
+    </div>
+  `;
+
+  let details = [];
+
+  if (type === "computers") {
+    details = [
+      detailCard("tahun", getValue(type, row, "tahun")),
+      detailCard("serial", getValue(type, row, "serial")),
+      detailCard("cpu", getValue(type, row, "cpu")),
+      detailCard("core", getValue(type, row, "core")),
+      detailCard("thread", getValue(type, row, "thread")),
+      detailCard("ram", getValue(type, row, "ram")),
+      detailCard("storage", getValue(type, row, "storage")),
+      detailCard("gpu", getValue(type, row, "gpu")),
+      detailCard("os", getValue(type, row, "os")),
+      detailCard("pengguna", getValue(type, row, "pengguna")),
+      detailCard("scan_terakhir", getValue(type, row, "scan_terakhir")),
+      detailCard("perubahan", getValue(type, row, "perubahan")),
+      detailCard("status", status)
+    ];
+  } else {
+    details = [
+      detailCard("serial", getValue(type, row, "serial")),
+      detailCard("tinta", getValue(type, row, "tinta")),
+      detailCard("ftp", getValue(type, row, "ftp")),
+      detailCard("mp", getValue(type, row, "mp")),
+      detailCard("status", status)
+    ];
+  }
+
+  const title = type === "computers"
+    ? row.komputer || "Detail Komputer"
+    : row.unit || "Detail Printer";
+
+  openModal(
+    title,
+    `
+      <div class="inventory-detail-grid">
+        ${heading}
+        ${details.join("")}
+      </div>
+    `
+  );
+}
+
 
   // =======================================================
   // FORM TAMBAH DAN EDIT
   // =======================================================
 
-  function openForm(type, row = null) {
-    if (!isAdmin()) {
-      alert("Silakan login sebagai Admin.");
-      return;
+  
+function openForm(type, row = null) {
+  if (!isAdmin()) {
+    alert("Silakan login sebagai Admin.");
+    return;
+  }
+
+  const config = CONFIG[type];
+  const editing = !!row;
+
+  const fieldsByKey = new Map(
+    config.fields.map(field => [field[0], field])
+  );
+
+  function renderField(key, fullWidth = false) {
+    const field = fieldsByKey.get(key);
+
+    if (!field) return "";
+
+    const [, label, inputType] = field;
+
+    let value = row?.[key] ?? "";
+
+    if (key === "ftp") {
+      value = normalizeDate(value);
     }
 
-    const config = CONFIG[type];
-    const editing = !!row;
+    const readonly = editing && key === "serial";
 
-    const fields = config.fields.map(
-      ([key, label, inputType]) => {
-        let value = row?.[key] ?? "";
+    return `
+      <label class="inventory-form-field ${fullWidth ? "maintenance-field-wide" : ""}">
+        <span>
+          ${inventoryIcon(key)}
+          ${escape(label)}
+          ${config.required.includes(key) ? " *" : ""}
+        </span>
 
-        if (key === "ftp") {
-          value = normalizeDate(value);
-        }
+        <input
+          name="${key}"
+          type="${inputType || "text"}"
+          value="${escape(value)}"
+          ${config.required.includes(key) ? "required" : ""}
+          ${readonly ? "readonly" : ""}
+          ${inputType === "number" ? 'min="0" step="1"' : ""}
+          autocomplete="off">
+      </label>
+    `;
+  }
 
-        if (key === "mp") {
-          value = calculateMP(row?.ftp);
-        }
+  function renderSection(title, icon, keys, wideKeys = [], extra = "") {
+    return `
+      <div>
+        <div class="maintenance-form-section-title">
+          <span>${inventoryIcon(icon)}</span>
+          <h3>${title}</h3>
+        </div>
 
-        const readonly = editing && key === "serial";
+        <div class="inventory-form-grid">
+          ${keys.map(key =>
+            renderField(key, wideKeys.includes(key))
+          ).join("")}
 
-        return `
-          <label class="inventory-form-field">
+          ${extra}
+        </div>
+      </div>
+    `;
+  }
 
-            <span>
-              ${escape(label)}
-              ${config.required.includes(key) ? " *" : ""}
-            </span>
+  let sections = "";
 
-            <input
-              name="${key}"
-              type="${inputType || "text"}"
-              value="${escape(value)}"
-              ${config.required.includes(key) ? "required" : ""}
-              ${readonly ? "readonly" : ""}
-              ${inputType === "number" ? 'min="0" step="1"' : ""}
-              autocomplete="off">
+  if (type === "computers") {
+    sections = `
+      ${renderSection(
+        "Identitas Perangkat",
+        "monitor",
+        ["tahun", "komputer", "merek", "model", "serial"],
+        ["serial"]
+      )}
 
-          </label>
-        `;
-      }
-    ).join("");
+      ${renderSection(
+        "Spesifikasi Hardware",
+        "cpu",
+        ["cpu", "core", "thread", "ram", "storage", "gpu"],
+        ["cpu", "gpu"]
+      )}
 
-    const overlay = openModal(
-      editing
-        ? `Edit ${type === "computers" ? "Komputer" : "Printer"}`
-        : `Tambah ${type === "computers" ? "Komputer" : "Printer"}`,
+      ${renderSection(
+        "Sistem dan Pengguna",
+        "os",
+        ["os", "pengguna"]
+      )}
+    `;
+  } else {
+    const mpCard = `
+      <div class="inventory-form-field">
+        <span>
+          ${inventoryIcon("mp")}
+          Masa Pakai (otomatis)
+        </span>
+        <strong data-mp-preview>
+          ${escape(calculateMP(row?.ftp))}
+        </strong>
+      </div>
+    `;
 
-      `
-        <form class="inventory-form">
+    sections = `
+      ${renderSection(
+        "Identitas Perangkat",
+        "printer",
+        ["serial", "unit", "merek", "model", "tinta"],
+        ["serial"]
+      )}
 
-          <div class="inventory-form-grid">
-            ${fields}
-          </div>
+      ${renderSection(
+        "Masa Pakai",
+        "clock",
+        ["ftp"],
+        [],
+        mpCard
+      )}
+    `;
+  }
 
-          <p
-            class="inventory-form-message"
-            role="alert">
-          </p>
+  const overlay = openModal(
+    editing
+      ? `Edit ${type === "computers" ? "Komputer" : "Printer"}`
+      : `Tambah ${type === "computers" ? "Komputer" : "Printer"}`,
 
-          <div class="inventory-form-footer">
+    `
+      <form class="inventory-form maintenance-form">
 
-            <button
-              type="button"
-              class="inventory-button"
-              data-cancel>
-              Batal
-            </button>
+        ${sections}
 
-            <button
-              type="submit"
-              class="inventory-button inventory-primary">
-              ${editing ? "Simpan Perubahan" : "Simpan Data"}
-            </button>
+        <p
+          class="inventory-form-message"
+          role="alert">
+        </p>
 
-          </div>
+        <div class="inventory-form-footer">
 
-        </form>
-      `
-    );
+          <button
+            type="button"
+            class="inventory-button"
+            data-cancel>
+            Batal
+          </button>
 
-    const form = $(".inventory-form", overlay);
-    const message = $(".inventory-form-message", overlay);
+          <button
+            type="submit"
+            class="inventory-button inventory-primary">
+            ${editing ? "Simpan Perubahan" : "Simpan Data"}
+          </button>
 
-    form.elements.ftp?.addEventListener("change", () => {
-      // Masa pakai dihitung dari tanggal FTP.
-    });
+        </div>
 
-    $("[data-cancel]", overlay).onclick = closeModal;
+      </form>
+    `
+  );
 
-    form.addEventListener("submit", async event => {
-      event.preventDefault();
+  const form = $(".inventory-form", overlay);
+  const message = $(".inventory-form-message", overlay);
+  const mpPreview = $("[data-mp-preview]", overlay);
 
-      if (!isAdmin() || state.busy) return;
+  const ftpInput = form.elements.namedItem("ftp");
 
-      const data = {};
-
-      config.fields.forEach(([key]) => {
-        const input = form.elements.namedItem(key);
-
-        if (input) {
-          data[key] = String(input.value || "").trim();
-        }
-      });
-
-      if (type === "printers") {
-        data.ftp = normalizeDate(data.ftp);
-        data.mp = calculateMP(data.ftp);
-      }
-
-      if (editing) {
-        data.serial = getSerial(row);
-        data.status = row.status || "Aktif";
-      } else {
-        data.status = "Aktif";
-      }
-
-      state.busy = true;
-
-      const button = $('button[type="submit"]', form);
-
-      button.disabled = true;
-      button.textContent = "Menyimpan...";
-
-      try {
-        await request(
-          type,
-          editing ? "update" : "create",
-          { data }
-        );
-
-        closeModal();
-
-        await load(type);
-
-        alert("Data berhasil disimpan.");
-
-      } catch (error) {
-        message.textContent =
-          error.message || "Gagal menyimpan data.";
-
-        button.disabled = false;
-        button.textContent = "Coba Lagi";
-
-      } finally {
-        state.busy = false;
-      }
+  if (ftpInput && mpPreview) {
+    ftpInput.addEventListener("input", () => {
+      mpPreview.textContent = calculateMP(ftpInput.value);
     });
   }
+
+  $("[data-cancel]", overlay).onclick = closeModal;
+
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!isAdmin() || state.busy) return;
+
+    const data = {};
+
+    config.fields.forEach(([key]) => {
+      const input = form.elements.namedItem(key);
+
+      if (input) {
+        data[key] = String(input.value || "").trim();
+      }
+    });
+
+    if (type === "printers") {
+      data.ftp = normalizeDate(data.ftp);
+      data.mp = calculateMP(data.ftp);
+    }
+
+    if (editing) {
+      data.serial = getSerial(row);
+      data.status = row.status || "Aktif";
+    } else {
+      data.status = "Aktif";
+    }
+
+    state.busy = true;
+
+    const button = $('button[type="submit"]', form);
+
+    button.disabled = true;
+    button.textContent = "Menyimpan...";
+
+    try {
+      await request(
+        type,
+        editing ? "update" : "create",
+        { data }
+      );
+
+      closeModal();
+
+      await load(type);
+
+      alert("Data berhasil disimpan.");
+
+    } catch (error) {
+      message.textContent =
+        error.message || "Gagal menyimpan data.";
+
+      button.disabled = false;
+      button.textContent = "Coba Lagi";
+
+    } finally {
+      state.busy = false;
+    }
+  });
+}
+
 
   // =======================================================
   // ARSIP DAN AKTIFKAN KEMBALI
