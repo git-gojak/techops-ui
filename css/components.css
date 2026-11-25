@@ -1,4 +1,3 @@
-
 .icon-button {
   width: 40px;
   height: 40px;
@@ -41,6 +40,7 @@
   justify-content: space-between;
   margin: 30px 0 16px;
 }
+
 /* Utility: elemen kiri dan kanan dalam satu baris */
 .flex-between {
   display: flex;
@@ -146,9 +146,9 @@
   height: 18px;
 }
 
-
-
-/* INVENTARIS KOMPUTER DAN PRINTER */
+/* =========================================================
+   INVENTARIS KOMPUTER DAN PRINTER
+   ========================================================= */
 
 .inventory-page {
   display: flex;
@@ -320,6 +320,8 @@
   color: var(--text-main);
 }
 
+/* Modal Inventaris */
+
 .inventory-modal-overlay {
   position: fixed;
   inset: 0;
@@ -362,6 +364,8 @@
   font-size: 25px;
   cursor: pointer;
 }
+
+/* Grid dasar inventaris */
 
 .inventory-detail-grid,
 .inventory-form-grid {
@@ -417,6 +421,8 @@
   font-size: 12px;
 }
 
+/* Responsif dasar inventaris */
+
 @media (max-width: 600px) {
   .inventory-heading {
     align-items: flex-start;
@@ -436,10 +442,8 @@
   }
 }
 
-
 /* =========================================================
    GOJAK TECHOPS — MAINTENANCE
-   Hanya komponen yang masih digunakan
    ========================================================= */
 
 /* Tampilan fallback dan loading */
@@ -511,7 +515,7 @@
   box-shadow: var(--shadow-blue);
 }
 
-/* Modal */
+/* Modal Maintenance */
 
 .maintenance-modal-open {
   overflow: hidden;
@@ -626,23 +630,37 @@
   color: #ff9292;
 }
 
-/* Konfirmasi perangkat */
+/* Konfirmasi perangkat dan Detail Inventaris */
 
 .maintenance-confirmation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
 }
 
-.maintenance-confirmation-heading span {
-  color: var(--blue-light);
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: .8px;
+.maintenance-confirmation-heading > div {
+  min-width: 0;
 }
 
-.maintenance-confirmation-heading h3 {
-  margin-top: 5px;
+.maintenance-confirmation-heading strong {
+  display: block;
+  overflow-wrap: anywhere;
   color: var(--text-main);
-  font-size: 18px;
+  font-size: 13px;
+}
+
+.maintenance-confirmation-heading .inventory-status {
+  flex: 0 0 auto;
+  color: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: normal;
 }
 
 .maintenance-detail-grid {
@@ -653,8 +671,9 @@
 
 .maintenance-detail-field {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--border);
@@ -662,18 +681,19 @@
   background: rgba(255,255,255,.025);
 }
 
-.maintenance-detail-field small {
-  color: var(--text-muted);
-  font-size: 10px;
+.maintenance-detail-field svg {
+  flex: 0 0 18px;
 }
 
 .maintenance-detail-field strong {
+  min-width: 0;
   overflow-wrap: anywhere;
   color: var(--text-main);
   font-size: 12px;
+  font-weight: 600;
 }
 
-/* Form Maintenance */
+/* Form Maintenance dan Inventaris */
 
 .maintenance-form {
   display: flex;
@@ -705,11 +725,17 @@
   height: 30px;
   display: grid;
   place-items: center;
+  flex: 0 0 auto;
   border-radius: 9px;
   background: rgba(48,139,255,.13);
   color: var(--blue-light);
   font-size: 11px;
   font-weight: 800;
+}
+
+.maintenance-form-section-title > span svg {
+  width: 18px;
+  height: 18px;
 }
 
 .maintenance-form-section-title h3 {
@@ -737,7 +763,14 @@
 }
 
 .maintenance-field > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-weight: 650;
+}
+
+.maintenance-field > span svg {
+  flex: 0 0 18px;
 }
 
 .maintenance-field > span b {
@@ -770,6 +803,18 @@
   color: var(--text-muted);
   font-size: 10px;
   line-height: 1.5;
+}
+
+.maintenance-field > strong {
+  display: block;
+  min-height: 40px;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(255,255,255,.025);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .maintenance-radio-group {
@@ -805,7 +850,11 @@
   color: #ff9292;
 }
 
-/* Responsif HP: hanya modal dan form */
+/* =========================================================
+   RESPONSIF HP
+   Form Maintenance tetap satu kolom.
+   Form Inventaris tetap dua kolom.
+   ========================================================= */
 
 @media (max-width: 760px) {
   .maintenance-modal-backdrop {
@@ -831,12 +880,26 @@
     grid-column: auto;
   }
 
+  /* Khusus form inventaris komputer dan printer */
+  .inventory-form .maintenance-form-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .inventory-form .maintenance-field-wide {
+    grid-column: 1 / -1;
+  }
+
   .maintenance-modal-actions {
     flex-direction: column-reverse;
   }
 
   .maintenance-modal-actions .maintenance-button {
     width: 100%;
+  }
+
+  /* Detail inventaris tetap satu kolom agar nyaman dibaca */
+  .inventory-detail .maintenance-detail-grid {
+    grid-template-columns: 1fr;
   }
 }
 
