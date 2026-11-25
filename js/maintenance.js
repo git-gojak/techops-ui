@@ -21,6 +21,8 @@
   let lastUpdated = null;
   let initialized = false;
   let dataLoaded = false;
+  let loadPromise = null;
+   
 
   // =======================================================
   // UTILITAS
@@ -273,16 +275,6 @@
             aria-label="Cari riwayat Maintenance"
             autocomplete="off">
 
-          ${isAdmin() ? `
-            <button
-              type="button"
-              class="inventory-button inventory-primary"
-              id="scanMaintenanceQR">
-              ▦ Scan QR
-            </button>
-          ` : ""}
-        </div>
-
         <div class="inventory-summary" id="maintenanceSummary">
           <span>Total riwayat: <strong>${rows.length}</strong></span>
           <span>Hasil pencarian: <strong>—</strong></span>
@@ -354,8 +346,6 @@
       currentPage = 1;
       drawTable();
     });
-
-    $("#scanMaintenanceQR")?.addEventListener("click", openScanner);
 
     $("#maintenancePageSize")?.addEventListener("change", event => {
       pageSize = event.target.value === "all"
@@ -1597,6 +1587,44 @@
 
     return window.TechOpsMaintenanceData;
   }
+     // =======================================================
+  // CACHE DAN PENCEGAHAN REQUEST GANDA
+  // =======================================================
+
+  async function loadData(forceRefresh = false) {
+
+    // Jika sedang ada request, gunakan proses yang sama.
+    if (loadPromise) {
+      if (!forceRefresh) {
+        return loadPromise;
+      }
+
+      // Jika login/logout terjadi saat request lama berjalan,
+      // tunggu request lama selesai sebelum mengambil ulang.
+      await loadPromise.catch(() => {});
+
+      // Jika request pengganti sudah berjalan, gunakan itu.
+      if (loadPromise) {
+        return loadPromise;
+      }
+    }
+
+    // Gunakan cache jika tidak diminta mengambil data baru.
+    if (dataLoaded && !forceRefresh) {
+      return window.TechOpsMaintenanceData;
+    }
+
+    const request = refresh();
+    loadPromise = request;
+
+    try {
+      return await request;
+    } finally {
+      if (loadPromise === request) {
+        loadPromise = null;
+      }
+    }
+  }
 
   // =======================================================
   // INISIALISASI DAN NAVIGASI
@@ -1628,7 +1656,7 @@
     }
 
     try {
-      await refresh();
+     await loadData(forceRefresh);
 
     } catch (error) {
       console.error("Maintenance load:", error);
@@ -1657,6 +1685,21 @@
     }
   }
 
+    // =======================================================
+  // INISIALISASI — SAMA SEPERTI INVENTARIS
+  // =======================================================
+
+  function initialize() {
+    // Mulai memuat Maintenance sejak aplikasi dibuka.
+    // Tidak perlu menunggu pengguna membuka menu Maintenance.
+    openPage();
+  }
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initialize
+  );
+
   // Navigasi ke halaman Maintenance.
   document.addEventListener("click", event => {
     const nav = event.target.closest(
@@ -1668,21 +1711,9 @@
     setTimeout(() => openPage(), 0);
   });
 
-  // Login/logout: ambil ulang data agar masking mengikuti hak akses.
+  // Login/logout: ambil data baru agar masking sesuai hak akses.
   document.addEventListener("techops:authchange", () => {
-    if ($("#page-maintenance")?.classList.contains("active")) {
-      openPage(true);
-    }
-  });
-
-  // Tutup modal dengan tombol Escape.
-  document.addEventListener("keydown", event => {
-    if (
-      event.key === "Escape" &&
-      $("#maintenanceModal")
-    ) {
-      closeModal();
-    }
+    openPage(true);
   });
 
   // =======================================================
