@@ -1575,11 +1575,11 @@
     return toInputDate(result);
   }
 
+  
   // =======================================================
   // REFRESH DATA
   // =======================================================
 
-  
   async function refresh() {
     if (!api() || typeof api().get !== "function") {
       throw new Error("TechOpsAPI belum tersedia.");
@@ -1589,24 +1589,27 @@
     const status = $("#maintenanceLoadStatus");
 
     if (status) {
-      status.textContent = "Memperbarui data...";
+      status.textContent = dataLoaded
+        ? "Memperbarui data..."
+        : "Memuat data...";
     }
 
     try {
       const result = await api().get("maintenance.list");
-
       const rows = normalizeArray(result);
 
-      // Abaikan hasil request lama setelah perubahan autentikasi.
+      // Abaikan hasil request lama setelah status Admin berubah.
       if (requestVersion !== loadVersion) {
         return window.TechOpsMaintenanceData || [];
       }
 
+      // Ganti data setelah hasil terbaru berhasil diterima.
       window.TechOpsMaintenanceData = rows;
       lastUpdated = new Date();
       dataLoaded = true;
-      currentPage = 1;
 
+      // Tidak mengembalikan pengguna ke halaman pertama.
+      // drawTable() akan menyesuaikan halaman jika jumlah data berubah.
       if (getRoot() && $("#maintenanceTableBody")) {
         drawTable();
       } else {
@@ -1634,29 +1637,28 @@
     }
   }
 
-     // =======================================================
+  // =======================================================
   // CACHE DAN PENCEGAHAN REQUEST GANDA
   // =======================================================
 
   async function loadData(forceRefresh = false) {
 
-    // Jika sedang ada request, gunakan proses yang sama.
+    // Gunakan request yang sedang berjalan jika tidak dipaksa refresh.
     if (loadPromise) {
       if (!forceRefresh) {
         return loadPromise;
       }
 
-      // Jika login/logout terjadi saat request lama berjalan,
-      // tunggu request lama selesai sebelum mengambil ulang.
+      // Tunggu request lama selesai sebelum mengambil data baru.
       await loadPromise.catch(() => {});
 
-      // Jika request pengganti sudah berjalan, gunakan itu.
+      // Jika request pengganti sudah berjalan, gunakan request tersebut.
       if (loadPromise) {
         return loadPromise;
       }
     }
 
-    // Gunakan cache jika tidak diminta mengambil data baru.
+    // Gunakan cache jika data sudah tersedia.
     if (dataLoaded && !forceRefresh) {
       return window.TechOpsMaintenanceData;
     }
@@ -1666,6 +1668,7 @@
 
     try {
       return await request;
+
     } finally {
       if (loadPromise === request) {
         loadPromise = null;
@@ -1690,14 +1693,15 @@
 
     if (!root) return;
 
-    // Pertahankan struktur halaman jika sudah tersedia.
+    // Tampilkan kerangka halaman jika belum tersedia.
     if (!$("#maintenanceTableBody")) {
       render();
     } else {
+      // Data lama tetap ditampilkan saat refresh berlangsung.
       drawTable();
     }
 
-    // Gunakan data tersimpan jika tidak diminta refresh.
+    // Tidak perlu request ulang jika cache masih digunakan.
     if (dataLoaded && !forceRefresh) {
       return;
     }
@@ -1705,10 +1709,12 @@
     const body = $("#maintenanceTableBody");
     const status = $("#maintenanceLoadStatus");
 
+    // Loading hanya ditampilkan saat belum ada data sebelumnya.
+    // Data lama tidak akan dikosongkan ketika refresh.
     if (!dataLoaded && body) {
       body.innerHTML = `
         <tr>
-          <td colspan="9">Memuat data Maintenance...</td>
+          <td colspan="9">Memuat data...</td>
         </tr>
       `;
     }
@@ -1725,8 +1731,7 @@
     } catch (error) {
       console.error("Maintenance load:", error);
 
-      // Jika belum pernah ada data, tampilkan pesan di tabel.
-      // Jika sudah ada data, jangan hapus data terakhir.
+      // Tampilkan pesan error hanya jika belum ada data sebelumnya.
       if (!dataLoaded && body) {
         body.innerHTML = `
           <tr>
@@ -1746,24 +1751,25 @@
     }
   }
 
-    // =======================================================
-  // INISIALISASI — SAMA SEPERTI INVENTARIS
   // =======================================================
-  
+  // INISIALISASI
+  // =======================================================
+
   function initialize() {
     if (!Array.isArray(window.TechOpsMaintenanceData)) {
       window.TechOpsMaintenanceData = [];
     }
 
-    // Saat Maintenance dibuka, tampilkan cache lalu perbarui.
+    // Saat halaman Maintenance dibuka, tampilkan cache
+    // kemudian ambil data terbaru tanpa menghilangkan tabel lama.
     document.addEventListener("techops:pagechange", event => {
       if (event.detail?.page === "maintenance") {
         openPage(true);
       }
     });
 
-    // Cache harus dibersihkan setiap kali status Admin berubah.
-    // Ini mencegah data Admin tertinggal setelah logout.
+    // Bersihkan cache ketika Admin login atau logout.
+    // Ini mencegah data dengan hak akses lama tetap ditampilkan.
     document.addEventListener("techops:authchange", () => {
       loadVersion++;
 
