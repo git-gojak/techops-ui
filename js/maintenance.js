@@ -1,4 +1,3 @@
-
 /* =========================================================
    GOJAK TECHOPS
    MAINTENANCE MODULE — TECHOPS UI
@@ -23,7 +22,11 @@
   let dataLoaded = false;
   let loadPromise = null;
   let loadVersion = 0;
-   
+
+  // Sorting tabel Maintenance.
+  // direction: 0 = urutan asli, 1 = naik, -1 = turun.
+  let sortKey = null;
+  let sortDirection = 0;
 
   // =======================================================
   // UTILITAS
@@ -234,7 +237,6 @@
   // HALAMAN MAINTENANCE
   // =======================================================
 
-  
   function render() {
     const root = getRoot();
 
@@ -249,16 +251,6 @@
 
     root.innerHTML = `
       <div class="inventory-page">
-
-        <div class="inventory-heading">
-          <div>
-            <span class="inventory-eyebrow">MANAJEMEN PERANGKAT</span>
-            <h2>Riwayat Maintenance</h2>
-            <p>
-              Catatan perawatan dan perbaikan komputer maupun printer.
-            </p>
-          </div>
-        </div>
 
         <div class="inventory-toolbar">
           <input
@@ -294,14 +286,86 @@
             <thead>
               <tr>
                 <th>No.</th>
-                <th>Tanggal</th>
-                <th>Jenis</th>
-                <th>Nama Perangkat</th>
-                <th>Serial</th>
-                <th>Kegiatan</th>
-                <th>Keterangan</th>
-                <th>Kondisi</th>
-                <th>Penanganan</th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="Tanggal">
+                    Tanggal
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="jenis_aset">
+                    Jenis
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="nama_aset">
+                    Nama Perangkat
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="serial">
+                    Serial
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="kegiatan">
+                    Kegiatan
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="keterangan">
+                    Keterangan
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="kondisi">
+                    Kondisi
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
+
+                <th>
+                  <button
+                    type="button"
+                    class="inventory-sort-button"
+                    data-maintenance-sort="teknisi">
+                    Penanganan
+                    <span class="inventory-sort-indicator" aria-hidden="true">↕</span>
+                  </button>
+                </th>
               </tr>
             </thead>
 
@@ -380,10 +444,145 @@
       drawTable();
     });
 
+    // Event sorting kolom.
+    root.querySelectorAll("[data-maintenance-sort]")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          toggleMaintenanceSort(
+            button.dataset.maintenanceSort
+          );
+        });
+      });
+
     drawTable();
     iconRefresh();
   }
 
+    // =======================================================
+  // PENGURUTAN TABEL MAINTENANCE
+  // =======================================================
+
+  function getMaintenanceSortValue(row, key) {
+    if (key === "Tanggal") {
+      const value = row.Tanggal;
+
+      if (value instanceof Date) {
+        return value.getTime();
+      }
+
+      const text = String(value || "").trim();
+
+      let match = text.match(
+        /^(\d{4})-(\d{1,2})-(\d{1,2})/
+      );
+
+      let year;
+      let month;
+      let day;
+
+      if (match) {
+        year = Number(match[1]);
+        month = Number(match[2]);
+        day = Number(match[3]);
+
+      } else {
+        match = text.match(
+          /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/
+        );
+
+        if (!match) return null;
+
+        day = Number(match[1]);
+        month = Number(match[2]);
+        year = Number(match[3]);
+      }
+
+      const date = new Date(year, month - 1, day);
+
+      if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+      ) {
+        return null;
+      }
+
+      return date.getTime();
+    }
+
+    if (key === "kegiatan") {
+      return String(
+        row.jenis_kegiatan || row.kegiatan || ""
+      ).trim().toLocaleLowerCase("id-ID");
+    }
+
+    return String(row[key] ?? "")
+      .trim()
+      .toLocaleLowerCase("id-ID");
+  }
+
+  function sortMaintenanceRows(rows) {
+    if (!sortKey || !sortDirection) {
+      return rows;
+    }
+
+    return rows
+      .map((row, index) => ({ row, index }))
+      .sort((a, b) => {
+        const valueA = getMaintenanceSortValue(a.row, sortKey);
+        const valueB = getMaintenanceSortValue(b.row, sortKey);
+
+        if (valueA === null && valueB === null) {
+          return a.index - b.index;
+        }
+
+        if (valueA === null) return 1;
+        if (valueB === null) return -1;
+
+        let result;
+
+        if (
+          typeof valueA === "number" &&
+          typeof valueB === "number"
+        ) {
+          result = valueA - valueB;
+        } else {
+          result = String(valueA).localeCompare(
+            String(valueB),
+            "id",
+            {
+              numeric: true,
+              sensitivity: "base"
+            }
+          );
+        }
+
+        return result === 0
+          ? a.index - b.index
+          : result * sortDirection;
+      })
+      .map(item => item.row);
+  }
+
+  function toggleMaintenanceSort(key) {
+    if (sortKey !== key) {
+      sortKey = key;
+      sortDirection = 1;
+
+    } else if (sortDirection === 1) {
+      sortDirection = -1;
+
+    } else if (sortDirection === -1) {
+      sortKey = null;
+      sortDirection = 0;
+
+    } else {
+      sortDirection = 1;
+    }
+
+    currentPage = 1;
+    drawTable();
+  }
 
   // =======================================================
   // TABEL RIWAYAT
@@ -414,13 +613,16 @@
       String(row[key] ?? "").toLowerCase().includes(query)
     ));
 
+    // Sorting dilakukan setelah pencarian dan sebelum pagination.
+    const sortedRows = sortMaintenanceRows(filteredRows);
+
     const size = pageSize === "all"
-      ? Math.max(filteredRows.length, 1)
+      ? Math.max(sortedRows.length, 1)
       : pageSize;
 
     const totalPages = Math.max(
       1,
-      Math.ceil(filteredRows.length / size)
+      Math.ceil(sortedRows.length / size)
     );
 
     currentPage = Math.min(
@@ -430,7 +632,7 @@
 
     const startIndex = (currentPage - 1) * size;
 
-    const visibleRows = filteredRows.slice(
+    const visibleRows = sortedRows.slice(
       startIndex,
       startIndex + size
     );
@@ -460,6 +662,7 @@
           <td colspan="9">Tidak ada riwayat Maintenance yang cocok.</td>
         </tr>
       `;
+
     } else {
       body.innerHTML = visibleRows.map((row, index) => {
         const isPrinter =
@@ -504,8 +707,8 @@
     const pageInfo = $("#maintenancePageInfo");
 
     if (pageInfo) {
-      pageInfo.textContent = filteredRows.length
-        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${filteredRows.length} riwayat`
+      pageInfo.textContent = sortedRows.length
+        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${sortedRows.length} riwayat`
         : "Tidak ada data";
     }
 
@@ -514,13 +717,38 @@
 
     if (prev) prev.disabled = currentPage <= 1;
     if (next) next.disabled = currentPage >= totalPages;
+
+    // Perbarui indikator panah sorting.
+    document
+      .querySelectorAll("[data-maintenance-sort]")
+      .forEach(button => {
+        const indicator = button.querySelector(
+          ".inventory-sort-indicator"
+        );
+
+        if (!indicator) return;
+
+        const active =
+          button.dataset.maintenanceSort === sortKey;
+
+        indicator.textContent = !active
+          ? "↕"
+          : sortDirection === 1
+            ? "↑"
+            : "↓";
+
+        button.setAttribute(
+          "aria-pressed",
+          String(active)
+        );
+      });
   }
 
   // =======================================================
   // QR SCANNER
   // =======================================================
 
-    function openScanner() {
+  function openScanner() {
     selectedDevice = null;
 
     const content = `
@@ -543,9 +771,7 @@
             <path
               d="M4 7V5a1 1 0 0 1 1-1h2m10 0h2a1 1 0 0 1 1 1v2M4 17v2a1 1 0 0 0 1 1h2m10 0h2a1 1 0 0 0 1-1v-2"
             />
-            <path
-              d="M8 9h8v6H8z"
-            />
+            <path d="M8 9h8v6H8z"/>
             <circle cx="12" cy="12" r="1.5"/>
           </svg>
 
@@ -562,7 +788,7 @@
     startScanner();
   }
 
-    async function startScanner() {
+  async function startScanner() {
     const message = $("#maintenanceScanMessageText");
 
     if (!message) return;
@@ -649,7 +875,7 @@
     }
   }
 
-  // =======================================================
+    // =======================================================
   // PENCARIAN PERANGKAT MELALUI QR INFO
   // =======================================================
 
@@ -1237,7 +1463,7 @@
     updateSchedule();
   }
 
-  // =======================================================
+    // =======================================================
   // MODAL
   // =======================================================
 
@@ -1259,15 +1485,15 @@
       >
 
         <header class="maintenance-modal-header">
-         
-         <div>
-           ${isScanner ? "" : '<small>GOJAK TECHOPS · ASSET MANAGEMENT</small>'}
-         
-           <h2 id="maintenanceModalTitle">
-             ${escapeHTML(title)}
-           </h2>
-         </div>
-         
+
+          <div>
+            ${isScanner ? "" : '<small>GOJAK TECHOPS · ASSET MANAGEMENT</small>'}
+
+            <h2 id="maintenanceModalTitle">
+              ${escapeHTML(title)}
+            </h2>
+          </div>
+
           <button
             type="button"
             class="maintenance-modal-close"
@@ -1595,7 +1821,6 @@
     return toInputDate(result);
   }
 
-  
   // =======================================================
   // REFRESH DATA
   // =======================================================
@@ -1623,13 +1848,10 @@
         return window.TechOpsMaintenanceData || [];
       }
 
-      // Ganti data setelah hasil terbaru berhasil diterima.
       window.TechOpsMaintenanceData = rows;
       lastUpdated = new Date();
       dataLoaded = true;
 
-      // Tidak mengembalikan pengguna ke halaman pertama.
-      // drawTable() akan menyesuaikan halaman jika jumlah data berubah.
       if (getRoot() && $("#maintenanceTableBody")) {
         drawTable();
       } else {
@@ -1663,22 +1885,18 @@
 
   async function loadData(forceRefresh = false) {
 
-    // Gunakan request yang sedang berjalan jika tidak dipaksa refresh.
     if (loadPromise) {
       if (!forceRefresh) {
         return loadPromise;
       }
 
-      // Tunggu request lama selesai sebelum mengambil data baru.
       await loadPromise.catch(() => {});
 
-      // Jika request pengganti sudah berjalan, gunakan request tersebut.
       if (loadPromise) {
         return loadPromise;
       }
     }
 
-    // Gunakan cache jika data sudah tersedia.
     if (dataLoaded && !forceRefresh) {
       return window.TechOpsMaintenanceData;
     }
@@ -1713,15 +1931,12 @@
 
     if (!root) return;
 
-    // Tampilkan kerangka halaman jika belum tersedia.
     if (!$("#maintenanceTableBody")) {
       render();
     } else {
-      // Data lama tetap ditampilkan saat refresh berlangsung.
       drawTable();
     }
 
-    // Tidak perlu request ulang jika cache masih digunakan.
     if (dataLoaded && !forceRefresh) {
       return;
     }
@@ -1729,8 +1944,6 @@
     const body = $("#maintenanceTableBody");
     const status = $("#maintenanceLoadStatus");
 
-    // Loading hanya ditampilkan saat belum ada data sebelumnya.
-    // Data lama tidak akan dikosongkan ketika refresh.
     if (!dataLoaded && body) {
       body.innerHTML = `
         <tr>
@@ -1751,7 +1964,6 @@
     } catch (error) {
       console.error("Maintenance load:", error);
 
-      // Tampilkan pesan error hanya jika belum ada data sebelumnya.
       if (!dataLoaded && body) {
         body.innerHTML = `
           <tr>
@@ -1780,16 +1992,12 @@
       window.TechOpsMaintenanceData = [];
     }
 
-    // Saat halaman Maintenance dibuka, tampilkan cache
-    // kemudian ambil data terbaru tanpa menghilangkan tabel lama.
     document.addEventListener("techops:pagechange", event => {
       if (event.detail?.page === "maintenance") {
         openPage(true);
       }
     });
 
-    // Bersihkan cache ketika Admin login atau logout.
-    // Ini mencegah data dengan hak akses lama tetap ditampilkan.
     document.addEventListener("techops:authchange", () => {
       loadVersion++;
 
