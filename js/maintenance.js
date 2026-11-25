@@ -1690,31 +1690,30 @@
   // =======================================================
 
   function initialize() {
-    // Mulai memuat Maintenance sejak aplikasi dibuka.
-    // Tidak perlu menunggu pengguna membuka menu Maintenance.
-    openPage();
+  if (!Array.isArray(window.TechOpsMaintenanceData)) {
+    window.TechOpsMaintenanceData = [];
   }
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    initialize
-  );
-
-  // Navigasi ke halaman Maintenance.
-  document.addEventListener("click", event => {
-    const nav = event.target.closest(
-      '[data-page="maintenance"]'
-    );
-
-    if (!nav) return;
-
-    setTimeout(() => openPage(), 0);
+  // Memuat Maintenance hanya ketika halamannya dibuka.
+  document.addEventListener("techops:pagechange", event => {
+    if (event.detail?.page === "maintenance") {
+      openPage(true);
+    }
   });
 
-  // Login/logout: ambil data baru agar masking sesuai hak akses.
+  // Login/logout hanya memuat ulang Maintenance
+  // jika halaman Maintenance sedang aktif.
   document.addEventListener("techops:authchange", () => {
-    openPage(true);
+    if (window.TechOps?.getActivePage?.() === "maintenance") {
+      openPage(true);
+    }
   });
+}
+
+document.addEventListener(
+  "DOMContentLoaded",
+  initialize
+);
 
   // =======================================================
   // PUBLIC MODULE
