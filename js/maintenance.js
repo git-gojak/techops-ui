@@ -22,6 +22,7 @@
   let initialized = false;
   let dataLoaded = false;
   let loadPromise = null;
+  let loadVersion = 0;
    
 
   // =======================================================
@@ -233,6 +234,7 @@
   // HALAMAN MAINTENANCE
   // =======================================================
 
+  
   function render() {
     const root = getRoot();
 
@@ -256,13 +258,6 @@
               Catatan perawatan dan perbaikan komputer maupun printer.
             </p>
           </div>
-
-          <button
-            type="button"
-            class="inventory-button"
-            id="maintenanceRefresh">
-            ↻ Perbarui
-          </button>
         </div>
 
         <div class="inventory-toolbar">
@@ -274,6 +269,19 @@
             value="${escapeHTML(currentQuery)}"
             aria-label="Cari riwayat Maintenance"
             autocomplete="off">
+
+          <button
+            type="button"
+            class="inventory-button"
+            id="maintenanceRefresh">
+            ↻ Perbarui
+          </button>
+
+          <span
+            class="inventory-footer"
+            id="maintenanceLoadStatus"
+            aria-live="polite"></span>
+        </div>
 
         <div class="inventory-summary" id="maintenanceSummary">
           <span>Total riwayat: <strong>${rows.length}</strong></span>
@@ -299,7 +307,9 @@
 
             <tbody id="maintenanceTableBody">
               <tr>
-                <td colspan="9">Memuat data Maintenance...</td>
+                <td colspan="9">
+                  ${dataLoaded ? "Menyiapkan tabel..." : "Memuat data..."}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -339,7 +349,9 @@
       </div>
     `;
 
-    $("#maintenanceRefresh")?.addEventListener("click", refresh);
+    $("#maintenanceRefresh")?.addEventListener("click", () => {
+      openPage(true);
+    });
 
     $("#maintenanceSearch")?.addEventListener("input", event => {
       currentQuery = event.target.value;
@@ -371,6 +383,7 @@
     drawTable();
     iconRefresh();
   }
+
 
   // =======================================================
   // TABEL RIWAYAT
@@ -1566,27 +1579,61 @@
   // REFRESH DATA
   // =======================================================
 
+  
   async function refresh() {
     if (!api() || typeof api().get !== "function") {
       throw new Error("TechOpsAPI belum tersedia.");
     }
 
-    const result = await api().get("maintenance.list");
+    const requestVersion = ++loadVersion;
+    const status = $("#maintenanceLoadStatus");
 
-    // Data baru disimpan setelah API berhasil.
-    const rows = normalizeArray(result);
-
-    window.TechOpsMaintenanceData = rows;
-    lastUpdated = new Date();
-    dataLoaded = true;
-    currentPage = 1;
-
-    if (getRoot()) {
-      render();
+    if (status) {
+      status.textContent = "Memperbarui data...";
     }
 
-    return window.TechOpsMaintenanceData;
+    try {
+      const result = await api().get("maintenance.list");
+
+      const rows = normalizeArray(result);
+
+      // Abaikan hasil request lama setelah perubahan autentikasi.
+      if (requestVersion !== loadVersion) {
+        return window.TechOpsMaintenanceData || [];
+      }
+
+      window.TechOpsMaintenanceData = rows;
+      lastUpdated = new Date();
+      dataLoaded = true;
+      currentPage = 1;
+
+      if (getRoot() && $("#maintenanceTableBody")) {
+        drawTable();
+      } else {
+        render();
+      }
+
+      const currentStatus = $("#maintenanceLoadStatus");
+
+      if (currentStatus) {
+        currentStatus.textContent = "Data terbaru";
+      }
+
+      return window.TechOpsMaintenanceData;
+
+    } catch (error) {
+      if (requestVersion === loadVersion) {
+        const currentStatus = $("#maintenanceLoadStatus");
+
+        if (currentStatus) {
+          currentStatus.textContent = "Pembaruan gagal";
+        }
+      }
+
+      throw error;
+    }
   }
+
      // =======================================================
   // CACHE DAN PENCEGAHAN REQUEST GANDA
   // =======================================================
@@ -1641,46 +1688,60 @@
 
     const root = getRoot();
 
-    // Jika data sudah ada, tampilkan cache tanpa memanggil API.
-    if (dataLoaded && !forceRefresh) {
+    if (!root) return;
+
+    // Pertahankan struktur halaman jika sudah tersedia.
+    if (!$("#maintenanceTableBody")) {
       render();
+    } else {
+      drawTable();
+    }
+
+    // Gunakan data tersimpan jika tidak diminta refresh.
+    if (dataLoaded && !forceRefresh) {
       return;
     }
 
-    if (root) {
-      root.innerHTML = `
-        <div class="maintenance-loading">
-          Memuat data Maintenance...
-        </div>
+    const body = $("#maintenanceTableBody");
+    const status = $("#maintenanceLoadStatus");
+
+    if (!dataLoaded && body) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="9">Memuat data Maintenance...</td>
+        </tr>
       `;
     }
 
+    if (status) {
+      status.textContent = dataLoaded
+        ? "Memperbarui data..."
+        : "Memuat data...";
+    }
+
     try {
-     await loadData(forceRefresh);
+      await loadData(forceRefresh);
 
     } catch (error) {
       console.error("Maintenance load:", error);
 
-      if (root) {
-        root.innerHTML = `
-          <div class="maintenance-page">
-            <div class="maintenance-empty maintenance-load-error">
-              <strong>Data Maintenance belum dapat dimuat.</strong>
-              <span>${escapeHTML(error.message || "Periksa koneksi API.")}</span>
-
-              <button
-                type="button"
-                class="maintenance-button"
-                id="maintenanceRetry"
-              >
-                Coba Lagi
-              </button>
-            </div>
-          </div>
+      // Jika belum pernah ada data, tampilkan pesan di tabel.
+      // Jika sudah ada data, jangan hapus data terakhir.
+      if (!dataLoaded && body) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="9">
+              Data belum dapat dimuat.
+              ${escapeHTML(error.message || "Periksa koneksi API.")}
+            </td>
+          </tr>
         `;
+      }
 
-        $("#maintenanceRetry")
-          ?.addEventListener("click", () => openPage(true));
+      const currentStatus = $("#maintenanceLoadStatus");
+
+      if (currentStatus) {
+        currentStatus.textContent = "Pembaruan gagal";
       }
     }
   }
@@ -1688,32 +1749,40 @@
     // =======================================================
   // INISIALISASI — SAMA SEPERTI INVENTARIS
   // =======================================================
-
+  
   function initialize() {
-  if (!Array.isArray(window.TechOpsMaintenanceData)) {
-    window.TechOpsMaintenanceData = [];
+    if (!Array.isArray(window.TechOpsMaintenanceData)) {
+      window.TechOpsMaintenanceData = [];
+    }
+
+    // Saat Maintenance dibuka, tampilkan cache lalu perbarui.
+    document.addEventListener("techops:pagechange", event => {
+      if (event.detail?.page === "maintenance") {
+        openPage(true);
+      }
+    });
+
+    // Cache harus dibersihkan setiap kali status Admin berubah.
+    // Ini mencegah data Admin tertinggal setelah logout.
+    document.addEventListener("techops:authchange", () => {
+      loadVersion++;
+
+      dataLoaded = false;
+      lastUpdated = null;
+      window.TechOpsMaintenanceData = [];
+
+      if (
+        window.TechOps?.getActivePage?.() === "maintenance"
+      ) {
+        openPage(true);
+      }
+    });
   }
 
-  // Memuat Maintenance hanya ketika halamannya dibuka.
-  document.addEventListener("techops:pagechange", event => {
-    if (event.detail?.page === "maintenance") {
-      openPage(true);
-    }
-  });
-
-  // Login/logout hanya memuat ulang Maintenance
-  // jika halaman Maintenance sedang aktif.
-  document.addEventListener("techops:authchange", () => {
-    if (window.TechOps?.getActivePage?.() === "maintenance") {
-      openPage(true);
-    }
-  });
-}
-
-document.addEventListener(
-  "DOMContentLoaded",
-  initialize
-);
+  document.addEventListener(
+    "DOMContentLoaded",
+    initialize
+  );
 
   // =======================================================
   // PUBLIC MODULE
