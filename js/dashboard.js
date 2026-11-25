@@ -1290,17 +1290,30 @@ const pagination = schedules.length
   // =======================================================
   // INISIALISASI
   // =======================================================
+function init() {
+  ensureLayout();
 
-  function init() {
-    ensureLayout();
+  // Refresh ketika Dashboard dibuka.
+  document.addEventListener("techops:pagechange", event => {
+    if (event.detail?.page === "dashboard") {
+      refresh();
+    }
+  });
 
-    document.addEventListener(
-      "techops:authchange",
-      refresh
-    );
+  // Login/logout hanya me-refresh Dashboard
+  // jika Dashboard sedang aktif.
+  document.addEventListener("techops:authchange", () => {
+    if (window.TechOps?.getActivePage?.() === "dashboard") {
+      refresh();
+    }
+  });
 
+  // Dashboard adalah halaman awal aplikasi.
+  if (window.TechOps?.getActivePage?.() === "dashboard") {
     refresh();
   }
+}
+  
 
   document.addEventListener("DOMContentLoaded", init);
 
