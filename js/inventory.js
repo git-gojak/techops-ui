@@ -686,81 +686,61 @@
     });
   }
 
-  
+
   function initialize() {
-    // Siapkan struktur kedua halaman.
+    // Siapkan struktur halaman Komputer dan Printer.
     renderPage("computers");
     renderPage("printers");
 
     refreshAdminButtons();
 
+    // Memuat data sesuai halaman inventaris yang sedang aktif.
     function loadActivePage() {
       const page = window.TechOps?.getActivePage?.();
 
       if (page === "computers") {
         load("computers");
-      }
-
-      if (page === "printers") {
+      } else if (page === "printers") {
         load("printers");
       }
     }
 
+    // Saat pengguna berpindah halaman.
     document.addEventListener("techops:pagechange", event => {
       const page = event.detail?.page;
 
       if (page === "computers") {
         load("computers");
-      }
-
-      if (page === "printers") {
+      } else if (page === "printers") {
         load("printers");
       }
     });
 
+    // Saat Admin login atau logout.
     document.addEventListener("techops:authchange", () => {
-      // Batalkan request sebelumnya agar hasil lama
-      // tidak menimpa data setelah login atau logout.
       state.requestId.computers++;
       state.requestId.printers++;
 
-      // Bersihkan cache untuk menjaga batas akses Admin.
+      // Bersihkan cache agar data sesuai hak akses terbaru.
       state.computers = [];
       state.printers = [];
 
       refreshAdminButtons();
-
       drawTable("computers");
       drawTable("printers");
 
       loadActivePage();
     });
 
+    // Perubahan tampilan khusus Admin.
     document.addEventListener("techops:admin-ui-updated", () => {
       refreshAdminButtons();
       drawTable("computers");
       drawTable("printers");
     });
 
+    // Muat halaman awal jika termasuk halaman inventaris.
     loadActivePage();
-  }
-
-  // Login/logout hanya memuat ulang halaman inventaris aktif.
-  document.addEventListener("techops:authchange", () => {
-    refreshAdminButtons();
-    loadActivePage();
-  });
-
-  // Perubahan tampilan khusus Admin tetap dipertahankan.
-  document.addEventListener("techops:admin-ui-updated", () => {
-    refreshAdminButtons();
-    drawTable("computers");
-    drawTable("printers");
-  });
-
-  // Jika halaman awal diatur ke Komputer atau Printer,
-  // muat halaman tersebut saja.
-  loadActivePage();
   }
 
   document.addEventListener("DOMContentLoaded", initialize);
