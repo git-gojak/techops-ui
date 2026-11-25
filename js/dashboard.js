@@ -374,7 +374,7 @@ async function loadData() {
         <div class="card-heading">
           <div>
             <h3>Monitoring Jadwal Maintenance</h3>
-            <p>Jadwal berdasarkan catatan perawatan terbaru setiap perangkat</p>
+            <p>Jadwal perawatan terdekat di setiap perangkat</p>
           </div>
         </div>
         <div id="dashboardSchedules"></div>
@@ -384,7 +384,7 @@ async function loadData() {
         <div class="card-heading">
           <div>
             <h3>Aktivitas Maintenance Terbaru</h3>
-            <p>Lima aktivitas komputer dan printer paling baru</p>
+            <p>Catatan perawatan dan perbaikan perangkat | max 25 Unit</p>
           </div>
         </div>
         <div id="latestMaintenance"></div>
@@ -394,7 +394,7 @@ async function loadData() {
         <div class="card-heading">
           <div>
             <h3>Kondisi Perangkat</h3>
-            <p>Berdasarkan catatan Maintenance terbaru</p>
+            <p>Monitoring kondisi komputer dan printer</p>
           </div>
         </div>
         <div id="dashboardConditions"></div>
@@ -599,29 +599,14 @@ async function loadData() {
 
     return null;
   }
-/*
-  function getDeviceModel(row, map) {
-    const inventory = findInventoryDevice(row, map);
 
-    return String(
-      row?.model ||
-      row?.Model ||
-      inventory?.model ||
-      ""
-    ).trim();
-  }
-*/
-   function getDeviceModel(row, map) {
+  function getDeviceModel(row, map) {
   const inventory = findInventoryDevice(row, map);
   const type = typeOf(row?.jenis_aset);
-/*
-  if (type === "komputer" && inventory?.model) {
-    return String(inventory.model).trim();
-  }
-*/
-      if (type === "komputer") {
-  return String(inventory?.model || "").trim();
-}
+
+   if (type === "komputer") {
+     return String(inventory?.model || "").trim();
+   }
       
   return String(
     row?.model ||
@@ -726,8 +711,6 @@ const pagination = allRows.length
   `
   : "";
 
-
-
   const container = $("#latestMaintenance");
   if (!container) return;
 
@@ -736,19 +719,9 @@ const pagination = allRows.length
       <div class="dashboard-activity-list">
         ${rows.map(({ row, date }) => {
           const type = typeOf(row.jenis_aset);
-        //  const isComputer = type === "komputer";
-
-          /*
-          const name = isComputer && !adminView
-            ? "Komputer"
-            : (
-                row.nama_aset ||
-                (type === "printer" ? "Printer" : "Komputer")
-              );
-           */
           const name =
-  row.nama_aset ||
-  (type === "printer" ? "Printer" : "Komputer"); 
+           row.nama_aset ||
+           (type === "printer" ? "Printer" : "Komputer"); 
 
           // Model dan serial publik sudah disensor oleh Backend.
           // Tampilkan nilai yang diterima dari Backend apa adanya.
@@ -817,7 +790,6 @@ const pagination = allRows.length
     }
   });
 }
-
 
   // =======================================================
   // CATATAN MAINTENANCE TERBARU PER PERANGKAT
@@ -1221,8 +1193,8 @@ const pagination = schedules.length
       <div class="dashboard-condition-table">
         <div class="condition-table-header">
           <span>Kondisi</span>
-          <strong>${iconSvg("computer")} Komputer</strong>
-          <strong>${iconSvg("printer")} Printer</strong>
+          <strong>${iconSvg("computer")} </strong>
+          <strong>${iconSvg("printer")} </strong>
         </div>
 
         ${rows.map(item => `
@@ -1235,17 +1207,6 @@ const pagination = schedules.length
             <strong>${groups.printer[item.key]}</strong>
           </div>
         `).join("")}
-      </div>
-
-      <div class="dashboard-condition-footer">
-        <span>
-          <b>${iconSvg("computer")}</b>
-          Komputer: ${komputerAktif} aktif · ${computerArchive} arsip
-        </span>
-        <span>
-          <b>${iconSvg("printer")}</b>
-          Printer: ${printerAktif} aktif · ${printerArchive} arsip
-        </span>
       </div>
     `;
   }
