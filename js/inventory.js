@@ -66,6 +66,10 @@
     page: { computers: 1, printers: 1 },
     pageSize: 10,
     busy: false
+    requestId: {
+      computers: 0,
+      printers: 0
+    },
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -157,6 +161,7 @@
     return row[key] ?? "-";
   }
 
+  
   function renderPage(type) {
     const config = CONFIG[type];
     const section = $(`#page-${type}`);
@@ -196,6 +201,11 @@
             data-refresh="${type}">
             ↻ Perbarui
           </button>
+
+          <span
+            class="inventory-footer"
+            id="${type}LoadStatus"
+            aria-live="polite"></span>
         </div>
 
         <div class="inventory-summary" id="${type}Summary">
@@ -213,13 +223,18 @@
               </tr>
             </thead>
             <tbody id="${type}TableBody">
-              <tr><td colspan="${config.columns.length + 3}">Memuat data...</td></tr>
+              <tr>
+                <td colspan="${config.columns.length + 3}">
+                  Memuat data...
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
 
         <div class="inventory-footer">
           <span id="${type}PageInfo">-</span>
+
           <div class="inventory-pagination">
             <select data-pagesize="${type}" aria-label="Jumlah data per halaman">
               <option value="10">10 data</option>
@@ -227,6 +242,7 @@
               <option value="50">50 data</option>
               <option value="all">Semua</option>
             </select>
+
             <button class="inventory-button" data-prev="${type}">‹</button>
             <button class="inventory-button" data-next="${type}">›</button>
           </div>
@@ -241,6 +257,7 @@
     });
   }
 
+
   async function request(type, action, payload = {}) {
     const result = await window.TechOpsAPI.request(
       `${CONFIG[type].action}.${action}`,
@@ -254,24 +271,69 @@
     return result.data;
   }
 
+  
   async function load(type) {
+    const requestId = ++state.requestId[type];
     const body = $(`#${type}TableBody`);
-    if (body) body.innerHTML = `<tr><td colspan="10">Memuat data...</td></tr>`;
+    const status = $(`#${type}LoadStatus`);
+
+    // Jangan mengosongkan tabel jika data lama tersedia.
+    if (!state[type].length && body) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="10">Memuat data...</td>
+        </tr>
+      `;
+    }
+
+    if (status) {
+      status.textContent = "Memperbarui data...";
+    }
 
     try {
       const rows = await request(type, "list", {
         includeArchived: isAdmin()
       });
 
-      state[type] = Array.isArray(rows) ? rows : [];
-      drawTable(type);
-    } catch (error) {
-      if (body) {
-        body.innerHTML = `<tr><td colspan="10">${escape(error.message)}</td></tr>`;
+      // Abaikan hasil request yang sudah tidak berlaku.
+      if (requestId !== state.requestId[type]) {
+        return;
       }
+
+      state[type] = Array.isArray(rows) ? rows : [];
+
+      drawTable(type);
+
+      const currentStatus = $(`#${type}LoadStatus`);
+
+      if (currentStatus) {
+        currentStatus.textContent = "Data terbaru";
+      }
+
+    } catch (error) {
+      if (requestId !== state.requestId[type]) {
+        return;
+      }
+
+      // Data lama tetap ditampilkan jika tersedia.
+      if (!state[type].length && body) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="10">${escape(error.message)}</td>
+          </tr>
+        `;
+      }
+
+      const currentStatus = $(`#${type}LoadStatus`);
+
+      if (currentStatus) {
+        currentStatus.textContent = "Pembaruan gagal";
+      }
+
       console.error(`Gagal memuat ${type}:`, error);
     }
   }
+
 
   function drawTable(type) {
     const config = CONFIG[type];
@@ -624,25 +686,63 @@
     });
   }
 
+  
   function initialize() {
-  // Siapkan struktur kedua halaman.
-  // Tidak mengambil data keduanya sekaligus.
-  renderPage("computers");
-  renderPage("printers");
+    // Siapkan struktur kedua halaman.
+    renderPage("computers");
+    renderPage("printers");
 
-  refreshAdminButtons();
+    refreshAdminButtons();
 
-  // Memuat hanya halaman inventaris yang sedang aktif.
-  function loadActivePage() {
-    const page = window.TechOps?.getActivePage?.();
+    function loadActivePage() {
+      const page = window.TechOps?.getActivePage?.();
 
-    if (page === "computers") {
-      load("computers");
+      if (page === "computers") {
+        load("computers");
+      }
+
+      if (page === "printers") {
+        load("printers");
+      }
     }
 
-    if (page === "printers") {
-      load("printers");
-    }
+    document.addEventListener("techops:pagechange", event => {
+      const page = event.detail?.page;
+
+      if (page === "computers") {
+        load("computers");
+      }
+
+      if (page === "printers") {
+        load("printers");
+      }
+    });
+
+    document.addEventListener("techops:authchange", () => {
+      // Batalkan request sebelumnya agar hasil lama
+      // tidak menimpa data setelah login atau logout.
+      state.requestId.computers++;
+      state.requestId.printers++;
+
+      // Bersihkan cache untuk menjaga batas akses Admin.
+      state.computers = [];
+      state.printers = [];
+
+      refreshAdminButtons();
+
+      drawTable("computers");
+      drawTable("printers");
+
+      loadActivePage();
+    });
+
+    document.addEventListener("techops:admin-ui-updated", () => {
+      refreshAdminButtons();
+      drawTable("computers");
+      drawTable("printers");
+    });
+
+    loadActivePage();
   }
 
   // Saat pengguna membuka Komputer atau Printer.
