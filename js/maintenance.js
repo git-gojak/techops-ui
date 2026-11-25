@@ -12,8 +12,8 @@
   const $ = (selector, root = document) =>
     root.querySelector(selector);
 
-  const PAGE_SIZE = 10;
-
+  
+  let pageSize = 10;
   let selectedDevice = null;
   let qrScanner = null;
   let scannerStarting = false;
@@ -232,253 +232,70 @@
   // HALAMAN MAINTENANCE
   // =======================================================
 
-  function render() {
-    const root = getRoot();
+  
+function render() {
+  const root = getRoot();
 
-    if (!root) {
-      console.error("Area #maintenanceRoot tidak ditemukan.");
-      return;
-    }
-
-    const rows = Array.isArray(window.TechOpsMaintenanceData)
-      ? window.TechOpsMaintenanceData
-      : [];
-
-    root.innerHTML = `
-      <div class="maintenance-page">
-
-        <div class="maintenance-heading">
-          <div>
-            <span class="maintenance-eyebrow">
-              ASSET MANAGEMENT
-            </span>
-
-            <h2>Riwayat Maintenance</h2>
-
-            <p>
-              Catatan perawatan dan perbaikan perangkat komputer
-              maupun printer.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            class="maintenance-button"
-            id="maintenanceRefresh"
-          >
-            <span aria-hidden="true">↻</span>
-            Perbarui
-          </button>
-        </div>
-
-        <div class="maintenance-info">
-          <div>
-            <small>Data terakhir diperbarui</small>
-            <strong id="maintenanceLastUpdated">
-              ${lastUpdated
-                ? escapeHTML(
-                    new Intl.DateTimeFormat("id-ID", {
-                      dateStyle: "medium",
-                      timeStyle: "short"
-                    }).format(new Date(lastUpdated))
-                  )
-                : "Belum tersedia"}
-            </strong>
-          </div>
-
-          <div class="maintenance-total">
-            <strong>${rows.length}</strong>
-            <span>Riwayat</span>
-          </div>
-        </div>
-
-        <div class="maintenance-panel">
-
-          <div class="maintenance-toolbar">
-
-            <input
-              type="search"
-              id="maintenanceSearch"
-              class="maintenance-search"
-              placeholder="Cari perangkat, serial, kegiatan, teknisi..."
-              value="${escapeHTML(currentQuery)}"
-              aria-label="Cari riwayat Maintenance"
-            >
-
-            ${isAdmin() ? `
-              <button
-                type="button"
-                class="maintenance-button maintenance-primary"
-                id="scanMaintenanceQR"
-              >
-                <span aria-hidden="true">▦</span>
-                Scan QR
-              </button>
-            ` : ""}
-
-          </div>
-
-          <div id="maintenanceTable"></div>
-
-        </div>
-
-      </div>
-    `;
-
-    $("#maintenanceRefresh")?.addEventListener(
-      "click",
-      refresh
-    );
-
-    $("#maintenanceSearch")?.addEventListener(
-      "input",
-      event => {
-        currentQuery = event.target.value;
-        currentPage = 1;
-        drawTable();
-      }
-    );
-
-    $("#scanMaintenanceQR")?.addEventListener(
-      "click",
-      openScanner
-    );
-
-    drawTable();
-    iconRefresh();
+  if (!root) {
+    console.error("Area #maintenanceRoot tidak ditemukan.");
+    return;
   }
 
-  // =======================================================
-  // TABEL RIWAYAT
-  // =======================================================
+  const rows = Array.isArray(window.TechOpsMaintenanceData)
+    ? window.TechOpsMaintenanceData
+    : [];
 
-  function drawTable() {
-    const host = $("#maintenanceTable");
-    if (!host) return;
+  root.innerHTML = `
+    <div class="inventory-page">
 
-    const all = Array.isArray(window.TechOpsMaintenanceData)
-      ? window.TechOpsMaintenanceData
-      : [];
-
-    const query = String(currentQuery || "").toLowerCase();
-
-    const filteredRows = all.filter(row => [
-      "Tanggal",
-      "jenis_aset",
-      "nama_aset",
-      "serial",
-      "kegiatan",
-      "kondisi",
-      "keterangan",
-      "teknisi",
-      "jadwal"
-    ].some(key =>
-      String(row[key] ?? "").toLowerCase().includes(query)
-    ));
-
-    if (!filteredRows.length) {
-      currentPage = 1;
-
-      host.innerHTML = `
-        <div class="maintenance-empty">
-          Tidak ada riwayat Maintenance yang cocok.
+      <div class="inventory-heading">
+        <div>
+          <span class="inventory-eyebrow">MANAJEMEN PERANGKAT</span>
+          <h2>Riwayat Maintenance</h2>
+          <p>
+            Catatan perawatan dan perbaikan komputer maupun printer.
+          </p>
         </div>
-      `;
 
-      return;
-    }
+        <button
+          type="button"
+          class="inventory-button"
+          id="maintenanceRefresh">
+          ↻ Perbarui
+        </button>
+      </div>
 
-    const totalPages = Math.ceil(
-      filteredRows.length / PAGE_SIZE
-    );
+      <div class="inventory-toolbar">
+        <input
+          type="search"
+          id="maintenanceSearch"
+          class="inventory-search"
+          placeholder="Cari perangkat, serial, kegiatan, teknisi..."
+          value="${escapeHTML(currentQuery)}"
+          aria-label="Cari riwayat Maintenance"
+          autocomplete="off">
 
-    currentPage = Math.min(
-      Math.max(currentPage, 1),
-      totalPages
-    );
-
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-
-    const visibleRows = filteredRows.slice(
-      startIndex,
-      startIndex + PAGE_SIZE
-    );
-
-    const endIndex = startIndex + visibleRows.length;
-
-    let paginationHTML = "";
-
-    if (totalPages > 1) {
-      const maxVisiblePages = 5;
-
-      let firstPage = Math.max(
-        1,
-        currentPage - Math.floor(maxVisiblePages / 2)
-      );
-
-      let lastPage = Math.min(
-        totalPages,
-        firstPage + maxVisiblePages - 1
-      );
-
-      firstPage = Math.max(
-        1,
-        lastPage - maxVisiblePages + 1
-      );
-
-      const pageNumbers = [];
-
-      for (
-        let page = firstPage;
-        page <= lastPage;
-        page++
-      ) {
-        pageNumbers.push(`
+        ${isAdmin() ? `
           <button
             type="button"
-            class="maintenance-page-number ${
-              page === currentPage ? "active" : ""
-            }"
-            data-maintenance-page="${page}"
-            aria-label="Halaman ${page}"
-            aria-current="${
-              page === currentPage ? "page" : "false"
-            }"
-          >
-            ${page}
+            class="inventory-button inventory-primary"
+            id="scanMaintenanceQR">
+            ▦ Scan QR
           </button>
-        `);
-      }
+        ` : ""}
+      </div>
 
-      paginationHTML = `
-        <nav
-          class="maintenance-pagination"
-          aria-label="Navigasi halaman riwayat Maintenance"
-        >
-          <button
-            type="button"
-            data-maintenance-page="${currentPage - 1}"
-            aria-label="Halaman sebelumnya"
-            ${currentPage === 1 ? "disabled" : ""}
-          >‹</button>
+      <div class="inventory-summary" id="maintenanceSummary">
+        <span>Total riwayat: <strong>${rows.length}</strong></span>
+        <span>Hasil pencarian: <strong>—</strong></span>
+        <span>Data diperbarui: <strong>Belum tersedia</strong></span>
+      </div>
 
-          ${pageNumbers.join("")}
-
-          <button
-            type="button"
-            data-maintenance-page="${currentPage + 1}"
-            aria-label="Halaman berikutnya"
-            ${currentPage === totalPages ? "disabled" : ""}
-          >›</button>
-        </nav>
-      `;
-    }
-
-    host.innerHTML = `
-      <div class="maintenance-table-wrap">
-        <table class="maintenance-table">
+      <div class="inventory-table-wrap">
+        <table class="inventory-table">
           <thead>
             <tr>
+              <th>No.</th>
               <th>Tanggal</th>
               <th>Jenis</th>
               <th>Nama Perangkat</th>
@@ -490,91 +307,220 @@
             </tr>
           </thead>
 
-          <tbody>
-            ${visibleRows.map(row => {
-              const isPrinter =
-                String(row.jenis_aset || "").toLowerCase() ===
-                "printer";
-
-              return `
-                <tr>
-                  <td>${escapeHTML(formatDate(row.Tanggal))}</td>
-
-                  <td>
-                    <span class="maintenance-type ${
-                      isPrinter ? "printer" : ""
-                    }">
-                      ${escapeHTML(row.jenis_aset || "-")}
-                    </span>
-                  </td>
-
-                  <td class="maintenance-device-name">
-                    ${escapeHTML(
-                      isPrinter
-                        ? row.nama_aset || "-"
-                        : maskComputerName(row.nama_aset)
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHTML(maskSerial(row.serial))}
-                  </td>
-
-                  <td>
-                    ${escapeHTML(
-                      row.jenis_kegiatan ||
-                      row.kegiatan ||
-                      "-"
-                    )}
-                  </td>
-
-                  <td>
-                    ${escapeHTML(row.keterangan || "-")}
-                  </td>
-
-                  <td>
-                    ${escapeHTML(row.kondisi || "-")}
-                  </td>
-
-                  <td>
-                    ${escapeHTML(row.teknisi || "-")}
-                  </td>
-                </tr>
-              `;
-            }).join("")}
+          <tbody id="maintenanceTableBody">
+            <tr>
+              <td colspan="9">Memuat data Maintenance...</td>
+            </tr>
           </tbody>
         </table>
       </div>
 
-      ${paginationHTML}
+      <div class="inventory-footer">
+        <span id="maintenancePageInfo">Menyiapkan data...</span>
 
-      <div class="maintenance-table-footer">
-        Menampilkan ${startIndex + 1}–${endIndex}
-        dari ${filteredRows.length} riwayat
+        <div class="inventory-pagination">
+          <select
+            id="maintenancePageSize"
+            aria-label="Jumlah data per halaman">
+            <option value="10" ${pageSize === 10 ? "selected" : ""}>10 data</option>
+            <option value="20" ${pageSize === 20 ? "selected" : ""}>20 data</option>
+            <option value="50" ${pageSize === 50 ? "selected" : ""}>50 data</option>
+            <option value="all" ${pageSize === "all" ? "selected" : ""}>Semua</option>
+          </select>
+
+          <button
+            type="button"
+            class="inventory-button"
+            id="maintenancePrev"
+            aria-label="Halaman sebelumnya">
+            ‹
+          </button>
+
+          <button
+            type="button"
+            class="inventory-button"
+            id="maintenanceNext"
+            aria-label="Halaman berikutnya">
+            ›
+          </button>
+        </div>
       </div>
+
+    </div>
+  `;
+
+  $("#maintenanceRefresh")?.addEventListener("click", refresh);
+
+  $("#maintenanceSearch")?.addEventListener("input", event => {
+    currentQuery = event.target.value;
+    currentPage = 1;
+    drawTable();
+  });
+
+  $("#scanMaintenanceQR")?.addEventListener("click", openScanner);
+
+  $("#maintenancePageSize")?.addEventListener("change", event => {
+    pageSize = event.target.value === "all"
+      ? "all"
+      : Number(event.target.value);
+
+    currentPage = 1;
+    drawTable();
+  });
+
+  $("#maintenancePrev")?.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      drawTable();
+    }
+  });
+
+  $("#maintenanceNext")?.addEventListener("click", () => {
+    currentPage++;
+    drawTable();
+  });
+
+  drawTable();
+  iconRefresh();
+}
+
+
+  // =======================================================
+  // TABEL RIWAYAT
+  // =======================================================
+
+ 
+function drawTable() {
+  const body = $("#maintenanceTableBody");
+  if (!body) return;
+
+  const all = Array.isArray(window.TechOpsMaintenanceData)
+    ? window.TechOpsMaintenanceData
+    : [];
+
+  const query = String(currentQuery || "").toLowerCase().trim();
+
+  const filteredRows = all.filter(row => [
+    "Tanggal",
+    "jenis_aset",
+    "nama_aset",
+    "serial",
+    "kegiatan",
+    "jenis_kegiatan",
+    "kondisi",
+    "keterangan",
+    "teknisi",
+    "jadwal"
+  ].some(key =>
+    String(row[key] ?? "").toLowerCase().includes(query)
+  ));
+
+  const size = pageSize === "all"
+    ? Math.max(filteredRows.length, 1)
+    : pageSize;
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRows.length / size)
+  );
+
+  currentPage = Math.min(
+    Math.max(currentPage, 1),
+    totalPages
+  );
+
+  const startIndex = (currentPage - 1) * size;
+
+  const visibleRows = filteredRows.slice(
+    startIndex,
+    startIndex + size
+  );
+
+  const endIndex = startIndex + visibleRows.length;
+
+  // Ringkasan data
+  const updatedLabel = lastUpdated
+    ? new Intl.DateTimeFormat("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(new Date(lastUpdated))
+    : "Belum tersedia";
+
+  const summary = $("#maintenanceSummary");
+
+  if (summary) {
+    summary.innerHTML = `
+      <span>Total riwayat: <strong>${all.length}</strong></span>
+      <span>Hasil pencarian: <strong>${filteredRows.length}</strong></span>
+      <span>Data diperbarui: <strong>${escapeHTML(updatedLabel)}</strong></span>
     `;
-
-    host.querySelectorAll("[data-maintenance-page]")
-      .forEach(button => {
-        button.addEventListener("click", () => {
-          const nextPage = Number(
-            button.dataset.maintenancePage
-          );
-
-          if (
-            !Number.isInteger(nextPage) ||
-            nextPage < 1 ||
-            nextPage > totalPages ||
-            nextPage === currentPage
-          ) {
-            return;
-          }
-
-          currentPage = nextPage;
-          drawTable();
-        });
-      });
   }
+
+  // Isi tabel
+  if (!visibleRows.length) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="9">Tidak ada riwayat Maintenance yang cocok.</td>
+      </tr>
+    `;
+  } else {
+    body.innerHTML = visibleRows.map((row, index) => {
+      const isPrinter =
+        String(row.jenis_aset || "").toLowerCase() === "printer";
+
+      return `
+        <tr>
+          <td>${startIndex + index + 1}</td>
+
+          <td>${escapeHTML(formatDate(row.Tanggal))}</td>
+
+          <td>${escapeHTML(row.jenis_aset || "-")}</td>
+
+          <td>
+            ${escapeHTML(
+              isPrinter
+                ? row.nama_aset || "-"
+                : maskComputerName(row.nama_aset)
+            )}
+          </td>
+
+          <td>${escapeHTML(maskSerial(row.serial))}</td>
+
+          <td>
+            ${escapeHTML(
+              row.jenis_kegiatan ||
+              row.kegiatan ||
+              "-"
+            )}
+          </td>
+
+          <td>${escapeHTML(row.keterangan || "-")}</td>
+
+          <td>${escapeHTML(row.kondisi || "-")}</td>
+
+          <td>${escapeHTML(row.teknisi || "-")}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // Informasi halaman
+  const pageInfo = $("#maintenancePageInfo");
+
+  if (pageInfo) {
+    pageInfo.textContent = filteredRows.length
+      ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${filteredRows.length} riwayat`
+      : "Tidak ada data";
+  }
+
+  // Tombol navigasi
+  const prev = $("#maintenancePrev");
+  const next = $("#maintenanceNext");
+
+  if (prev) prev.disabled = currentPage <= 1;
+  if (next) next.disabled = currentPage >= totalPages;
+}
+
 
   // =======================================================
   // QR SCANNER
