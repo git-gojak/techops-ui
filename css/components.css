@@ -435,3 +435,413 @@
     padding: 20px 15px;
   }
 }
+
+
+/* =========================================================
+   GOJAK TECHOPS — MAINTENANCE
+   Hanya komponen yang masih digunakan
+   ========================================================= */
+
+/* Tampilan fallback dan loading */
+
+.maintenance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.maintenance-empty,
+.maintenance-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 130px;
+  padding: 22px;
+  border: 1px dashed var(--border-bright);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.maintenance-load-error strong {
+  color: var(--text-main);
+}
+
+.maintenance-load-error span {
+  overflow-wrap: anywhere;
+}
+
+/* Tombol Maintenance */
+
+.maintenance-button {
+  min-height: 39px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.maintenance-button:hover:not(:disabled) {
+  border-color: var(--blue-light);
+  filter: brightness(1.08);
+}
+
+.maintenance-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.maintenance-primary {
+  border-color: rgba(125,190,255,.35);
+  background: linear-gradient(135deg,#329aff,#1260ce);
+  color: white;
+  box-shadow: var(--shadow-blue);
+}
+
+/* Modal */
+
+.maintenance-modal-open {
+  overflow: hidden;
+}
+
+.maintenance-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(2,7,14,.82);
+  backdrop-filter: blur(8px);
+}
+
+.maintenance-modal {
+  width: 100%;
+  max-width: 680px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-bright);
+  border-radius: 18px;
+  background: linear-gradient(145deg,#1b2a40,#101a29);
+  box-shadow: 0 25px 80px rgba(0,0,0,.55);
+}
+
+.maintenance-modal-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.maintenance-modal-header small {
+  color: var(--blue-light);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .8px;
+}
+
+.maintenance-modal-header h2 {
+  margin-top: 5px;
+  color: var(--text-main);
+  font-size: 17px;
+}
+
+.maintenance-modal-close {
+  width: 35px;
+  height: 35px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.maintenance-modal-body {
+  overflow-y: auto;
+  padding: 19px;
+}
+
+.maintenance-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+/* QR Scanner */
+
+.maintenance-scanner-content > p {
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.maintenance-qr-reader {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #080d14;
+}
+
+.maintenance-qr-reader video {
+  border-radius: 12px;
+}
+
+.maintenance-scan-message {
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.maintenance-error {
+  display: block;
+  margin-bottom: 12px;
+  color: #ff9292;
+}
+
+/* Konfirmasi perangkat */
+
+.maintenance-confirmation-heading {
+  margin-bottom: 16px;
+}
+
+.maintenance-confirmation-heading span {
+  color: var(--blue-light);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .8px;
+}
+
+.maintenance-confirmation-heading h3 {
+  margin-top: 5px;
+  color: var(--text-main);
+  font-size: 18px;
+}
+
+.maintenance-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 10px;
+}
+
+.maintenance-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+}
+
+.maintenance-detail-field small {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.maintenance-detail-field strong {
+  overflow-wrap: anywhere;
+  color: var(--text-main);
+  font-size: 12px;
+}
+
+/* Form Maintenance */
+
+.maintenance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.maintenance-form-intro {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.maintenance-form-section {
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255,255,255,.02);
+}
+
+.maintenance-form-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.maintenance-form-section-title > span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(48,139,255,.13);
+  color: var(--blue-light);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.maintenance-form-section-title h3 {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.maintenance-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 13px;
+}
+
+.maintenance-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.maintenance-field-wide {
+  grid-column: 1 / -1;
+}
+
+.maintenance-field > span {
+  font-weight: 650;
+}
+
+.maintenance-field > span b {
+  color: #ff8585;
+}
+
+.maintenance-field input:not([type="radio"]) {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-bright);
+  border-radius: 9px;
+  outline: none;
+  background: var(--bg-input);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 12px;
+}
+
+.maintenance-field input:focus {
+  border-color: var(--blue-light);
+}
+
+.maintenance-field input[readonly] {
+  opacity: .8;
+  cursor: not-allowed;
+}
+
+.maintenance-field small {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.maintenance-radio-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+}
+
+.maintenance-radio-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-main);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.maintenance-radio-group input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue-light);
+}
+
+.maintenance-form-message {
+  min-height: 0;
+  color: #8fe0b5;
+  font-size: 12px;
+}
+
+.maintenance-form-message.error {
+  color: #ff9292;
+}
+
+/* Responsif HP: hanya modal dan form */
+
+@media (max-width: 760px) {
+  .maintenance-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .maintenance-modal {
+    max-height: 94vh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .maintenance-modal-body {
+    padding: 15px;
+  }
+
+  .maintenance-detail-grid,
+  .maintenance-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .maintenance-field-wide {
+    grid-column: auto;
+  }
+
+  .maintenance-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .maintenance-modal-actions .maintenance-button {
+    width: 100%;
+  }
+}
+
+/* Menyembunyikan field kondisional */
+
+.maintenance-field[hidden] {
+  display: none !important;
+}
