@@ -767,28 +767,6 @@ const pagination = allRows.length
     </div>
   `;
 }).join("")}
-
-          return `
-            <div class="dashboard-activity-item">
-              <span class="dashboard-activity-icon ${type}">
-                ${iconSvg(type === "printer" ? "printer" : "computer")}
-              </span>
-
-              <div class="dashboard-activity-info">
-                <strong>${esc(name)}</strong>
-                ${detail ? `<span>${detail}</span>` : ""}
-
-                <small>
-                  ${esc(activity)}
-                  ·
-                  ${esc(row.kondisi || "Kondisi belum diisi")}
-                </small>
-
-                <time>${esc(fmtDateTime(date))}</time>
-              </div>
-            </div>
-          `;
-        }).join("")}
       </div>
 
       ${pagination}
