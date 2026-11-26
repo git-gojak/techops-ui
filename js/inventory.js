@@ -85,6 +85,10 @@
     requestId: {
       computers: 0,
       printers: 0
+    },
+    lastUpdated: {
+      computers: null,
+      printers: null
     }
   };
 
@@ -366,19 +370,14 @@
             id="${type}Search"
             placeholder="Cari data inventaris..."
             autocomplete="off">
-
-          <button
-            type="button"
-            class="inventory-button"
-            data-refresh="${type}">
-            ↻ Perbarui
-          </button>
-
-          <span
-            class="inventory-footer"
-            id="${type}LoadStatus"
-            aria-live="polite"></span>
-        </div>
+        <button
+          type="button"
+          class="inventory-button inventory-refresh-icon"
+          data-refresh="${type}"
+          aria-label="Perbarui data"
+          title="Perbarui data">
+          <i data-lucide="refresh-cw"></i>
+        </button>
 
         <div
           class="inventory-summary"
@@ -518,11 +517,13 @@
         return;
       }
 
-      state[type] = Array.isArray(rows)
-        ? rows
-        : [];
-
-      drawTable(type);
+    state[type] = Array.isArray(rows)
+      ? rows
+      : [];
+    
+    state.lastUpdated[type] = new Date();
+    
+    drawTable(type);
 
       const currentStatus = $(`#${type}LoadStatus`);
 
@@ -589,11 +590,19 @@
 
     const summary = $(`#${type}Summary`);
 
+    const updatedLabel = state.lastUpdated[type]
+      ? new Intl.DateTimeFormat("id-ID", {
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(state.lastUpdated[type])
+      : "Belum tersedia";
+    
     if (summary) {
       summary.innerHTML = `
         <span>Total: <strong>${rows.length}</strong></span>
         <span>Aktif: <strong>${activeCount}</strong></span>
-        <span>Arsip: <strong>${archivedCount}</strong></span>        
+        <span>Arsip: <strong>${archivedCount}</strong></span>
+        <span>Terbaru: <strong>${escape(updatedLabel)}</strong></span>
       `;
     }
 
@@ -699,7 +708,7 @@
 
     if (info) {
       info.textContent = sorted.length
-        ? `Menampilkan ${start + 1}–${Math.min(start + displayed.length, sorted.length)} dari ${sorted.length} data`
+        ? `Menampilkan ${start + 1}–${Math.min(start + displayed.length, sorted.length)} dari ${sorted.length} data perangkat`
         : "Tidak ada data";
     }
 
