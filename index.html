@@ -96,8 +96,22 @@
           </svg>
         </span>
         <span>Koneksi</span>
+        
       </button>
-
+      <button
+        class="nav-item"
+        data-page="helpdesk"
+        data-admin-only
+        type="button"
+      >
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16v11H8l-4 4V5z"/>
+            <path d="M8 9h8M8 13h5"/>
+          </svg>
+        </span>
+        <span>Helpdesk</span>
+      </button>
     </nav>
 
     <div class="sidebar-bottom">
@@ -317,6 +331,16 @@
   </div>
 
 </section>
+            <!-- HELPDESK ADMIN -->
+      <section class="page-section" id="page-helpdesk">
+
+        <div id="helpdeskRoot">
+          <div class="maintenance-loading">
+            Halaman Helpdesk siap dimuat.
+          </div>
+        </div>
+
+      </section>
       <!-- KONEKSI -->
       <section class="page-section" id="page-connectivity">
 
@@ -505,6 +529,8 @@
 
 <!-- MAINTENANCE -->
 <script src="js/maintenance.js"></script>
+  <!-- HELPDESK -->
+<script src="js/helpdesk.js"></script>
 <!-- PWA SERVICE WORKER -->
 <script>
   if ("serviceWorker" in navigator && location.protocol === "https:") {
