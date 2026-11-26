@@ -176,7 +176,7 @@
         const result = await api().getPublic("helpdesk.submit", {
           perangkat: device.type,
           nama: device.name || device.unit || "-",
-          serial: device.serial,
+          serial: device.qrValue || device.serial,
           kendala
         });
 
