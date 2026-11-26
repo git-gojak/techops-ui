@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     connectivity: {
       title: "Koneksi",
       subtitle: "Monitoring konektivitas"
-    }
+    }, 
         helpdesk: {
       title: "Helpdesk Inbox",
       subtitle: "Laporan kendala perangkat"
