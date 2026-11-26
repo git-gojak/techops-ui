@@ -943,7 +943,9 @@
 
       selectedDevice = {
         type: isComputer ? "Komputer" : "Printer",
-
+        // Nilai QR asli untuk identifikasi laporan Helpdesk.
+        // Tidak ditampilkan kepada pengguna publik.
+        qrValue: String(qrText || "").trim(),
         serial: getValue(device, [
           "serial",
           "Asset/Serial ID",
@@ -1132,11 +1134,19 @@
       </div>
     `;
 
-    showModal("Informasi Perangkat", content);
+   showModal("Informasi Perangkat", content);
 
-    $("#maintenanceScanAgain")
-      ?.addEventListener("click", openScanner);
-  }
+$("#maintenanceScanAgain")
+  ?.addEventListener("click", openScanner);
+
+$("#maintenanceReportIssue")
+  ?.addEventListener("click", () => {
+    if (window.HelpdeskPage?.openReport) {
+      window.HelpdeskPage.openReport(selectedDevice);
+    } else {
+      alert("Modul Helpdesk belum siap.");
+    }
+  });  }
 
   // =======================================================
   // KONFIRMASI IDENTITAS PERANGKAT
@@ -1199,25 +1209,23 @@
 
         <div class="maintenance-modal-actions">
 
-          <button
-            type="button"
-            class="maintenance-button"
-            id="maintenanceRescan"
-          >
-            Scan Ulang
-          </button>
+  <button
+    type="button"
+    class="maintenance-button maintenance-primary"
+    id="maintenanceReportIssue"
+  >
+    Laporkan Kendala
+  </button>
 
-          <button
-            type="button"
-            class="maintenance-button maintenance-primary"
-            id="maintenanceContinue"
-          >
-            Lanjutkan
-          </button>
+  <button
+    type="button"
+    class="maintenance-button"
+    id="maintenanceScanAgain"
+  >
+    Scan Perangkat Lain
+  </button>
 
-        </div>
-
-      </div>
+</div>
     `;
 
     showModal("Konfirmasi Perangkat", content);
