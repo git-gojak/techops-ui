@@ -1123,13 +1123,25 @@
           ${historyContent}
         </div>
 
-        <button
-          type="button"
-          class="maintenance-button"
-          id="maintenanceScanAgain"
-        >
-          Scan Perangkat Lain
-        </button>
+        <div class="maintenance-modal-actions">
+
+  <button
+    type="button"
+    class="maintenance-button maintenance-primary"
+    id="maintenanceReportIssue"
+  >
+    Laporkan Kendala
+  </button>
+
+  <button
+    type="button"
+    class="maintenance-button"
+    id="maintenanceScanAgain"
+  >
+    Scan Perangkat Lain
+  </button>
+
+</div>
 
       </div>
     `;
