@@ -593,8 +593,7 @@
       summary.innerHTML = `
         <span>Total: <strong>${rows.length}</strong></span>
         <span>Aktif: <strong>${activeCount}</strong></span>
-        <span>Arsip: <strong>${archivedCount}</strong></span>
-        <span>Hasil pencarian: <strong>${filtered.length}</strong></span>
+        <span>Arsip: <strong>${archivedCount}</strong></span>        
       `;
     }
 
@@ -988,8 +987,8 @@
       sections = `
         ${renderSection(
           "Identitas Perangkat",
-          "printer",
-          ["unit", "merek", "model", "serial", "tinta"],
+          "printer",          
+          ["unit", "merek", "model", "tinta", "serial"],
           ["serial"]
         )}
 
