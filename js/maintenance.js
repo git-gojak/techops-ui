@@ -262,18 +262,14 @@
             aria-label="Cari riwayat Maintenance"
             autocomplete="off">
 
-          <button
-            type="button"
-            class="inventory-button"
-            id="maintenanceRefresh">
-            ↻ Perbarui
-          </button>
-
-          <span
-            class="inventory-footer"
-            id="maintenanceLoadStatus"
-            aria-live="polite"></span>
-        </div>
+         <button
+           type="button"
+           class="inventory-button inventory-refresh-icon"
+           id="maintenanceRefresh"
+           aria-label="Perbarui data"
+           title="Perbarui data">
+           <i data-lucide="refresh-cw"></i>
+         </button>
 
         <div class="inventory-summary" id="maintenanceSummary">
           <span>Total riwayat: <strong>${rows.length}</strong></span>
@@ -639,22 +635,35 @@
 
     const endIndex = startIndex + visibleRows.length;
 
-    const updatedLabel = lastUpdated
-      ? new Intl.DateTimeFormat("id-ID", {
-          dateStyle: "medium",
-          timeStyle: "short"
-        }).format(new Date(lastUpdated))
-      : "Belum tersedia";
-
-    const summary = $("#maintenanceSummary");
-
-    if (summary) {
-      summary.innerHTML = `
-        <span>Total riwayat: <strong>${all.length}</strong></span>
-        <span>Hasil pencarian: <strong>${filteredRows.length}</strong></span>
-        <span>Data diperbarui: <strong>${escapeHTML(updatedLabel)}</strong></span>
-      `;
-    }
+      const countPerawatan = all.filter(row =>
+        String(row.jenis_kegiatan || row.kegiatan || "")
+          .trim()
+          .toLowerCase() === "perawatan"
+      ).length;
+      
+      const countPerbaikan = all.filter(row =>
+        String(row.jenis_kegiatan || row.kegiatan || "")
+          .trim()
+          .toLowerCase() === "perbaikan"
+      ).length;
+      
+      const updatedLabel = lastUpdated
+        ? new Intl.DateTimeFormat("id-ID", {
+            dateStyle: "medium",
+            timeStyle: "short"
+          }).format(new Date(lastUpdated))
+        : "Belum tersedia";
+      
+      const summary = $("#maintenanceSummary");
+      
+      if (summary) {
+        summary.innerHTML = `
+          <span>Total: <strong>${all.length}</strong></span>
+          <span>Perawatan: <strong>${countPerawatan}</strong></span>
+          <span>Perbaikan: <strong>${countPerbaikan}</strong></span>
+          <span>Terbaru: <strong>${escapeHTML(updatedLabel)}</strong></span>
+        `;
+      }
 
     if (!visibleRows.length) {
       body.innerHTML = `
@@ -708,7 +717,7 @@
 
     if (pageInfo) {
       pageInfo.textContent = sortedRows.length
-        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${sortedRows.length} riwayat`
+        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${sortedRows.length} perawatan dan perbaikan`
         : "Tidak ada data";
     }
 
