@@ -376,7 +376,22 @@
           data-refresh="${type}"
           aria-label="Perbarui data"
           title="Perbarui data">
-          <i data-lucide="refresh-cw"></i>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M20 7v5h-5M4 17v-5h5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+            <path
+              d="M5.6 9a7 7 0 0 1 11.8-2L20 12M4 12l2.6 5a7 7 0 0 0 11.8-2"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+          </svg>
         </button>
 
         <div
