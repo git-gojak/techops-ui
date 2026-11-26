@@ -717,31 +717,56 @@ const pagination = allRows.length
   container.innerHTML = rows.length
     ? `
       <div class="dashboard-activity-list">
-        ${rows.map(({ row, date }) => {
-          const type = typeOf(row.jenis_aset);
-          const name =
-           row.nama_aset ||
-           (type === "printer" ? "Printer" : "Komputer"); 
+       ${rows.map(({ row, date }) => {
+  const type = typeOf(row.jenis_aset);
 
-          // Model dan serial publik sudah disensor oleh Backend.
-          // Tampilkan nilai yang diterima dari Backend apa adanya.
-          const model =
-            getDeviceModel(row, map) ||
-            "Model tidak tersedia";
+  const name =
+    row.nama_aset ||
+    (type === "printer" ? "Printer" : "Komputer");
 
-          const serial = row.serial || "";
-          const activity =
-            row.jenis_kegiatan ||
-            row.kegiatan ||
-            "Maintenance";
+  const device = findInventoryDevice(row, map);
 
-          const detail = [
-            model,
-            serial
-          ]
-            .filter(Boolean)
-            .map(esc)
-            .join(" · ");
+  const brand =
+    device?.merek ||
+    row.manufacturer ||
+    row.merek ||
+    row.Merek ||
+    name;
+
+  const model =
+    getDeviceModel(row, map) ||
+    "Model tidak tersedia";
+
+  const serial = row.serial || "";
+
+  const detail = [model, serial]
+    .filter(Boolean)
+    .map(esc)
+    .join(" · ");
+
+  const activity =
+    row.jenis_kegiatan ||
+    row.kegiatan ||
+    "Maintenance";
+
+  return `
+    <div class="dashboard-activity-item">
+      <span class="dashboard-activity-icon ${type}">
+        ${iconSvg(type === "printer" ? "printer" : "computer")}
+      </span>
+
+      <div class="dashboard-activity-info">
+        <strong>${esc(brand)} · ${detail}</strong>
+
+        <small>
+          ${esc(activity)} ·
+          ${esc(row.kondisi || "Kondisi belum diisi")} ·
+          ${esc(fmtDateTime(date))}
+        </small>
+      </div>
+    </div>
+  `;
+}).join("")}
 
           return `
             <div class="dashboard-activity-item">
