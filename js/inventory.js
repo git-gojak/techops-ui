@@ -445,10 +445,10 @@
               data-pagesize="${type}"
               aria-label="Jumlah data per halaman">
 
-              <option value="10">10 data</option>
-              <option value="20">20 data</option>
-              <option value="50">50 data</option>
-              <option value="all">Semua</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="all">all</option>
 
             </select>
 
@@ -723,7 +723,7 @@
 
     if (info) {
       info.textContent = sorted.length
-        ? `Menampilkan ${start + 1}–${Math.min(start + displayed.length, sorted.length)} dari ${sorted.length} data perangkat`
+        ? `Menampilkan ${start + 1}–${Math.min(start + displayed.length, sorted.length)} dari ${sorted.length} data inventory`
         : "Tidak ada data";
     }
 
