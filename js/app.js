@@ -23,6 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
       title: "Koneksi",
       subtitle: "Monitoring konektivitas"
     }
+        helpdesk: {
+      title: "Helpdesk Inbox",
+      subtitle: "Laporan kendala perangkat"
+    }
   };
 
   const navButtons = document.querySelectorAll("[data-page]");
