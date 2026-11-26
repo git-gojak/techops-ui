@@ -234,13 +234,25 @@
 
     if (!reports.length) {
       root.innerHTML = `
+        <div class="inventory-toolbar">
+          <strong>Helpdesk Inbox</strong>
+          <button type="button"
+            class="inventory-button"
+            id="helpdeskRefresh">
+            Muat Ulang
+          </button>
+        </div>
+
         <div class="empty-state">
           Belum ada laporan kendala.
         </div>
       `;
+
+      $("#helpdeskRefresh", root)
+        ?.addEventListener("click", loadReports);
+
       return;
     }
-
     root.innerHTML = `
       <div class="inventory-toolbar">
         <div>
