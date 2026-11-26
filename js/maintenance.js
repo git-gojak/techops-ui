@@ -1165,89 +1165,86 @@ $("#maintenanceReportIssue")
   // =======================================================
 
   function showDeviceConfirmation() {
-    const device = selectedDevice;
-    if (!device) return;
+  const device = selectedDevice;
+  if (!device) return;
 
-    let details = "";
+  let details = "";
 
-    if (device.type === "Komputer") {
-      details = `
-        <div class="maintenance-detail-field">
-          <small>Serial</small>
-          <strong>${escapeHTML(device.serial)}</strong>
-        </div>
+  if (device.type === "Komputer") {
+    details = `
+      <div class="maintenance-detail-field">
+        <small>Serial</small>
+        <strong>${escapeHTML(device.serial)}</strong>
+      </div>
 
-        <div class="maintenance-detail-field">
-          <small>Merek</small>
-          <strong>${escapeHTML(device.manufacturer || "-")}</strong>
-        </div>
+      <div class="maintenance-detail-field">
+        <small>Merek</small>
+        <strong>${escapeHTML(device.manufacturer || "-")}</strong>
+      </div>
 
-        <div class="maintenance-detail-field">
-          <small>Pengguna</small>
-          <strong>${escapeHTML(device.pengguna || "-")}</strong>
-        </div>
-      `;
-
-    } else {
-      details = `
-        <div class="maintenance-detail-field">
-          <small>Unit</small>
-          <strong>${escapeHTML(device.unit || "-")}</strong>
-        </div>
-
-        <div class="maintenance-detail-field">
-          <small>Merek</small>
-          <strong>${escapeHTML(device.manufacturer || "-")}</strong>
-        </div>
-
-        <div class="maintenance-detail-field">
-          <small>Model</small>
-          <strong>${escapeHTML(device.model || "-")}</strong>
-        </div>
-      `;
-    }
-
-    const content = `
-      <div class="maintenance-confirmation">
-
-        <div class="maintenance-confirmation-heading">
-          <span>PERANGKAT DITEMUKAN</span>
-          <h3>${escapeHTML(device.type)}</h3>
-        </div>
-
-        <div class="maintenance-detail-grid">
-          ${details}
-        </div>
-
-        <div class="maintenance-modal-actions">
-
-  <button
-    type="button"
-    class="maintenance-button maintenance-primary"
-    id="maintenanceReportIssue"
-  >
-    Laporkan Kendala
-  </button>
-
-  <button
-    type="button"
-    class="maintenance-button"
-    id="maintenanceScanAgain"
-  >
-    Scan Perangkat Lain
-  </button>
-
-</div>
+      <div class="maintenance-detail-field">
+        <small>Pengguna</small>
+        <strong>${escapeHTML(device.pengguna || "-")}</strong>
+      </div>
     `;
+  } else {
+    details = `
+      <div class="maintenance-detail-field">
+        <small>Unit</small>
+        <strong>${escapeHTML(device.unit || "-")}</strong>
+      </div>
 
-    showModal("Konfirmasi Perangkat", content);
+      <div class="maintenance-detail-field">
+        <small>Merek</small>
+        <strong>${escapeHTML(device.manufacturer || "-")}</strong>
+      </div>
 
-    $("#maintenanceRescan")
-      ?.addEventListener("click", openScanner);
-
-    $("#maintenanceContinue")
-      ?.addEventListener("click", () => openForm(device));
+      <div class="maintenance-detail-field">
+        <small>Model</small>
+        <strong>${escapeHTML(device.model || "-")}</strong>
+      </div>
+    `;
   }
+
+  const content = `
+    <div class="maintenance-confirmation">
+
+      <div class="maintenance-confirmation-heading">
+        <span>PERANGKAT DITEMUKAN</span>
+        <h3>${escapeHTML(device.type)}</h3>
+      </div>
+
+      <div class="maintenance-detail-grid">
+        ${details}
+      </div>
+
+      <div class="maintenance-modal-actions">
+        <button
+          type="button"
+          class="maintenance-button"
+          id="maintenanceRescan">
+          Scan Ulang
+        </button>
+
+        <button
+          type="button"
+          class="maintenance-button maintenance-primary"
+          id="maintenanceContinue">
+          Lanjut Catat Maintenance
+        </button>
+      </div>
+
+    </div>
+  `;
+
+  showModal("Konfirmasi Perangkat", content);
+
+  $("#maintenanceRescan")
+    ?.addEventListener("click", openScanner);
+
+  $("#maintenanceContinue")
+    ?.addEventListener("click", () => openForm(device));
+}
 
   // =======================================================
   // FORM MAINTENANCE
