@@ -393,7 +393,7 @@
               stroke-linejoin="round"/>
           </svg>
         </button>
-
+        </div>
         <div
           class="inventory-summary"
           id="${type}Summary">
