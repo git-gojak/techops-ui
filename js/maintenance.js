@@ -397,10 +397,10 @@
             <select
               id="maintenancePageSize"
               aria-label="Jumlah data per halaman">
-              <option value="10" ${pageSize === 10 ? "selected" : ""}>10 data</option>
-              <option value="20" ${pageSize === 20 ? "selected" : ""}>20 data</option>
-              <option value="50" ${pageSize === 50 ? "selected" : ""}>50 data</option>
-              <option value="all" ${pageSize === "all" ? "selected" : ""}>Semua</option>
+              <option value="10" ${pageSize === 10 ? "selected" : ""}>10</option>
+              <option value="20" ${pageSize === 20 ? "selected" : ""}>20</option>
+              <option value="50" ${pageSize === 50 ? "selected" : ""}>50</option>
+              <option value="all" ${pageSize === "all" ? "selected" : ""}>all</option>
             </select>
 
             <button
@@ -732,7 +732,7 @@
 
     if (pageInfo) {
       pageInfo.textContent = sortedRows.length
-        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${sortedRows.length} perawatan dan perbaikan`
+        ? `Menampilkan ${startIndex + 1}–${endIndex} dari ${sortedRows.length} kegiatan`
         : "Tidak ada data";
     }
 
