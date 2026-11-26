@@ -1023,3 +1023,138 @@
   font-weight: 800;
   text-align: center;
 }
+/* =========================================================
+   GOJAK TECHOPS — HELPDESK INBOX
+   Tampilan kartu responsif desktop dan HP
+   ========================================================= */
+
+#helpdeskRoot {
+  width: 100%;
+  min-width: 0;
+}
+
+.helpdesk-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.helpdesk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(255,255,255,.025);
+}
+
+.helpdesk-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.helpdesk-card-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.helpdesk-card-heading strong {
+  color: var(--text-main);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.helpdesk-card-heading small,
+.helpdesk-card > small {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.helpdesk-problem {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(0,0,0,.12);
+  color: var(--text-main);
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.helpdesk-card label {
+  margin-bottom: -6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.helpdesk-status,
+.helpdesk-note {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid var(--border-bright);
+  border-radius: 9px;
+  outline: none;
+  background: var(--bg-input);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 12px;
+}
+
+.helpdesk-status:focus,
+.helpdesk-note:focus {
+  border-color: var(--blue-light);
+}
+
+.helpdesk-note {
+  min-height: 76px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.helpdesk-save {
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* Helpdesk form publik */
+
+#helpdeskModal textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* HP dan layar sempit */
+
+@media (max-width: 760px) {
+  .helpdesk-list {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .helpdesk-card {
+    padding: 13px;
+  }
+
+  .helpdesk-card-heading strong {
+    font-size: 12px;
+  }
+
+  .helpdesk-problem {
+    font-size: 12px;
+  }
+}
