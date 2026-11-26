@@ -1,3 +1,4 @@
+
 /**
  * GOJAK TECHOPS — HELPDESK
  * Laporan kendala publik dan Inbox Admin.
@@ -19,6 +20,7 @@
 
   let reports = [];
   let loading = false;
+  let loadError = "";
 
   function api() {
     return window.TechOpsAPI;
@@ -228,14 +230,45 @@
     }
 
     if (loading) {
-      root.innerHTML = `<div class="empty-state">Memuat laporan...</div>`;
+      root.innerHTML = `
+        <div class="empty-state">
+          Memuat laporan...
+        </div>
+      `;
       return;
     }
 
+    // Tampilkan kegagalan pemuatan secara terpisah
+    // agar tidak dianggap sebagai inbox kosong.
+    if (loadError) {
+      root.innerHTML = `
+        <div class="inventory-toolbar">
+          <strong>Helpdesk Inbox</strong>
+
+          <button type="button"
+            class="inventory-button"
+            id="helpdeskRefresh">
+            Coba Lagi
+          </button>
+        </div>
+
+        <div class="empty-state">
+          Gagal memuat laporan: ${escapeHTML(loadError)}
+        </div>
+      `;
+
+      $("#helpdeskRefresh", root)
+        ?.addEventListener("click", loadReports);
+
+      return;
+    }
+
+    // Kondisi inbox benar-benar kosong
     if (!reports.length) {
       root.innerHTML = `
         <div class="inventory-toolbar">
           <strong>Helpdesk Inbox</strong>
+
           <button type="button"
             class="inventory-button"
             id="helpdeskRefresh">
@@ -253,6 +286,7 @@
 
       return;
     }
+
     root.innerHTML = `
       <div class="inventory-toolbar">
         <div>
@@ -315,7 +349,8 @@
       </div>
     `;
 
-    $("#helpdeskRefresh", root)?.addEventListener("click", loadReports);
+    $("#helpdeskRefresh", root)
+      ?.addEventListener("click", loadReports);
 
     root.querySelectorAll(".helpdesk-save").forEach(button => {
       button.addEventListener("click", saveReport);
@@ -329,14 +364,20 @@
     }
 
     loading = true;
+    loadError = "";
     render();
 
     try {
       reports = await api().get("helpdesk.list", {});
-      if (!Array.isArray(reports)) reports = [];
+
+      if (!Array.isArray(reports)) {
+        reports = [];
+      }
 
     } catch (error) {
-      toast(error.message || "Gagal mengambil laporan.");
+      loadError = error.message || "Gagal mengambil laporan.";
+      toast(loadError);
+
     } finally {
       loading = false;
       render();
