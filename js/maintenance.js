@@ -1027,16 +1027,17 @@
       }
     }
   }
-
-   
+  
   // =======================================================
   // DETAIL QR — MENGIKUTI POLA TAMPILAN INVENTORY
   // =======================================================
-
-  function renderQrField(label, value) {
+  function renderQrField(label, value, key) {
     return `
       <label class="maintenance-field">
-        <span>${escapeHTML(label)}</span>
+        <span>
+          ${window.TechOpsIcons.render(key)}
+          ${escapeHTML(label)}
+        </span>
 
         <input
           type="text"
@@ -1047,11 +1048,12 @@
     `;
   }
 
-  function renderQrSection(title, fields) {
+  function renderQrSection(title, icon, fields) {
     return `
       <section class="maintenance-form-section">
 
         <div class="maintenance-form-section-title">
+          <span>${window.TechOpsIcons.render(icon)}</span>
           <h3>${escapeHTML(title)}</h3>
         </div>
 
@@ -1071,53 +1073,49 @@
 
     if (isComputer) {
       return `
-        ${renderQrSection("Identitas Perangkat", [
+        ${renderQrSection("Identitas Perangkat", "monitor", [
           renderQrField("Tahun Perolehan",
-            read(["tahun", "Tahun Perolehan"])),
+            read(["tahun", "Tahun Perolehan"]), "tahun"),
           renderQrField("Computer Name",
-            read(["komputer", "Computer Name", "computer_name"])),
+            read(["komputer", "Computer Name", "computer_name"]), "komputer"),
           renderQrField("Manufacturer",
-            read(["merek", "Manufacturer", "manufacturer"])),
+            read(["merek", "Manufacturer", "manufacturer"]), "merek"),
           renderQrField("Model",
-            read(["model", "Model"])),
+            read(["model", "Model"]), "model"),
           renderQrField("Asset / Serial ID",
-            read(["serial", "Asset/Serial ID", "asset_id"]))
+            read(["serial", "Asset/Serial ID", "asset_id"]), "serial")
         ])}
 
-        ${renderQrSection("Spesifikasi Hardware", [
-          renderQrField("CPU", read(["cpu", "CPU"])),
-          renderQrField("Core", read(["core", "Core"])),
-          renderQrField("Thread", read(["thread", "Thread"])),
-          renderQrField("RAM", read(["ram", "RAM"])),
-          renderQrField("Storage", read(["storage", "Storage"])),
-          renderQrField("GPU", read(["gpu", "GPU"]))
+        ${renderQrSection("Spesifikasi Hardware", "cpu", [
+          renderQrField("CPU", read(["cpu", "CPU"]), "cpu"),
+          renderQrField("Core", read(["core", "Core"]), "core"),
+          renderQrField("Thread", read(["thread", "Thread"]), "thread"),
+          renderQrField("RAM", read(["ram", "RAM"]), "ram"),
+          renderQrField("Storage", read(["storage", "Storage"]), "storage"),
+          renderQrField("GPU", read(["gpu", "GPU"]), "gpu")
         ])}
 
-        ${renderQrSection("Sistem dan Pengguna", [
-          renderQrField("Operating System", read(["os", "OS"])),
-          renderQrField("Pengguna", read(["pengguna", "Pengguna"])),
-          renderQrField("Status", read(["status", "Status"]))
+        ${renderQrSection("Sistem dan Pengguna", "user", [
+          renderQrField("Operating System", read(["os", "OS"]), "os"),
+          renderQrField("Pengguna", read(["pengguna", "Pengguna"]), "pengguna")
         ])}
       `;
     }
 
     return `
-      ${renderQrSection("Identitas Perangkat", [
+      ${renderQrSection("Identitas Perangkat", "printer", [
         renderQrField("Serial Number",
-          read(["serial", "sn_asset", "Serial Number"])),
-        renderQrField("Unit", read(["unit", "Unit"])),
-        renderQrField("Merek", read(["merek", "Manufacturer", "manufacturer"])),
-        renderQrField("Model", read(["model", "Model"])),
-        renderQrField("Jenis Tinta", read(["tinta", "Tinta"]))
+          read(["serial", "sn_asset", "Serial Number"]), "serial"),
+        renderQrField("Unit", read(["unit", "Unit"]), "unit"),
+        renderQrField("Merek",
+          read(["merek", "Manufacturer", "manufacturer"]), "merek"),
+        renderQrField("Model", read(["model", "Model"]), "model"),
+        renderQrField("Jenis Tinta", read(["tinta", "Tinta"]), "tinta")
       ])}
 
-      ${renderQrSection("Masa Pakai", [
-        renderQrField("Tanggal FTP",
-          read(["ftp", "FTP"])),
-        renderQrField("Masa Pakai (MP)",
-          read(["mp", "MP"])),
-        renderQrField("Status",
-          read(["status", "Status"]))
+      ${renderQrSection("Masa Pakai", "clock", [
+        renderQrField("Tanggal FTP", read(["ftp", "FTP"]), "ftp"),
+        renderQrField("Masa Pakai (MP)", read(["mp", "MP"]), "mp")
       ])}
     `;
   }
