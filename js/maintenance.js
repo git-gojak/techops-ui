@@ -1032,6 +1032,12 @@
   // DETAIL QR — MENGIKUTI POLA TAMPILAN INVENTORY
   // =======================================================
   function renderQrField(label, value, key) {
+    let displayValue = value || "-";
+
+    if (key === "ftp" && displayValue !== "-") {
+      displayValue = formatDate(displayValue);
+    }
+
     return `
       <label class="maintenance-field">
         <span>
@@ -1041,7 +1047,7 @@
 
         <input
           type="text"
-          value="${escapeHTML(value || "-")}"
+          value="${escapeHTML(displayValue)}"
           disabled
         >
       </label>
