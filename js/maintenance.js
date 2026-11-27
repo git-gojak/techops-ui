@@ -943,7 +943,7 @@
 
       selectedDevice = {
         type: isComputer ? "Komputer" : "Printer",
-
+      
         serial: getValue(device, [
           "serial",
           "Asset/Serial ID",
@@ -952,7 +952,7 @@
           "sn_asset",
           "Serial Number"
         ]),
-
+      
         name: isComputer
           ? getValue(device, [
               "komputer",
@@ -969,25 +969,30 @@
               ]),
               getValue(device, ["model", "Model"])
             ].filter(Boolean).join(" "),
-
+      
         manufacturer: getValue(device, [
           "merek",
           "manufacturer",
           "Manufacturer"
         ]),
-
+      
         model: getValue(device, ["model", "Model"]),
-
+      
         pengguna: getValue(device, [
           "pengguna",
           "Pengguna"
         ]),
-
-        unit: getValue(device, ["unit", "Unit"])
+      
+        unit: getValue(device, ["unit", "Unit"]),
+      
+        // Data lengkap untuk tampilan detail QR
+        data: device,
+        result: result,
+        isComputer: isComputer
       };
 
       if (!isAdmin()) {
-        showPublicDeviceInfo(result, device, isComputer);
+        showQrDeviceDetail();
         return;
       }
 
@@ -1023,210 +1028,251 @@
     }
   }
 
+   
   // =======================================================
-  // INFORMASI PERANGKAT UNTUK PUBLIK
+  // DETAIL QR — MENGIKUTI POLA TAMPILAN INVENTORY
   // =======================================================
 
-  function showPublicDeviceInfo(result, device, isComputer) {
-    const read = (keys) => {
-      const value = getValue(device, keys);
-      return value === undefined || value === null || value === ""
-        ? "-"
-        : String(value);
-    };
+  function renderQrField(label, value) {
+    return `
+      <label class="maintenance-field">
+        <span>${escapeHTML(label)}</span>
 
-    const fields = isComputer
-      ? [
-          ["Tahun Perolehan", ["tahun", "Tahun Perolehan"]],
-          ["Computer Name", ["komputer", "Computer Name"]],
-          ["Merek", ["merek", "Manufacturer", "manufacturer"]],
-          ["Model", ["model", "Model"]],
-          ["Serial", ["serial", "Asset/Serial ID", "asset_id"]],
-          ["Processor", ["cpu", "CPU"]],
-          ["Core", ["core", "Core"]],
-          ["Thread", ["thread", "Thread"]],
-          ["RAM", ["ram", "RAM"]],
-          ["Storage", ["storage", "Storage"]],
-          ["GPU", ["gpu", "GPU"]],
-          ["Sistem Operasi", ["os", "OS"]],
-          ["Pengguna", ["pengguna", "Pengguna"]],
-          ["Status", ["status", "Status Perubahan"]]
-        ]
-      : [
-          ["Serial", ["serial", "sn_asset", "Serial Number"]],
-          ["Unit", ["unit", "Unit"]],
-          ["Merek", ["merek", "Manufacturer", "manufacturer"]],
-          ["Model", ["model", "Model"]],
-          ["Tinta", ["tinta", "Tinta"]],
-          ["FTP", ["ftp", "FTP"]],
-          ["MP", ["mp", "MP"]],
-          ["Status", ["status", "Status"]]
-        ];
-
-    const detailRows = fields.map(([label, keys]) => `
-      <div class="maintenance-detail-field">
-        <small>${escapeHTML(label)}</small>
-        <strong>${escapeHTML(read(keys))}</strong>
-      </div>
-    `).join("");
-
-    const history = Array.isArray(result.riwayat)
-      ? result.riwayat
-      : [];
-
-    const historyContent = history.length
-      ? history.map(item => `
-          <div class="maintenance-detail-field">
-            <small>
-              ${escapeHTML(String(
-                getValue(item, ["Tanggal", "tanggal", "created_at"]) || "-"
-              ))}
-            </small>
-            <strong>
-              ${escapeHTML(String(
-                getValue(item, ["jenis_kegiatan", "kegiatan", "aktivitas"]) || "-"
-              ))}
-            </strong>
-            <div>
-              ${escapeHTML(String(
-                getValue(item, ["kondisi", "Kondisi"]) || "-"
-              ))}
-            </div>
-            <div>
-              ${escapeHTML(String(
-                getValue(item, ["keterangan", "Keterangan", "catatan"]) || "-"
-              ))}
-            </div>
-            <small>
-              ${escapeHTML(String(
-                getValue(item, ["teknisi", "Teknisi"]) || "-"
-              ))}
-            </small>
-          </div>
-        `).join("")
-      : `<p>Belum ada riwayat Maintenance.</p>`;
-
-    const content = `
-      <div class="maintenance-public-device">
-
-        <h3>Informasi ${isComputer ? "Komputer" : "Printer"}</h3>
-
-        <div class="maintenance-device-details">
-          ${detailRows}
-        </div>
-
-        <h3>Riwayat Maintenance</h3>
-
-        <div class="maintenance-public-history">
-          ${historyContent}
-        </div>
-
-        <button
-          type="button"
-          class="maintenance-button"
-          id="maintenanceScanAgain"
+        <input
+          type="text"
+          value="${escapeHTML(value || "-")}"
+          disabled
         >
-          Scan Perangkat Lain
-        </button>
-
-      </div>
+      </label>
     `;
-
-    showModal("Informasi Perangkat", content);
-
-    $("#maintenanceScanAgain")
-      ?.addEventListener("click", openScanner);
   }
 
-  // =======================================================
-  // KONFIRMASI IDENTITAS PERANGKAT
-  // =======================================================
+  function renderQrSection(title, fields) {
+    return `
+      <section class="maintenance-form-section">
 
-  function showDeviceConfirmation() {
-    const device = selectedDevice;
-    if (!device) return;
-
-    let details = "";
-
-    if (device.type === "Komputer") {
-      details = `
-        <div class="maintenance-detail-field">
-          <small>Serial</small>
-          <strong>${escapeHTML(device.serial)}</strong>
+        <div class="maintenance-form-section-title">
+          <h3>${escapeHTML(title)}</h3>
         </div>
 
-        <div class="maintenance-detail-field">
-          <small>Merek</small>
-          <strong>${escapeHTML(device.manufacturer || "-")}</strong>
+        <div class="maintenance-form-grid inventory-form-grid">
+          ${fields.join("")}
         </div>
 
-        <div class="maintenance-detail-field">
-          <small>Pengguna</small>
-          <strong>${escapeHTML(device.pengguna || "-")}</strong>
-        </div>
-      `;
+      </section>
+    `;
+  }
 
-    } else {
-      details = `
-        <div class="maintenance-detail-field">
-          <small>Unit</small>
-          <strong>${escapeHTML(device.unit || "-")}</strong>
-        </div>
+  function buildQrInventoryDetail(device, isComputer) {
+    const read = keys => {
+      const value = getValue(device, keys);
+      return value || "-";
+    };
 
-        <div class="maintenance-detail-field">
-          <small>Merek</small>
-          <strong>${escapeHTML(device.manufacturer || "-")}</strong>
-        </div>
+    if (isComputer) {
+      return `
+        ${renderQrSection("Identitas Perangkat", [
+          renderQrField("Tahun Perolehan",
+            read(["tahun", "Tahun Perolehan"])),
+          renderQrField("Computer Name",
+            read(["komputer", "Computer Name", "computer_name"])),
+          renderQrField("Manufacturer",
+            read(["merek", "Manufacturer", "manufacturer"])),
+          renderQrField("Model",
+            read(["model", "Model"])),
+          renderQrField("Asset / Serial ID",
+            read(["serial", "Asset/Serial ID", "asset_id"]))
+        ])}
 
-        <div class="maintenance-detail-field">
-          <small>Model</small>
-          <strong>${escapeHTML(device.model || "-")}</strong>
-        </div>
+        ${renderQrSection("Spesifikasi Hardware", [
+          renderQrField("CPU", read(["cpu", "CPU"])),
+          renderQrField("Core", read(["core", "Core"])),
+          renderQrField("Thread", read(["thread", "Thread"])),
+          renderQrField("RAM", read(["ram", "RAM"])),
+          renderQrField("Storage", read(["storage", "Storage"])),
+          renderQrField("GPU", read(["gpu", "GPU"]))
+        ])}
+
+        ${renderQrSection("Sistem dan Pengguna", [
+          renderQrField("Operating System", read(["os", "OS"])),
+          renderQrField("Pengguna", read(["pengguna", "Pengguna"])),
+          renderQrField("Status", read(["status", "Status"]))
+        ])}
       `;
     }
 
+    return `
+      ${renderQrSection("Identitas Perangkat", [
+        renderQrField("Serial Number",
+          read(["serial", "sn_asset", "Serial Number"])),
+        renderQrField("Unit", read(["unit", "Unit"])),
+        renderQrField("Merek", read(["merek", "Manufacturer", "manufacturer"])),
+        renderQrField("Model", read(["model", "Model"])),
+        renderQrField("Jenis Tinta", read(["tinta", "Tinta"]))
+      ])}
+
+      ${renderQrSection("Masa Pakai", [
+        renderQrField("Tanggal FTP",
+          read(["ftp", "FTP"])),
+        renderQrField("Masa Pakai (MP)",
+          read(["mp", "MP"])),
+        renderQrField("Status",
+          read(["status", "Status"]))
+      ])}
+    `;
+  }
+
+  // =======================================================
+  // RIWAYAT MAINTENANCE
+  // =======================================================
+
+  function renderQrMaintenanceHistory(result) {
+    const history = Array.isArray(result?.riwayat)
+      ? result.riwayat
+      : [];
+
+    if (!history.length) {
+      return `<p>Belum ada riwayat Maintenance.</p>`;
+    }
+
+    return history.map(item => `
+      <div class="maintenance-detail-field">
+
+        <small>
+          ${escapeHTML(
+            getValue(item, ["Tanggal", "tanggal", "created_at"]) || "-"
+          )}
+        </small>
+
+        <strong>
+          ${escapeHTML(
+            getValue(item, ["jenis_kegiatan", "kegiatan", "aktivitas"]) || "-"
+          )}
+        </strong>
+
+        <div>
+          ${escapeHTML(
+            getValue(item, ["kondisi", "Kondisi"]) || "-"
+          )}
+        </div>
+
+        <div>
+          ${escapeHTML(
+            getValue(item, ["keterangan", "Keterangan", "catatan"]) || "-"
+          )}
+        </div>
+
+        <small>
+          ${escapeHTML(
+            getValue(item, ["teknisi", "Teknisi"]) || "-"
+          )}
+        </small>
+
+      </div>
+    `).join("");
+  }
+
+  // =======================================================
+  // TAMPILAN HASIL SCAN QR
+  // =======================================================
+
+  function showQrDeviceDetail() {
+    const device = selectedDevice;
+
+    if (!device || !device.data) return;
+
+    const isAdminUser = isAdmin();
+
+    const detail = buildQrInventoryDetail(
+      device.data,
+      device.isComputer
+    );
+
+    const history = !isAdminUser
+      ? `
+          <section class="maintenance-form-section">
+
+            <div class="maintenance-form-section-title">
+              <h3>Riwayat Maintenance</h3>
+            </div>
+
+            <div class="maintenance-public-history">
+              ${renderQrMaintenanceHistory(device.result)}
+            </div>
+
+          </section>
+        `
+      : "";
+
+    const actions = isAdminUser
+      ? `
+          <div class="maintenance-modal-actions">
+
+            <button
+              type="button"
+              class="maintenance-button"
+              id="maintenanceRescan">
+              Scan Ulang
+            </button>
+
+            <button
+              type="button"
+              class="maintenance-button maintenance-primary"
+              id="maintenanceContinue">
+              Catat Maintenance
+            </button>
+
+          </div>
+        `
+      : `
+          <div class="maintenance-modal-actions">
+
+            <button
+              type="button"
+              class="maintenance-button"
+              id="maintenanceScanAgain">
+              Scan Perangkat Lain
+            </button>
+
+          </div>
+        `;
+
     const content = `
-      <div class="maintenance-confirmation">
+      <div class="maintenance-form inventory-form">
 
-        <div class="maintenance-confirmation-heading">
-          <span>PERANGKAT DITEMUKAN</span>
-          <h3>${escapeHTML(device.type)}</h3>
-        </div>
+        ${detail}
 
-        <div class="maintenance-detail-grid">
-          ${details}
-        </div>
+        ${history}
 
-        <div class="maintenance-modal-actions">
-
-          <button
-            type="button"
-            class="maintenance-button"
-            id="maintenanceRescan"
-          >
-            Scan Ulang
-          </button>
-
-          <button
-            type="button"
-            class="maintenance-button maintenance-primary"
-            id="maintenanceContinue"
-          >
-            Lanjutkan
-          </button>
-
-        </div>
+        ${actions}
 
       </div>
     `;
 
-    showModal("Konfirmasi Perangkat", content);
+    showModal(
+      `Detail ${device.type}`,
+      content
+    );
 
-    $("#maintenanceRescan")
-      ?.addEventListener("click", openScanner);
+    if (isAdminUser) {
+      $("#maintenanceRescan")
+        ?.addEventListener("click", openScanner);
 
-    $("#maintenanceContinue")
-      ?.addEventListener("click", () => openForm(device));
+      $("#maintenanceContinue")
+        ?.addEventListener("click", () => openForm(device));
+
+    } else {
+      $("#maintenanceScanAgain")
+        ?.addEventListener("click", openScanner);
+    }
+  }
+
+  // =======================================================
+  // KONFIRMASI PERANGKAT
+  // =======================================================
+
+  function showDeviceConfirmation() {
+    showQrDeviceDetail();
   }
 
   // =======================================================
