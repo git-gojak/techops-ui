@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "gojak-techops-ui-v5";
+const CACHE_NAME = "gojak-techops-ui-v6";
 
 const APP_FILES = [
   "./",
@@ -23,6 +23,7 @@ const APP_FILES = [
   "./js/inventory.js",
   "./js/maintenance.js",
   "./js/hardware.js",
+  "./js/guide.js",
   "./icons/app-icon.svg",
   "./icons/ui.svg"
 ];
