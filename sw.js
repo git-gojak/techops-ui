@@ -18,6 +18,7 @@ const APP_FILES = [
 
   "./js/app.js",
   "./js/auth.js",
+  "./js/icons.js",
   "./js/dashboard.js",
   "./js/inventory.js",
   "./js/maintenance.js",
