@@ -1,4 +1,3 @@
-
 (function () {
   "use strict";
 
@@ -35,8 +34,7 @@
   let currentScanId = null;
   let busy = false;
 
-  const $ = (selector, root = document) =>
-    root.querySelector(selector);
+  const $ = (selector, root = document) => root.querySelector(selector);
 
   function isAdmin() {
     return window.TechOpsAuth?.authenticated === true;
@@ -73,285 +71,18 @@
         Math.random().toString(36).slice(2);
   }
 
-  function addStyles() {
-    if ($("#hardwareScanStyles")) return;
-
-    const style = document.createElement("style");
-    style.id = "hardwareScanStyles";
-
-    style.textContent = `
-      .hw-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 10050;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 12px;
-        background: rgba(15,23,42,.65);
-      }
-
-      .hw-dialog {
-        width: min(820px,100%);
-        max-height: 94vh;
-        overflow-y: auto;
-        color: var(--text,#172033);
-        background: var(--surface,#fff);
-        border: 1px solid var(--border,#e5e7eb);
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0,0,0,.25);
-      }
-
-      .hw-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 17px 20px;
-        border-bottom: 1px solid var(--border,#e5e7eb);
-      }
-
-      .hw-head h2 {
-        margin: 0;
-        font-size: 18px;
-      }
-
-      .hw-head p {
-        margin: 5px 0 0;
-        font-size: 12px;
-        opacity: .7;
-      }
-
-      .hw-close {
-        border: 0;
-        background: transparent;
-        color: inherit;
-        font-size: 26px;
-        cursor: pointer;
-      }
-
-      .hw-body {
-        padding: 18px 20px;
-      }
-
-      .hw-status {
-        padding: 12px 14px;
-        margin-bottom: 15px;
-        border-radius: 9px;
-        background: var(--surface-muted,#f3f4f6);
-        font-size: 13px;
-      }
-
-      .hw-status.error {
-        color: #991b1b;
-        background: #fef2f2;
-      }
-
-      .hw-status.success {
-        color: #065f46;
-        background: #ecfdf5;
-      }
-
-      .hw-groups {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-
-      .hw-group,
-      .hw-section,
-      .hw-command {
-        min-width: 0;
-        padding: 14px;
-        margin-top: 14px;
-        border: 1px solid var(--border,#e5e7eb);
-        border-radius: 11px;
-      }
-
-      .hw-group h3,
-      .hw-section h3 {
-        margin: 0 0 10px;
-        font-size: 14px;
-      }
-
-      .hw-field {
-        display: grid;
-        grid-template-columns: 115px minmax(0,1fr);
-        gap: 8px;
-        padding: 8px 0;
-        border-top: 1px solid var(--border,#edf0f3);
-        font-size: 12px;
-      }
-
-      .hw-field span {
-        opacity: .65;
-      }
-
-      .hw-field strong {
-        overflow-wrap: anywhere;
-      }
-
-      .hw-meta,
-      .hw-existing {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-
-      .hw-input {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 0;
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .hw-input input {
-        box-sizing: border-box;
-        width: 100%;
-        padding: 10px;
-        border: 1px solid var(--border,#d1d5db);
-        border-radius: 8px;
-        background: var(--surface,#fff);
-        color: inherit;
-        font: inherit;
-      }
-
-      .hw-existing div {
-        padding: 9px;
-        border-radius: 8px;
-        background: var(--surface-muted,#f3f4f6);
-        font-size: 12px;
-      }
-
-      .hw-existing small {
-        display: block;
-        margin-bottom: 4px;
-        opacity: .65;
-      }
-
-      .hw-change {
-        display: grid;
-        grid-template-columns: 110px minmax(0,1fr);
-        gap: 8px;
-        padding: 9px;
-        margin-top: 8px;
-        border-radius: 8px;
-        background: var(--surface-muted,#f3f4f6);
-        font-size: 12px;
-      }
-
-      .hw-old {
-        color: #b45309;
-        overflow-wrap: anywhere;
-      }
-
-      .hw-new {
-        color: #047857;
-        overflow-wrap: anywhere;
-      }
-
-      .hw-note {
-        margin: 10px 0 0;
-        font-size: 11px;
-        opacity: .7;
-        line-height: 1.5;
-      }
-
-      .hw-actions {
-        display: flex;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 18px;
-      }
-
-      .hw-actions button,
-      .hw-copy {
-        padding: 10px 14px;
-        border: 1px solid var(--border,#d1d5db);
-        border-radius: 8px;
-        background: var(--surface,#fff);
-        color: inherit;
-        cursor: pointer;
-      }
-
-      .hw-actions .primary,
-      .hw-copy {
-        color: white;
-        background: var(--primary,#2563eb);
-        border-color: var(--primary,#2563eb);
-      }
-
-      .hw-actions button:disabled {
-        opacity: .6;
-        cursor: wait;
-      }
-
-      .hw-command code {
-        display: block;
-        padding: 11px;
-        margin: 8px 0;
-        border-radius: 7px;
-        background: #111827;
-        color: white;
-        font-size: 12px;
-        line-height: 1.6;
-        overflow-wrap: anywhere;
-        user-select: text;
-      }
-
-      .hw-command p {
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .hw-copy {
-        width: 100%;
-      }
-
-      @media(max-width:620px) {
-        .hw-backdrop {
-          padding: 7px;
-        }
-
-        .hw-dialog {
-          max-height: 97vh;
-        }
-
-        .hw-body {
-          padding: 13px;
-        }
-
-        .hw-groups,
-        .hw-meta,
-        .hw-existing {
-          grid-template-columns: 1fr;
-        }
-
-        .hw-field {
-          grid-template-columns: 105px minmax(0,1fr);
-        }
-
-        .hw-change {
-          grid-template-columns: 1fr;
-          gap: 4px;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
-  }
-
   function close() {
-    $(".hw-backdrop")?.remove();
-    document.body.classList.remove("modal-open");
+    $(".hardware-scan-backdrop")?.remove();
+    document.body.classList.remove("maintenance-modal-open");
 
     currentData = null;
     currentRecord = null;
     currentScanId = null;
     busy = false;
+  }
+
+  function getModalBody() {
+    return $(".hardware-scan-backdrop .maintenance-modal-body");
   }
 
   function getMatchingRecord(serial) {
@@ -407,27 +138,35 @@
 
   function renderFields(data, fields) {
     return fields.map(([key, label]) => `
-      <div class="hw-field">
-        <span>${esc(label)}</span>
-        <strong>${esc(data[key] || "-")}</strong>
+      <div class="maintenance-detail-field">
+        <div>
+          <small>${esc(label)}</small>
+          <strong>${esc(data[key] || "-")}</strong>
+        </div>
       </div>
     `).join("");
   }
 
   function renderChanges(changes) {
     if (!changes.length) {
-      return `<p class="hw-note">Tidak ada perubahan yang terdeteksi.</p>`;
+      return `
+        <div class="maintenance-empty">
+          Tidak ada perubahan yang terdeteksi.
+        </div>
+      `;
     }
 
-    return changes.map(change => `
-      <div class="hw-change">
-        <strong>${esc(change.label)}</strong>
-        <div>
-          <div class="hw-old">Sebelum: ${esc(change.oldValue)}</div>
-          <div class="hw-new">Sesudah: ${esc(change.newValue)}</div>
-        </div>
+    return `
+      <div class="maintenance-form-grid">
+        ${changes.map(change => `
+          <div class="inventory-detail-item">
+            <small>${esc(change.label)}</small>
+            <strong>Sebelum: ${esc(change.oldValue)}</strong>
+            <strong>Sesudah: ${esc(change.newValue)}</strong>
+          </div>
+        `).join("")}
       </div>
-    `).join("");
+    `;
   }
 
   function updateChanges() {
@@ -459,31 +198,42 @@
 
     const inventorySection = row
       ? `
-        <section class="hw-section">
+        <section class="maintenance-form-section">
           <h3>Data Inventaris Saat Ini</h3>
 
-          <div class="hw-existing">
-            <div>
-              <small>Tahun Perolehan</small>
-              <strong>${esc(row.tahun || "-")}</strong>
+          <div class="maintenance-detail-grid">
+            <div class="maintenance-detail-field">
+              <div>
+                <small>Tahun Perolehan</small>
+                <strong>${esc(row.tahun || "-")}</strong>
+              </div>
             </div>
-            <div>
-              <small>Pengguna</small>
-              <strong>${esc(row.pengguna || "-")}</strong>
+
+            <div class="maintenance-detail-field">
+              <div>
+                <small>Pengguna Saat Ini</small>
+                <strong>${esc(row.pengguna || "-")}</strong>
+              </div>
             </div>
-            <div>
-              <small>Status</small>
-              <strong>${esc(row.status || "-")}</strong>
+
+            <div class="maintenance-detail-field">
+              <div>
+                <small>Status</small>
+                <strong>${esc(row.status || "-")}</strong>
+              </div>
             </div>
-            <div>
-              <small>Perubahan Sebelumnya</small>
-              <strong>${esc(row.perubahan || "-")}</strong>
+
+            <div class="maintenance-detail-field">
+              <div>
+                <small>Perubahan Sebelumnya</small>
+                <strong>${esc(row.perubahan || "-")}</strong>
+              </div>
             </div>
           </div>
 
-          <div class="hw-meta" style="margin-top:12px">
-            <label class="hw-input">
-              Pengguna *
+          <div class="maintenance-form-grid">
+            <label class="maintenance-field">
+              <span>Pengguna *</span>
               <input
                 id="hwPengguna"
                 type="text"
@@ -493,23 +243,23 @@
             </label>
           </div>
 
-          <p class="hw-note">
+          <p class="maintenance-form-intro">
             Tahun perolehan dipertahankan. Pengguna dapat diperbarui oleh Admin.
           </p>
         </section>
 
-        <section class="hw-section">
+        <section class="maintenance-form-section">
           <h3>Pemeriksaan Perubahan <span id="hwChangeCount"></span></h3>
           <div id="hwChangePreview"></div>
         </section>
       `
       : `
-        <section class="hw-section">
+        <section class="maintenance-form-section">
           <h3>Komputer Baru</h3>
 
-          <div class="hw-meta">
-            <label class="hw-input">
-              Tahun Perolehan *
+          <div class="maintenance-form-grid">
+            <label class="maintenance-field">
+              <span>Tahun Perolehan *</span>
               <input
                 id="hwTahun"
                 type="number"
@@ -520,8 +270,8 @@
                 required>
             </label>
 
-            <label class="hw-input">
-              Pengguna *
+            <label class="maintenance-field">
+              <span>Pengguna *</span>
               <input
                 id="hwPengguna"
                 type="text"
@@ -533,34 +283,47 @@
       `;
 
     return `
-      <div class="hw-status success">
-        Scan berhasil. ${row
-          ? "Komputer ditemukan dalam inventaris."
-          : "Komputer belum terdaftar dalam inventaris."}
+      <div class="maintenance-form-section">
+        <div class="maintenance-form-message">
+          Scan berhasil. ${row
+            ? "Komputer ditemukan dalam inventaris."
+            : "Komputer belum terdaftar dalam inventaris."}
+        </div>
       </div>
 
-      <div class="hw-groups">
-        <section class="hw-group">
-          <h3>Identitas Perangkat</h3>
+      <section class="maintenance-form-section">
+        <h3>Identitas Perangkat</h3>
+        <div class="maintenance-detail-grid">
           ${renderFields(data, identity)}
-        </section>
+        </div>
+      </section>
 
-        <section class="hw-group">
-          <h3>Spesifikasi Hardware</h3>
+      <section class="maintenance-form-section">
+        <h3>Spesifikasi Hardware</h3>
+        <div class="maintenance-detail-grid">
           ${renderFields(data, hardware)}
-        </section>
-      </div>
+        </div>
+      </section>
 
-      <p class="hw-note">
+      <p class="maintenance-form-intro">
         Waktu pemindaian: ${esc(data.scan_terakhir)}
       </p>
 
       ${inventorySection}
 
-      <div class="hw-actions">
-        <button type="button" data-hw-close>Tutup</button>
-        <button type="button" data-hw-again>Scan Ulang</button>
-        <button type="button" class="primary" id="hwSave">
+      <div class="maintenance-modal-actions">
+        <button type="button" class="maintenance-button" data-hw-close>
+          Tutup
+        </button>
+
+        <button type="button" class="maintenance-button" data-hw-again>
+          Scan Ulang
+        </button>
+
+        <button
+          type="button"
+          class="maintenance-button maintenance-primary"
+          id="hwSave">
           ${row ? "Simpan Pembaruan" : "Simpan Komputer Baru"}
         </button>
       </div>
@@ -571,33 +334,67 @@
     const message = String(error?.message || "Koneksi scanner gagal.");
 
     return `
-      <div class="hw-status error">
-        <strong>Pemindaian belum berhasil.</strong>
-        <p>${esc(message)}</p>
-        <p>Pastikan Hardware Scanner sudah dijalankan pada komputer yang akan dipindai.</p>
+      <div class="maintenance-form-section">
+        <div class="maintenance-form-message error">
+          <strong>Pemindaian belum berhasil.</strong>
+          <p>${esc(message)}</p>
+          <p>
+            Pastikan Hardware Scanner sudah dijalankan pada komputer yang dipindai.
+          </p>
+        </div>
       </div>
 
-      <section class="hw-command">
-        <strong>Windows — PowerShell</strong>
-        <p>Salin perintah ini, lalu jalankan di PowerShell komputer yang dipindai.</p>
-        <code>${esc(POWERSHELL_COMMAND)}</code>
-        <button class="hw-copy" id="hwCopyWindows" type="button">
-          Salin Perintah Windows
-        </button>
+      <section class="maintenance-form-section">
+        <h3>Windows — PowerShell</h3>
+
+        <p class="maintenance-form-intro">
+          Salin perintah berikut, lalu jalankan di PowerShell komputer yang dipindai.
+        </p>
+
+        <div class="inventory-detail-item">
+          <code>${esc(POWERSHELL_COMMAND)}</code>
+        </div>
+
+        <div class="maintenance-modal-actions">
+          <button
+            class="maintenance-button maintenance-primary"
+            id="hwCopyWindows"
+            type="button">
+            Salin Perintah Windows
+          </button>
+        </div>
       </section>
 
-      <section class="hw-command">
-        <strong>Linux — Terminal</strong>
-        <p>Salin perintah ini, lalu jalankan di Terminal komputer yang dipindai.</p>
-        <code>${esc(LINUX_COMMAND)}</code>
-        <button class="hw-copy" id="hwCopyLinux" type="button">
-          Salin Perintah Linux
-        </button>
+      <section class="maintenance-form-section">
+        <h3>Linux — Terminal</h3>
+
+        <p class="maintenance-form-intro">
+          Salin perintah berikut, lalu jalankan di Terminal komputer yang dipindai.
+        </p>
+
+        <div class="inventory-detail-item">
+          <code>${esc(LINUX_COMMAND)}</code>
+        </div>
+
+        <div class="maintenance-modal-actions">
+          <button
+            class="maintenance-button maintenance-primary"
+            id="hwCopyLinux"
+            type="button">
+            Salin Perintah Linux
+          </button>
+        </div>
       </section>
 
-      <div class="hw-actions">
-        <button type="button" data-hw-close>Tutup</button>
-        <button type="button" class="primary" data-hw-again>
+      <div class="maintenance-modal-actions">
+        <button type="button" class="maintenance-button" data-hw-close>
+          Tutup
+        </button>
+
+        <button
+          type="button"
+          class="maintenance-button maintenance-primary"
+          data-hw-again>
           Coba Lagi
         </button>
       </div>
@@ -613,10 +410,34 @@
     }
   }
 
+  function bindResultActions(body) {
+    body.querySelector("[data-hw-close]")
+      ?.addEventListener("click", close);
+
+    body.querySelector("[data-hw-again]")
+      ?.addEventListener("click", () => runScan(body));
+
+    body.querySelector("#hwSave")
+      ?.addEventListener("click", saveResult);
+
+    body.querySelector("#hwPengguna")
+      ?.addEventListener("input", updateChanges);
+
+    body.querySelector("#hwCopyWindows")
+      ?.addEventListener("click", function () {
+        copyCommand(POWERSHELL_COMMAND, this);
+      });
+
+    body.querySelector("#hwCopyLinux")
+      ?.addEventListener("click", function () {
+        copyCommand(LINUX_COMMAND, this);
+      });
+  }
+
   async function runScan(body) {
     if (!isAdmin()) {
       body.innerHTML = `
-        <div class="hw-status error">
+        <div class="maintenance-form-message error">
           Silakan login sebagai Admin untuk menjalankan pemindaian.
         </div>
       `;
@@ -626,7 +447,7 @@
     currentScanId = null;
 
     body.innerHTML = `
-      <div class="hw-status">
+      <div class="maintenance-loading">
         Menghubungi Hardware Scanner dan membaca spesifikasi komputer...
       </div>
     `;
@@ -671,41 +492,15 @@
       const row = getMatchingRecord(data.serial);
 
       currentScanId = createScanId();
-
       body.innerHTML = renderResults(data, row);
 
-      body.querySelector("[data-hw-close]")
-        ?.addEventListener("click", close);
-
-      body.querySelector("[data-hw-again]")
-        ?.addEventListener("click", () => runScan(body));
-
-      body.querySelector("#hwSave")
-        ?.addEventListener("click", saveResult);
-
-      body.querySelector("#hwPengguna")
-        ?.addEventListener("input", updateChanges);
+      bindResultActions(body);
 
       if (row) updateChanges();
 
     } catch (error) {
       body.innerHTML = renderError(error);
-
-      body.querySelector("[data-hw-close]")
-        ?.addEventListener("click", close);
-
-      body.querySelector("[data-hw-again]")
-        ?.addEventListener("click", () => runScan(body));
-
-      body.querySelector("#hwCopyWindows")
-        ?.addEventListener("click", function () {
-          copyCommand(POWERSHELL_COMMAND, this);
-        });
-
-      body.querySelector("#hwCopyLinux")
-        ?.addEventListener("click", function () {
-          copyCommand(LINUX_COMMAND, this);
-        });
+      bindResultActions(body);
     }
   }
 
@@ -829,24 +624,30 @@
         new CustomEvent("techops:hardware-saved")
       );
 
-      const body = $(".hw-body");
+      const body = getModalBody();
 
       if (body) {
         body.innerHTML = `
-          <div class="hw-status success">
-            <strong>
-              ${isExisting
-                ? "Pembaruan komputer berhasil disimpan."
-                : "Komputer baru berhasil ditambahkan."}
-            </strong>
-            <p>${esc(data.komputer)} — ${esc(data.serial)}</p>
-            <p>Status: ${esc(data.status)}</p>
-            <p>Perubahan: ${esc(data.perubahan || "-")}</p>
-            <p>Permintaan penyimpanan berhasil diproses oleh server.</p>
+          <div class="maintenance-form-section">
+            <div class="maintenance-form-message">
+              <strong>
+                ${isExisting
+                  ? "Pembaruan komputer berhasil disimpan."
+                  : "Komputer baru berhasil ditambahkan."}
+              </strong>
+
+              <p>${esc(data.komputer)} — ${esc(data.serial)}</p>
+              <p>Status: ${esc(data.status)}</p>
+              <p>Perubahan: ${esc(data.perubahan || "-")}</p>
+              <p>Permintaan penyimpanan berhasil diproses oleh server.</p>
+            </div>
           </div>
 
-          <div class="hw-actions">
-            <button type="button" class="primary" data-hw-close>
+          <div class="maintenance-modal-actions">
+            <button
+              type="button"
+              class="maintenance-button maintenance-primary"
+              data-hw-close>
               Selesai
             </button>
           </div>
@@ -877,41 +678,52 @@
       return;
     }
 
-    addStyles();
     close();
 
     const backdrop = document.createElement("div");
-    backdrop.className = "hw-backdrop";
+    backdrop.className =
+      "maintenance-modal-backdrop hardware-scan-backdrop";
 
     backdrop.innerHTML = `
-      <section class="hw-dialog" role="dialog" aria-modal="true">
-        <header class="hw-head">
+      <section
+        class="maintenance-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="hardwareScanTitle">
+
+        <header class="maintenance-modal-header">
           <div>
-            <h2>Scan Spesifikasi Komputer</h2>
-            <p>GoJak TechOps Hardware Scanner</p>
+            <small>GOJAK TECHOPS · INVENTARIS KOMPUTER</small>
+            <h2 id="hardwareScanTitle">Scan Spesifikasi Komputer</h2>
           </div>
-          <button class="hw-close" type="button" aria-label="Tutup">
+
+          <button
+            class="maintenance-modal-close"
+            type="button"
+            aria-label="Tutup">
             &times;
           </button>
         </header>
 
-        <div class="hw-body">
-          <div class="hw-status">Menyiapkan pemindaian...</div>
+        <div class="maintenance-modal-body">
+          <div class="maintenance-loading">
+            Menyiapkan pemindaian...
+          </div>
         </div>
       </section>
     `;
 
     document.body.appendChild(backdrop);
-    document.body.classList.add("modal-open");
+    document.body.classList.add("maintenance-modal-open");
 
-    backdrop.querySelector(".hw-close")
+    backdrop.querySelector(".maintenance-modal-close")
       .addEventListener("click", close);
 
     backdrop.addEventListener("click", event => {
       if (event.target === backdrop) close();
     });
 
-    runScan($(".hw-body", backdrop));
+    runScan(getModalBody());
   }
 
   document.addEventListener("click", event => {
@@ -935,5 +747,4 @@
     open,
     close
   };
-
 })();
