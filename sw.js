@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "gojak-techops-ui-v4";
+const CACHE_NAME = "gojak-techops-ui-v5";
 
 const APP_FILES = [
   "./",
