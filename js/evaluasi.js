@@ -3,25 +3,29 @@
    GOJAK TECHOPS
    EVALUASI PERANGKAT
 
-   Kategori:
-   - Perlu Penggantian
-   - Perlu Perhatian
+   KATEGORI:
+   1. Perlu Penggantian
+   2. Perlu Perhatian
 
-   STANDAR KOMPUTER 2026:
-   - Intel Core i3 Gen 8 atau lebih baru
-   - AMD Ryzen 3 seri 3000 atau lebih baru
-   - RAM minimal 8 GB
-   - Core dan thread sebagai faktor pendukung
-   - SSD untuk sistem operasi
-   - HDD tambahan untuk data tidak dianggap kekurangan
+   STANDAR KOMPUTER:
+   - Intel Core i3 Gen 8 atau lebih baru.
+   - AMD Ryzen 3 seri 3000 atau lebih baru.
+   - RAM minimal 8 GB.
+   - 4 core atau lebih disarankan.
+   - Core dan thread merupakan faktor pendukung.
+   - SSD SATA maupun NVMe memenuhi standar.
+   - HDD tambahan untuk data bukan kekurangan.
+   - OS hanya ditampilkan sebagai informasi.
 
-   Prinsip:
-   - Spesifikasi dinilai berdasarkan kemampuan perangkat.
+   PRINSIP:
+   - Hardware menjadi pertimbangan utama.
+   - RAM rendah tidak otomatis berarti harus ganti PC.
    - Usia bukan alasan tunggal penggantian.
-   - Perbaikan dan Perawatan dihitung terpisah.
+   - Riwayat perbaikan menjadi faktor pendukung.
    - Perawatan rutin tidak dianggap kerusakan.
    - Riwayat dicocokkan berdasarkan jenis aset dan serial.
-   - Maksimal 5 rekomendasi per kategori.
+   - Semua rekomendasi ditampilkan tanpa batas jumlah.
+   - Alasan evaluasi muncul saat kartu dibuka.
    - Hanya membaca data, tidak mengubah database.
    ========================================================= */
 
@@ -47,8 +51,6 @@
 
   const $ = (selector, parent = root) =>
     parent.querySelector(selector);
-
-  const MAX_PER_CATEGORY = 5;
 
   // =======================================================
   // UTILITAS
@@ -223,12 +225,14 @@
   }
 
   // =======================================================
-  // IDENTIFIKASI JENIS MAINTENANCE
+  // IDENTIFIKASI MAINTENANCE
   // =======================================================
 
   function activityType(row) {
     return normalizeText(
-      row?.jenis_kegiatan || row?.kegiatan || ""
+      row?.jenis_kegiatan ||
+      row?.kegiatan ||
+      ""
     );
   }
 
@@ -260,7 +264,7 @@
 
   // =======================================================
   // RIWAYAT PER PERANGKAT
-  // Pencocokan berdasarkan jenis aset dan serial.
+  // Pencocokan jenis aset dan serial.
   // =======================================================
 
   function getHistory(type, serial) {
@@ -287,8 +291,10 @@
       const dateA = maintenanceDate(a);
       const dateB = maintenanceDate(b);
 
-      return (dateB?.getTime() || 0) -
-        (dateA?.getTime() || 0);
+      return (
+        (dateB?.getTime() || 0) -
+        (dateA?.getTime() || 0)
+      );
     });
 
     const latest = sorted[0] || null;
@@ -315,7 +321,7 @@
   }
 
   // =======================================================
-  // PEMERIKSAAN GENERASI PROCESSOR
+  // PEMERIKSAAN PROCESSOR
   // =======================================================
 
   function assessCpu(value) {
@@ -323,6 +329,7 @@
 
     // Intel Core i3/i5/i7/i9.
     // Contoh: i3-8100, i5-8500, i3-10100.
+
     const intel = cpu.match(
       /\bI[3579]\s*[- ]?\s*(\d{4,5})\b/
     );
@@ -344,6 +351,7 @@
 
     // AMD Ryzen.
     // Contoh: Ryzen 3 3200G, Ryzen 5 3600.
+
     const amd = cpu.match(
       /\bRYZEN\s*([3579])\s*(?:PRO\s*)?(\d{4,5})/
     );
@@ -360,12 +368,14 @@
       return {
         known: true,
         meets,
-        description: `AMD Ryzen ${series} seri ${generation}000`,
+        description:
+          `AMD Ryzen ${series} seri ${generation}000`,
         generation
       };
     }
 
     // Intel Core Ultra dan penamaan Core baru.
+
     if (
       /\bCORE\s*ULTRA\b/.test(cpu) ||
       /\bCORE\s*[3579]\s+\d{3,4}[A-Z]?\b/.test(cpu)
@@ -402,14 +412,13 @@
     const thread = numberValue(row.thread);
 
     const cpu = assessCpu(row.cpu);
-    const os = normalizeText(row.os);
     const condition = history.latestCondition;
 
     const replacementFlags = [];
     const attentionFlags = [];
 
     // -----------------------------------------------------
-    // PROCESSOR
+    // HARDWARE: PROCESSOR
     // -----------------------------------------------------
 
     if (cpu.known && !cpu.meets) {
@@ -419,37 +428,39 @@
 
     } else if (!cpu.known) {
       attentionFlags.push(
-        "Model CPU belum dapat dikenali. Perlu pemeriksaan spesifikasi."
+        "Model processor belum dapat dikenali. Spesifikasi perlu diperiksa kembali."
       );
     }
 
     // -----------------------------------------------------
-    // RAM
+    // HARDWARE: RAM
+    // RAM rendah masih mungkin ditingkatkan.
     // -----------------------------------------------------
 
     if (ram !== null && ram < 8) {
-      replacementFlags.push(
-        `RAM hanya ${row.ram || ram + " GB"}, di bawah standar minimal 8 GB.`
+      attentionFlags.push(
+        `RAM hanya ${row.ram || ram + " GB"}. Kapasitas masih di bawah standar 8 GB dan perlu ditingkatkan.`
       );
 
     } else if (ram === null) {
       attentionFlags.push(
-        "Informasi kapasitas RAM belum lengkap."
+        "Informasi kapasitas RAM belum tercatat."
       );
+
     } else if (ram === 8) {
       attentionFlags.push(
-        "RAM 8 GB memenuhi standar minimal, tetapi 16 GB lebih disarankan untuk multitasking."
+        "RAM 8 GB memenuhi standar minimal. Peningkatan ke 16 GB dapat dipertimbangkan untuk multitasking."
       );
     }
 
     // -----------------------------------------------------
-    // CORE DAN THREAD
-    // Menjadi faktor pendukung, bukan alasan tunggal.
+    // HARDWARE: CORE DAN THREAD
+    // Faktor pendukung, bukan alasan tunggal penggantian.
     // -----------------------------------------------------
 
     if (core !== null && core < 4) {
       attentionFlags.push(
-        `Processor memiliki ${core} core. Untuk multitasking, 4 core atau lebih lebih disarankan.`
+        `Processor memiliki ${core} core. Empat core atau lebih lebih disarankan untuk multitasking.`
       );
     }
 
@@ -460,67 +471,58 @@
     }
 
     // -----------------------------------------------------
-    // SISTEM OPERASI
-    // -----------------------------------------------------
-
-    if (
-      /windows\s*10|win10/.test(os)
-    ) {
-      attentionFlags.push(
-        "Masih menggunakan Windows 10. Dukungan standar Windows 10 telah berakhir, sehingga perlu rencana pembaruan sistem operasi."
-      );
-    }
-
-    if (!os) {
-      attentionFlags.push(
-        "Informasi sistem operasi belum tercatat."
-      );
-    }
-
-    // -----------------------------------------------------
     // KONDISI TERAKHIR
+    // Rusak tidak otomatis berarti harus mengganti perangkat.
+    // Perlu dilihat bersama riwayat perbaikannya.
     // -----------------------------------------------------
 
     if (condition === "rusak") {
-      replacementFlags.push(
-        "Kondisi terakhir pada riwayat Maintenance tercatat Rusak."
-      );
+      if (history.repair >= 2) {
+        replacementFlags.push(
+          `Kondisi terakhir tercatat Rusak dan sudah memiliki ${history.repair} riwayat perbaikan. Penggantian perlu diprioritaskan setelah pemeriksaan teknis.`
+        );
+
+      } else {
+        attentionFlags.push(
+          "Kondisi terakhir pada Maintenance tercatat Rusak. Perlu pemeriksaan teknis untuk menentukan apakah masih layak diperbaiki."
+        );
+      }
 
     } else if (condition === "perlu perhatian") {
       attentionFlags.push(
-        "Kondisi terakhir tercatat Perlu Perhatian."
+        "Kondisi terakhir pada Maintenance tercatat Perlu Perhatian."
       );
     }
 
     // -----------------------------------------------------
     // RIWAYAT PERBAIKAN
-    // Perawatan tidak dihitung sebagai kerusakan.
+    // Perawatan tidak masuk hitungan kerusakan.
     // -----------------------------------------------------
 
     if (history.repair >= 4) {
       if (
-        (age !== null && age >= 8) ||
+        condition === "rusak" ||
         condition === "perlu perhatian"
       ) {
         replacementFlags.push(
-          `Sudah tercatat ${history.repair} kali perbaikan. Frekuensi ini perlu menjadi pertimbangan penggantian.`
+          `Sudah tercatat ${history.repair} kali perbaikan. Frekuensi perbaikan bersama kondisi terakhir menjadi pertimbangan kuat penggantian.`
         );
 
       } else {
         attentionFlags.push(
-          `Sudah tercatat ${history.repair} kali perbaikan. Perlu pemantauan lebih lanjut.`
+          `Sudah tercatat ${history.repair} kali perbaikan. Perlu dievaluasi apakah biaya perbaikan berikutnya masih ekonomis.`
         );
       }
 
     } else if (history.repair >= 2) {
       attentionFlags.push(
-        `Sudah tercatat ${history.repair} kali perbaikan.`
+        `Sudah tercatat ${history.repair} kali perbaikan. Riwayat ini perlu dipantau.`
       );
     }
 
     // -----------------------------------------------------
     // USIA PERANGKAT
-    // Usia tidak otomatis membuat perangkat harus diganti.
+    // Usia hanya faktor pendukung.
     // -----------------------------------------------------
 
     if (age !== null && age >= 8) {
@@ -552,6 +554,7 @@
       category,
       age,
       history,
+      cpu,
       reasons: [...new Set(reasons)]
     };
   }
@@ -572,51 +575,73 @@
     const replacementFlags = [];
     const attentionFlags = [];
 
-    // Kondisi terakhir.
+    // -----------------------------------------------------
+    // KONDISI TERAKHIR
+    // -----------------------------------------------------
+
     if (condition === "rusak") {
-      replacementFlags.push(
-        "Kondisi terakhir pada riwayat Maintenance tercatat Rusak."
-      );
-
-    } else if (condition === "perlu perhatian") {
-      attentionFlags.push(
-        "Kondisi terakhir tercatat Perlu Perhatian."
-      );
-    }
-
-    // Masa pakai.
-    if (age !== null && age >= 8) {
-      attentionFlags.push(
-        `Masa pakai printer sekitar ${age} tahun. Perlu dievaluasi dari sisi keandalan.`
-      );
-
-    } else if (age !== null && age >= 6) {
-      attentionFlags.push(
-        `Masa pakai printer sekitar ${age} tahun.`
-      );
-    }
-
-    // Riwayat perbaikan.
-    if (history.repair >= 4) {
-      if (
-        age !== null &&
-        age >= 8
-      ) {
+      if (history.repair >= 2) {
         replacementFlags.push(
-          `Printer telah mengalami ${history.repair} kali perbaikan dan masa pakainya sudah cukup lama.`
+          `Kondisi terakhir tercatat Rusak dan sudah memiliki ${history.repair} riwayat perbaikan. Penggantian perlu dipertimbangkan setelah pemeriksaan teknis.`
         );
 
       } else {
         attentionFlags.push(
-          `Sudah tercatat ${history.repair} kali perbaikan.`
+          "Kondisi terakhir tercatat Rusak. Perlu pemeriksaan teknis untuk mengetahui apakah printer masih ekonomis diperbaiki."
+        );
+      }
+
+    } else if (condition === "perlu perhatian") {
+      attentionFlags.push(
+        "Kondisi terakhir pada Maintenance tercatat Perlu Perhatian."
+      );
+    }
+
+    // -----------------------------------------------------
+    // RIWAYAT PERBAIKAN
+    // -----------------------------------------------------
+
+    if (history.repair >= 4) {
+      if (
+        condition === "rusak" ||
+        condition === "perlu perhatian"
+      ) {
+        replacementFlags.push(
+          `Printer telah mengalami ${history.repair} kali perbaikan dan kondisi terakhir memerlukan perhatian. Penggantian perlu dievaluasi.`
+        );
+
+      } else {
+        attentionFlags.push(
+          `Printer telah mengalami ${history.repair} kali perbaikan. Perlu dievaluasi dari sisi biaya dan keandalan.`
         );
       }
 
     } else if (history.repair >= 2) {
       attentionFlags.push(
-        `Sudah tercatat ${history.repair} kali perbaikan.`
+        `Sudah tercatat ${history.repair} kali perbaikan. Riwayat ini perlu dipantau.`
       );
     }
+
+    // -----------------------------------------------------
+    // MASA PAKAI
+    // FTP digunakan sebagai acuan tanggal, bukan bukti
+    // pasti tanggal pembelian printer.
+    // -----------------------------------------------------
+
+    if (age !== null && age >= 8) {
+      attentionFlags.push(
+        `Waktu sejak tanggal FTP sekitar ${age} tahun. Perlu dipantau dari sisi keandalan.`
+      );
+
+    } else if (age !== null && age >= 6) {
+      attentionFlags.push(
+        `Waktu sejak tanggal FTP sekitar ${age} tahun.`
+      );
+    }
+
+    // -----------------------------------------------------
+    // PENENTUAN KATEGORI
+    // -----------------------------------------------------
 
     let category = "";
     let reasons = [];
@@ -662,7 +687,6 @@
     const replacement = evaluated
       .filter(item => item.category === "replacement")
       .sort((a, b) => {
-        // Kondisi Rusak mendapat prioritas tertinggi.
         const aBroken =
           a.history.latestCondition === "rusak" ? 1 : 0;
 
@@ -673,7 +697,6 @@
           return bBroken - aBroken;
         }
 
-        // Setelah itu, spesifikasi dan riwayat perbaikan.
         return (
           b.history.repair - a.history.repair ||
           (b.age ?? -1) - (a.age ?? -1)
@@ -698,7 +721,7 @@
   }
 
   // =======================================================
-  // INFORMASI PERANGKAT
+  // IDENTITAS PERANGKAT
   // =======================================================
 
   function deviceName(row, type) {
@@ -707,10 +730,16 @@
       : row.unit || row.model || row.serial || "Printer tanpa nama";
   }
 
+  // =======================================================
+  // SPESIFIKASI PERANGKAT
+  // Ditampilkan langsung pada kartu.
+  // =======================================================
+
   function deviceSpecification(row, type, age) {
     if (type === "computers") {
       return `
         <div class="evaluation-spec">
+
           <span>
             CPU:
             <strong>${esc(row.cpu || "-")}</strong>
@@ -737,15 +766,22 @@
           </span>
 
           <span>
+            Tahun:
+            <strong>${esc(row.tahun || "-")}</strong>
+          </span>
+
+          <span>
             Usia:
             <strong>${esc(formatAge(age))}</strong>
           </span>
+
         </div>
       `;
     }
 
     return `
       <div class="evaluation-spec">
+
         <span>
           Merek:
           <strong>${esc(row.merek || "-")}</strong>
@@ -770,12 +806,14 @@
           Masa pakai:
           <strong>${esc(formatAge(age))}</strong>
         </span>
+
       </div>
     `;
   }
 
   // =======================================================
-  // KARTU REKOMENDASI
+  // KARTU PERANGKAT
+  // Alasan hanya muncul setelah kartu diklik.
   // =======================================================
 
   function renderDeviceCard(item, type, index, category) {
@@ -792,17 +830,7 @@
 
     const reasons = item.reasons.length
       ? item.reasons
-      : [
-          "Terdapat indikator yang perlu diperiksa lebih lanjut."
-        ];
-
-    const serialWarning = !serialKey(row.serial)
-      ? `
-        <p class="evaluation-warning">
-          Serial kosong. Riwayat Maintenance tidak dapat dicocokkan.
-        </p>
-      `
-      : "";
+      : ["Belum ada alasan evaluasi yang tersedia."];
 
     const latestCondition = history.latestCondition
       ? history.latestCondition.replace(/\b\w/g, char =>
@@ -811,11 +839,12 @@
       : "Belum ada catatan kondisi";
 
     return `
-      <article class="glass-card evaluation-device-card">
+      <details class="glass-card evaluation-device-card">
 
-        <div class="evaluation-device-heading">
+        <summary class="evaluation-device-heading">
 
           <div>
+
             <span class="evaluation-number">
               Prioritas ${index + 1}
             </span>
@@ -825,64 +854,78 @@
             <small>
               Serial: ${esc(row.serial || "Tidak tersedia")}
             </small>
+
           </div>
 
-          <span class="evaluation-badge ${isReplacement
-            ? "evaluation-red"
-            : "evaluation-yellow"}">
+          <span class="evaluation-badge ${
+            isReplacement
+              ? "evaluation-red"
+              : "evaluation-yellow"
+          }">
             ${label}
           </span>
 
-        </div>
+        </summary>
 
         ${deviceSpecification(row, type, item.age)}
 
-        <div class="evaluation-history">
+        <div class="evaluation-detail">
 
-          <div>
-            <span>Perbaikan</span>
-            <strong>${history.repair} kali</strong>
+          <div class="evaluation-reason">
+
+            <strong>Alasan Rekomendasi</strong>
+
+            <ul>
+              ${reasons.map(reason => `
+                <li>${esc(reason)}</li>
+              `).join("")}
+            </ul>
+
           </div>
 
-          <div>
-            <span>Perawatan</span>
-            <strong>${history.maintenance} kali</strong>
+          <div class="evaluation-history">
+
+            <div>
+              <span>Perbaikan</span>
+              <strong>${history.repair} kali</strong>
+            </div>
+
+            <div>
+              <span>Perawatan</span>
+              <strong>${history.maintenance} kali</strong>
+            </div>
+
+            <div>
+              <span>Kondisi terakhir</span>
+              <strong>${esc(latestCondition)}</strong>
+            </div>
+
+            <div>
+              <span>Tanggal catatan</span>
+              <strong>
+                ${history.latestDate
+                  ? esc(formatDate(history.latestDate))
+                  : "-"}
+              </strong>
+            </div>
+
           </div>
 
-          <div>
-            <span>Kondisi terakhir</span>
-            <strong>${esc(latestCondition)}</strong>
-          </div>
-
-          <div>
-            <span>Tanggal catatan</span>
-            <strong>${history.latestDate
-              ? esc(formatDate(history.latestDate))
-              : "-"}</strong>
-          </div>
+          ${!serialKey(row.serial) ? `
+            <p class="evaluation-warning">
+              Serial kosong. Riwayat Maintenance tidak dapat dicocokkan.
+            </p>
+          ` : ""}
 
         </div>
 
-        <div class="evaluation-reason">
-
-          <strong>Alasan rekomendasi</strong>
-
-          <ul>
-            ${reasons.map(reason => `
-              <li>${esc(reason)}</li>
-            `).join("")}
-          </ul>
-
-        </div>
-
-        ${serialWarning}
-
-      </article>
+      </details>
     `;
   }
 
   // =======================================================
   // BAGIAN KATEGORI
+  // Semua perangkat ditampilkan.
   // =======================================================
 
   function renderCategory(
@@ -895,23 +938,25 @@
   ) {
     const isReplacement = category === "replacement";
 
-    const shown = items.slice(0, MAX_PER_CATEGORY);
-
     return `
       <section class="evaluation-category">
 
         <div class="evaluation-category-heading">
 
           <div>
+
             <h3>
-              <span class="evaluation-dot ${isReplacement
-                ? "evaluation-dot-red"
-                : "evaluation-dot-yellow"}"></span>
+              <span class="evaluation-dot ${
+                isReplacement
+                  ? "evaluation-dot-red"
+                  : "evaluation-dot-yellow"
+              }"></span>
 
               ${title}
             </h3>
 
             <p>${description}</p>
+
           </div>
 
           <span class="evaluation-count">
@@ -920,8 +965,8 @@
 
         </div>
 
-        ${shown.length
-          ? shown.map((item, index) =>
+        ${items.length
+          ? items.map((item, index) =>
               renderDeviceCard(
                 item,
                 type,
@@ -937,16 +982,6 @@
           `
         }
 
-        ${total > MAX_PER_CATEGORY
-          ? `
-            <p class="evaluation-limit">
-              Menampilkan ${MAX_PER_CATEGORY} perangkat
-              dengan prioritas tertinggi dari ${total} perangkat.
-            </p>
-          `
-          : ""
-        }
-
       </section>
     `;
   }
@@ -960,7 +995,6 @@
     const isComputer = type === "computers";
 
     const recommendations = getRecommendations(type);
-
     const totalDevices = state[type].length;
 
     const updated = state.lastUpdated
@@ -976,6 +1010,7 @@
         <div class="inventory-heading">
 
           <div>
+
             <span class="inventory-eyebrow">
               GOJAK TECHOPS
             </span>
@@ -986,6 +1021,7 @@
               Rekomendasi perangkat yang membutuhkan
               perhatian atau penggantian.
             </p>
+
           </div>
 
           <button
@@ -1019,9 +1055,9 @@
 
             <button
               type="button"
-              class="inventory-button ${isComputer
-                ? "inventory-primary"
-                : ""}"
+              class="inventory-button ${
+                isComputer ? "inventory-primary" : ""
+              }"
               data-evaluation-type="computers">
 
               ${icon("komputer")} Komputer
@@ -1030,9 +1066,9 @@
 
             <button
               type="button"
-              class="inventory-button ${!isComputer
-                ? "inventory-primary"
-                : ""}"
+              class="inventory-button ${
+                !isComputer ? "inventory-primary" : ""
+              }"
               data-evaluation-type="printers">
 
               ${icon("printer")} Printer
@@ -1100,7 +1136,7 @@
 
         ${renderCategory(
           "Perlu Perhatian",
-          "Perangkat masih dapat digunakan, tetapi memiliki keterbatasan atau riwayat masalah.",
+          "Perangkat yang masih dapat digunakan, tetapi memiliki keterbatasan atau riwayat masalah.",
           recommendations.attention,
           recommendations.totalAttention,
           type,
@@ -1120,20 +1156,30 @@
             </li>
 
             <li>
+              RAM yang belum memenuhi standar masih dapat
+              dipertimbangkan untuk peningkatan.
+            </li>
+
+            <li>
               Empat core atau lebih disarankan untuk
               pekerjaan multitasking. Core dan thread
               menjadi faktor pendukung.
             </li>
 
             <li>
-              SSD digunakan untuk sistem operasi dan aplikasi.
-              HDD tambahan untuk penyimpanan data tidak
-              menjadi kekurangan.
+              SSD SATA dan SSD NVMe sama-sama memenuhi
+              standar. NVMe bukan syarat wajib. HDD tambahan
+              untuk penyimpanan data tidak menjadi kekurangan.
             </li>
 
             <li>
-              Kondisi perangkat, spesifikasi, dan frekuensi
-              perbaikan dinilai bersama.
+              Sistem operasi dan jenis storage ditampilkan
+              sebagai informasi, bukan alasan penentuan kategori.
+            </li>
+
+            <li>
+              Kondisi hardware menjadi pertimbangan utama.
+              Riwayat perbaikan digunakan sebagai faktor pendukung.
             </li>
 
             <li>
@@ -1144,11 +1190,6 @@
             <li>
               Riwayat Maintenance dicocokkan berdasarkan
               jenis aset dan serial perangkat.
-            </li>
-
-            <li>
-              Maksimal 5 perangkat ditampilkan pada setiap
-              kategori untuk masing-masing jenis aset.
             </li>
 
             <li>
