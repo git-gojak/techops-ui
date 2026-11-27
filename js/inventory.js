@@ -353,6 +353,16 @@
       <div class="inventory-page">
 
         <div class="inventory-heading">
+        ${type === "computers" ? `
+          <button
+            class="inventory-button"
+            type="button"
+            data-hardware-scan
+            data-admin-action
+            ${isAdmin() ? "" : "hidden"}>
+            Scan Spesifikasi
+          </button>
+        ` : ""}
           <button
             class="inventory-button inventory-primary"
             type="button"
@@ -1338,12 +1348,25 @@
 
   function refreshAdminButtons() {
     document
-      .querySelectorAll("[data-add]")
+      .querySelectorAll("[data-add], [data-hardware-scan]")
       .forEach(button => {
         button.hidden = !isAdmin();
       });
   }
 
+  // =======================================================
+  // AKSES DATA UNTUK HARDWARE SCANNER
+  // =======================================================
+  
+  window.TechOpsInventory = {
+    getComputers() {
+      return state.computers;
+    },
+  
+    refreshComputers() {
+      return load("computers");
+    }
+  };
   // =======================================================
   // INISIALISASI
   // =======================================================
