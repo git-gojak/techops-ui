@@ -1,16 +1,21 @@
-
 /* =========================================================
    GOJAK TECHOPS
-   EVALUASI PERANGKAT — TAHAP PEMERIKSAAN DATA
+   EVALUASI PERANGKAT
 
-   Fungsi:
-   - Membaca data komputer dan printer.
-   - Membaca riwayat Maintenance.
-   - Menghitung usia komputer dan MP printer.
-   - Menghitung jumlah Perbaikan dan Perawatan.
-   - Menampilkan data untuk analisis sebelum kategori final.
+   Kategori:
+   - Perlu Penggantian
+   - Perlu Perhatian
 
-   Tidak mengubah atau menyimpan data ke database.
+   Maksimal 5 perangkat per kategori untuk setiap jenis aset.
+
+   Prinsip:
+   - Kondisi Rusak pada catatan Maintenance terbaru menjadi
+     indikasi kuat untuk penggantian.
+   - Umur dan spesifikasi tidak menjadi alasan tunggal
+     untuk merekomendasikan penggantian.
+   - Riwayat Perbaikan dan Perawatan dihitung terpisah.
+   - Perawatan rutin tidak otomatis dianggap kerusakan.
+   - Hanya membaca data, tidak mengubah database.
    ========================================================= */
 
 (function () {
@@ -28,7 +33,6 @@
     printers: [],
     maintenance: [],
     type: "computers",
-    query: "",
     loading: false,
     loaded: false,
     lastUpdated: null
@@ -36,6 +40,8 @@
 
   const $ = (selector, parent = root) =>
     parent.querySelector(selector);
+
+  const MAX_PER_CATEGORY = 5;
 
   // =======================================================
   // UTILITAS
@@ -52,6 +58,14 @@
   }
 
   function normalizeArray(value) {
+    if (value?.success === false) {
+      throw new Error(
+        value.message ||
+        value.error ||
+        "Server gagal mengirim data."
+      );
+    }
+
     if (Array.isArray(value)) return value;
     if (Array.isArray(value?.data)) return value.data;
     if (Array.isArray(value?.items)) return value.items;
@@ -78,26 +92,18 @@
       .toUpperCase();
   }
 
-  function activityType(row) {
-    return String(
-      row?.jenis_kegiatan || row?.kegiatan || ""
-    ).trim().toLowerCase();
+  function normalizeText(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase();
   }
 
-  function assetType(row) {
-    const value = String(
-      row?.jenis_aset || ""
-    ).trim().toLowerCase();
+  function numberValue(value) {
+    const match = String(value ?? "")
+      .replace(",", ".")
+      .match(/\d+(\.\d+)?/);
 
-    if (
-      value === "komputer" ||
-      value === "computer" ||
-      value === "pc"
-    ) return "computers";
-
-    if (value === "printer") return "printers";
-
-    return "";
+    return match ? Number(match[0]) : null;
   }
 
   // =======================================================
@@ -112,6 +118,7 @@
     }
 
     const text = String(value).trim();
+
     if (!text) return null;
 
     let match = text.match(
@@ -126,6 +133,7 @@
       year = Number(match[1]);
       month = Number(match[2]);
       day = Number(match[3]);
+
     } else {
       match = text.match(
         /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/
@@ -151,7 +159,7 @@
     return date;
   }
 
-  function getAge(value) {
+  function getComputerAge(value) {
     const year = Number(String(value ?? "").trim());
 
     if (
@@ -165,34 +173,28 @@
     return new Date().getFullYear() - year;
   }
 
-  function calculateMP(value) {
-    const start = parseDate(value);
+  function getPrinterAge(value) {
+    const date = parseDate(value);
 
-    if (!start) return "-";
+    if (!date || date > new Date()) {
+      return null;
+    }
 
     const now = new Date();
 
-    if (start > now) return "Belum dimulai";
+    let years = now.getFullYear() - date.getFullYear();
 
-    let years = now.getFullYear() - start.getFullYear();
-    let months = now.getMonth() - start.getMonth();
-    let days = now.getDate() - start.getDate();
+    const anniversary = new Date(
+      now.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
 
-    if (days < 0) {
-      months--;
-      days += new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        0
-      ).getDate();
-    }
-
-    if (months < 0) {
+    if (anniversary > now) {
       years--;
-      months += 12;
     }
 
-    return `${years} th ${months} bln ${days} hr`;
+    return Math.max(0, years);
   }
 
   function formatDate(value) {
@@ -207,9 +209,51 @@
     }).format(date);
   }
 
+  function formatAge(age) {
+    return age === null
+      ? "Usia tidak diketahui"
+      : `${age} tahun`;
+  }
+
   // =======================================================
-  // RIWAYAT MAINTENANCE PER PERANGKAT
-  // Pencocokan berdasarkan jenis aset dan serial.
+  // IDENTIFIKASI JENIS MAINTENANCE
+  // =======================================================
+
+  function activityType(row) {
+    return normalizeText(
+      row?.jenis_kegiatan || row?.kegiatan || ""
+    );
+  }
+
+  function assetType(row) {
+    const value = normalizeText(row?.jenis_aset);
+
+    if (
+      value === "komputer" ||
+      value === "computer" ||
+      value === "pc"
+    ) {
+      return "computers";
+    }
+
+    if (value === "printer") {
+      return "printers";
+    }
+
+    return "";
+  }
+
+  function maintenanceDate(row) {
+    return parseDate(
+      row?.Tanggal ||
+      row?.tanggal ||
+      row?.date
+    );
+  }
+
+  // =======================================================
+  // RIWAYAT PER PERANGKAT
+  // Pencocokan wajib berdasarkan jenis aset dan serial.
   // =======================================================
 
   function getHistory(type, serial) {
@@ -218,7 +262,10 @@
     if (!key) {
       return {
         repair: 0,
-        maintenance: 0
+        maintenance: 0,
+        latestCondition: "",
+        latestDate: null,
+        matched: false
       };
     }
 
@@ -229,6 +276,16 @@
       );
     });
 
+    const sorted = [...rows].sort((a, b) => {
+      const dateA = maintenanceDate(a);
+      const dateB = maintenanceDate(b);
+
+      return (dateB?.getTime() || 0) -
+        (dateA?.getTime() || 0);
+    });
+
+    const latest = sorted[0] || null;
+
     return {
       repair: rows.filter(row =>
         activityType(row) === "perbaikan"
@@ -236,8 +293,743 @@
 
       maintenance: rows.filter(row =>
         activityType(row) === "perawatan"
-      ).length
+      ).length,
+
+      latestCondition: normalizeText(
+        latest?.kondisi || ""
+      ),
+
+      latestDate: latest
+        ? maintenanceDate(latest)
+        : null,
+
+      matched: true
     };
+  }
+
+  // =======================================================
+  // PENILAIAN KOMPUTER
+  // =======================================================
+
+  function evaluateComputer(row) {
+    const history = getHistory(
+      "computers",
+      row.serial
+    );
+
+    const age = getComputerAge(row.tahun);
+    const ram = numberValue(row.ram);
+    const core = numberValue(row.core);
+
+    const storage = normalizeText(row.storage);
+
+    const hasHdd =
+      /\bhdd\b|hard.?disk/.test(storage);
+
+    const reasons = [];
+    const weaknesses = [];
+
+    const condition = history.latestCondition;
+
+    // Kondisi terakhir tercatat Rusak.
+    if (condition === "rusak") {
+      reasons.push(
+        "Kondisi terakhir pada riwayat Maintenance tercatat Rusak."
+      );
+    }
+
+    // Keterbatasan spesifikasi.
+    if (ram !== null && ram <= 4) {
+      weaknesses.push(
+        `RAM ${row.ram || ram + " GB"} tergolong sangat terbatas.`
+      );
+    } else if (ram !== null && ram <= 8) {
+      weaknesses.push(
+        `RAM ${row.ram} masih terbatas untuk kebutuhan kerja yang lebih berat.`
+      );
+    }
+
+    if (core !== null && core <= 2) {
+      weaknesses.push(
+        `Prosesor hanya memiliki ${core} core.`
+      );
+    } else if (core !== null && core <= 4) {
+      weaknesses.push(
+        `Prosesor memiliki ${core} core sehingga kemampuan pemrosesan perlu diperhatikan.`
+      );
+    }
+
+    if (hasHdd) {
+      weaknesses.push(
+        "Media penyimpanan masih menggunakan HDD."
+      );
+    }
+
+    // Usia perangkat.
+    if (age !== null && age >= 8) {
+      weaknesses.push(
+        `Usia perangkat sekitar ${age} tahun.`
+      );
+    } else if (age !== null && age >= 6) {
+      weaknesses.push(
+        `Usia perangkat sekitar ${age} tahun dan perlu dipantau.`
+      );
+    }
+
+    // Riwayat perbaikan.
+    if (history.repair >= 4) {
+      weaknesses.push(
+        `Sudah tercatat ${history.repair} kali perbaikan.`
+      );
+    } else if (history.repair >= 2) {
+      weaknesses.push(
+        `Sudah tercatat ${history.repair} kali perbaikan.`
+      );
+    }
+
+    // Kondisi terakhir Perlu Perhatian.
+    if (condition === "perlu perhatian") {
+      reasons.push(
+        "Kondisi terakhir tercatat Perlu Perhatian."
+      );
+    }
+
+    let category = "";
+
+    const severeSpecCount = [
+      ram !== null && ram <= 4,
+      core !== null && core <= 2
+    ].filter(Boolean).length;
+
+    const hasStrongAgeAndRepair =
+      age !== null &&
+      age >= 8 &&
+      history.repair >= 2 &&
+      weaknesses.length >= 2;
+
+    const hasRepeatedRepairAndWeakSpec =
+      age !== null &&
+      age >= 6 &&
+      history.repair >= 2 &&
+      (
+        severeSpecCount >= 1 ||
+        hasHdd
+      );
+
+    const hasVeryFrequentRepair =
+      age !== null &&
+      age >= 5 &&
+      history.repair >= 4 &&
+      (
+        severeSpecCount >= 1 ||
+        hasHdd
+      );
+
+    if (
+      condition === "rusak" ||
+      hasStrongAgeAndRepair ||
+      hasRepeatedRepairAndWeakSpec ||
+      hasVeryFrequentRepair
+    ) {
+      category = "replacement";
+
+    } else if (
+      condition === "perlu perhatian" ||
+      weaknesses.length > 0 ||
+      history.repair >= 2
+    ) {
+      category = "attention";
+    }
+
+    if (category === "replacement") {
+      reasons.push(...weaknesses);
+
+      if (
+        history.repair >= 2 &&
+        !reasons.some(reason =>
+          reason.includes("kali perbaikan")
+        )
+      ) {
+        reasons.push(
+          `Riwayat menunjukkan ${history.repair} kali perbaikan.`
+        );
+      }
+
+    } else if (category === "attention") {
+      reasons.push(...weaknesses);
+    }
+
+    return {
+      category,
+      age,
+      history,
+      reasons: [...new Set(reasons)]
+    };
+  }
+
+  // =======================================================
+  // PENILAIAN PRINTER
+  // =======================================================
+
+  function evaluatePrinter(row) {
+    const history = getHistory(
+      "printers",
+      row.serial
+    );
+
+    const age = getPrinterAge(row.ftp);
+    const condition = history.latestCondition;
+
+    const reasons = [];
+
+    if (condition === "rusak") {
+      reasons.push(
+        "Kondisi terakhir pada riwayat Maintenance tercatat Rusak."
+      );
+    }
+
+    if (condition === "perlu perhatian") {
+      reasons.push(
+        "Kondisi terakhir tercatat Perlu Perhatian."
+      );
+    }
+
+    if (age !== null && age >= 8) {
+      reasons.push(
+        `Masa pakai printer sekitar ${age} tahun.`
+      );
+    } else if (age !== null && age >= 6) {
+      reasons.push(
+        `Masa pakai printer sekitar ${age} tahun.`
+      );
+    }
+
+    if (history.repair >= 4) {
+      reasons.push(
+        `Sudah tercatat ${history.repair} kali perbaikan.`
+      );
+    } else if (history.repair >= 2) {
+      reasons.push(
+        `Sudah tercatat ${history.repair} kali perbaikan.`
+      );
+    }
+
+    let category = "";
+
+    const oldAndRepeatedRepair =
+      age !== null &&
+      age >= 8 &&
+      history.repair >= 2;
+
+    const olderAndVeryFrequentRepair =
+      age !== null &&
+      age >= 6 &&
+      history.repair >= 4;
+
+    if (
+      condition === "rusak" ||
+      oldAndRepeatedRepair ||
+      olderAndVeryFrequentRepair
+    ) {
+      category = "replacement";
+
+    } else if (
+      condition === "perlu perhatian" ||
+      (age !== null && age >= 6) ||
+      history.repair >= 2
+    ) {
+      category = "attention";
+    }
+
+    return {
+      category,
+      age,
+      history,
+      reasons: [...new Set(reasons)]
+    };
+  }
+
+  // =======================================================
+  // MEMBANGUN DAFTAR REKOMENDASI
+  // =======================================================
+
+  function getRecommendations(type) {
+    const rows = state[type];
+
+    const evaluated = rows.map(row => {
+      const result = type === "computers"
+        ? evaluateComputer(row)
+        : evaluatePrinter(row);
+
+      return {
+        row,
+        ...result
+      };
+    });
+
+    const replacement = evaluated
+      .filter(item => item.category === "replacement")
+      .sort((a, b) => {
+        // Kondisi Rusak mendapat prioritas lebih tinggi.
+        const aBroken =
+          a.history.latestCondition === "rusak" ? 1 : 0;
+
+        const bBroken =
+          b.history.latestCondition === "rusak" ? 1 : 0;
+
+        if (aBroken !== bBroken) {
+          return bBroken - aBroken;
+        }
+
+        return (
+          b.history.repair - a.history.repair ||
+          (b.age ?? -1) - (a.age ?? -1)
+        );
+      });
+
+    const attention = evaluated
+      .filter(item => item.category === "attention")
+      .sort((a, b) => {
+        return (
+          b.history.repair - a.history.repair ||
+          (b.age ?? -1) - (a.age ?? -1)
+        );
+      });
+
+    return {
+      replacement,
+      attention,
+      totalReplacement: replacement.length,
+      totalAttention: attention.length
+    };
+  }
+
+  // =======================================================
+  // INFORMASI PERANGKAT
+  // =======================================================
+
+  function deviceName(row, type) {
+    return type === "computers"
+      ? row.komputer || row.serial || "Komputer tanpa nama"
+      : row.unit || row.model || row.serial || "Printer tanpa nama";
+  }
+
+  function deviceSpecification(row, type, age) {
+    if (type === "computers") {
+      return `
+        <div class="evaluation-spec">
+          <span>CPU: <strong>${esc(row.cpu || "-")}</strong></span>
+          <span>Core / Thread:
+            <strong>${esc(row.core || "-")} / ${esc(row.thread || "-")}</strong>
+          </span>
+          <span>RAM: <strong>${esc(row.ram || "-")}</strong></span>
+          <span>Storage: <strong>${esc(row.storage || "-")}</strong></span>
+          <span>Usia: <strong>${esc(formatAge(age))}</strong></span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="evaluation-spec">
+        <span>Merek: <strong>${esc(row.merek || "-")}</strong></span>
+        <span>Model: <strong>${esc(row.model || "-")}</strong></span>
+        <span>Tinta: <strong>${esc(row.tinta || "-")}</strong></span>
+        <span>Tanggal FTP: <strong>${esc(formatDate(row.ftp))}</strong></span>
+        <span>Masa pakai: <strong>${esc(formatAge(age))}</strong></span>
+      </div>
+    `;
+  }
+
+  // =======================================================
+  // KARTU REKOMENDASI
+  // =======================================================
+
+  function renderDeviceCard(item, type, index, category) {
+    const row = item.row;
+    const history = item.history;
+
+    const name = deviceName(row, type);
+
+    const isReplacement = category === "replacement";
+
+    const label = isReplacement
+      ? "Perlu Penggantian"
+      : "Perlu Perhatian";
+
+    const reasons = item.reasons.length
+      ? item.reasons
+      : ["Terdapat indikator yang perlu diperiksa lebih lanjut."];
+
+    const serialWarning = !serialKey(row.serial)
+      ? `
+        <p class="evaluation-warning">
+          Serial kosong. Riwayat Maintenance tidak dapat dicocokkan.
+        </p>
+      `
+      : "";
+
+    const latestCondition = history.latestCondition
+      ? history.latestCondition.replace(/\b\w/g, char =>
+          char.toUpperCase()
+        )
+      : "Belum ada catatan kondisi";
+
+    return `
+      <article class="glass-card evaluation-device-card">
+
+        <div class="evaluation-device-heading">
+
+          <div>
+            <span class="evaluation-number">
+              Prioritas ${index + 1}
+            </span>
+
+            <h4>${esc(name)}</h4>
+
+            <small>
+              Serial: ${esc(row.serial || "Tidak tersedia")}
+            </small>
+          </div>
+
+          <span class="evaluation-badge ${isReplacement
+            ? "evaluation-red"
+            : "evaluation-yellow"}">
+            ${label}
+          </span>
+
+        </div>
+
+        ${deviceSpecification(row, type, item.age)}
+
+        <div class="evaluation-history">
+
+          <div>
+            <span>Perbaikan</span>
+            <strong>${history.repair} kali</strong>
+          </div>
+
+          <div>
+            <span>Perawatan</span>
+            <strong>${history.maintenance} kali</strong>
+          </div>
+
+          <div>
+            <span>Kondisi terakhir</span>
+            <strong>${esc(latestCondition)}</strong>
+          </div>
+
+          <div>
+            <span>Tanggal catatan</span>
+            <strong>${history.latestDate
+              ? esc(formatDate(history.latestDate))
+              : "-"}</strong>
+          </div>
+
+        </div>
+
+        <div class="evaluation-reason">
+
+          <strong>Alasan rekomendasi</strong>
+
+          <ul>
+            ${reasons.map(reason => `
+              <li>${esc(reason)}</li>
+            `).join("")}
+          </ul>
+
+        </div>
+
+        ${serialWarning}
+
+      </article>
+    `;
+  }
+
+  // =======================================================
+  // BAGIAN KATEGORI
+  // =======================================================
+
+  function renderCategory(title, description, items, total, type, category) {
+    const isReplacement = category === "replacement";
+
+    const shown = items.slice(0, MAX_PER_CATEGORY);
+
+    return `
+      <section class="evaluation-category">
+
+        <div class="evaluation-category-heading">
+
+          <div>
+            <h3>
+              <span class="evaluation-dot ${isReplacement
+                ? "evaluation-dot-red"
+                : "evaluation-dot-yellow"}"></span>
+              ${title}
+            </h3>
+
+            <p>${description}</p>
+          </div>
+
+          <span class="evaluation-count">
+            ${total} perangkat
+          </span>
+
+        </div>
+
+        ${shown.length
+          ? shown.map((item, index) =>
+              renderDeviceCard(
+                item,
+                type,
+                index,
+                category
+              )
+            ).join("")
+          : `
+            <div class="glass-card evaluation-empty">
+              Tidak ada perangkat yang masuk kategori ini
+              berdasarkan data yang tersedia.
+            </div>
+          `
+        }
+
+        ${total > MAX_PER_CATEGORY
+          ? `
+            <p class="evaluation-limit">
+              Menampilkan ${MAX_PER_CATEGORY} perangkat
+              dengan prioritas tertinggi dari ${total} perangkat.
+            </p>
+          `
+          : ""
+        }
+
+      </section>
+    `;
+  }
+
+  // =======================================================
+  // TAMPILAN UTAMA
+  // =======================================================
+
+  function render() {
+    const type = state.type;
+    const isComputer = type === "computers";
+
+    const recommendations = getRecommendations(type);
+
+    const totalDevices = state[type].length;
+
+    const updated = state.lastUpdated
+      ? new Intl.DateTimeFormat("id-ID", {
+          dateStyle: "medium",
+          timeStyle: "short"
+        }).format(state.lastUpdated)
+      : "-";
+
+    root.innerHTML = `
+      <div class="inventory-page evaluation-page">
+
+        <div class="inventory-heading">
+
+          <div>
+            <span class="inventory-eyebrow">
+              GOJAK TECHOPS
+            </span>
+
+            <h2>Evaluasi Perangkat</h2>
+
+            <p>
+              Rekomendasi perangkat yang membutuhkan
+              perhatian atau penggantian.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="inventory-button inventory-primary"
+            id="evaluationRefresh"
+            ${state.loading ? "disabled" : ""}>
+            ${state.loading ? "Memuat..." : "Perbarui Data"}
+          </button>
+
+        </div>
+
+        <section class="glass-card">
+
+          <div class="card-heading">
+            <div>
+              <h3>Pilih Jenis Perangkat</h3>
+              <p>
+                Evaluasi komputer dan printer dilakukan
+                dengan kriteria masing-masing.
+              </p>
+            </div>
+          </div>
+
+          <div class="maintenance-radio-group">
+
+            <button
+              type="button"
+              class="inventory-button ${isComputer
+                ? "inventory-primary"
+                : ""}"
+              data-evaluation-type="computers">
+              ${icon("komputer")} Komputer
+            </button>
+
+            <button
+              type="button"
+              class="inventory-button ${!isComputer
+                ? "inventory-primary"
+                : ""}"
+              data-evaluation-type="printers">
+              ${icon("printer")} Printer
+            </button>
+
+          </div>
+
+        </section>
+
+        <div class="dashboard-grid">
+
+          <article class="stat-card">
+            <div class="stat-icon blue">
+              ${icon(isComputer ? "komputer" : "printer")}
+            </div>
+
+            <div class="stat-info">
+              <span>Total Perangkat Aktif</span>
+              <strong>${totalDevices}</strong>
+              <small>${isComputer ? "Komputer" : "Printer"}</small>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon purple">
+              ${icon("history")}
+            </div>
+
+            <div class="stat-info">
+              <span>Perlu Penggantian</span>
+              <strong>${recommendations.totalReplacement}</strong>
+              <small>Hasil evaluasi</small>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-icon teal">
+              ${icon("monitor")}
+            </div>
+
+            <div class="stat-info">
+              <span>Perlu Perhatian</span>
+              <strong>${recommendations.totalAttention}</strong>
+              <small>Hasil evaluasi</small>
+            </div>
+          </article>
+
+        </div>
+
+        ${renderCategory(
+          "Perlu Penggantian",
+          "Perangkat dengan indikasi kuat bahwa penggantian perlu diprioritaskan.",
+          recommendations.replacement,
+          recommendations.totalReplacement,
+          type,
+          "replacement"
+        )}
+
+        ${renderCategory(
+          "Perlu Perhatian",
+          "Perangkat masih dapat digunakan, tetapi memiliki keterbatasan atau riwayat masalah.",
+          recommendations.attention,
+          recommendations.totalAttention,
+          type,
+          "attention"
+        )}
+
+        <section class="glass-card evaluation-notes">
+
+          <h3>Dasar Evaluasi</h3>
+
+          <ul>
+            <li>
+              Kondisi Rusak pada catatan Maintenance terbaru
+              menjadi indikasi kuat untuk penggantian.
+            </li>
+
+            <li>
+              Usia perangkat, spesifikasi, dan frekuensi
+              perbaikan dinilai bersama, bukan secara terpisah.
+            </li>
+
+            <li>
+              Perawatan dihitung dan ditampilkan terpisah.
+              Perawatan rutin tidak otomatis dianggap kerusakan.
+            </li>
+
+            <li>
+              Riwayat Maintenance dicocokkan berdasarkan
+              jenis aset dan serial perangkat.
+            </li>
+
+            <li>
+              Perangkat yang tidak masuk dua kategori
+              tidak ditampilkan sebagai rekomendasi.
+            </li>
+
+            <li>
+              Rekomendasi merupakan hasil penyaringan data
+              inventaris dan riwayat yang tercatat.
+            </li>
+          </ul>
+
+          <div class="inventory-footer">
+            Data diperbarui: ${updated}
+          </div>
+
+        </section>
+
+      </div>
+    `;
+
+    bindEvents();
+  }
+
+  // =======================================================
+  // EVENT
+  // =======================================================
+
+  function bindEvents() {
+    $("#evaluationRefresh")?.addEventListener(
+      "click",
+      () => openPage(true)
+    );
+
+    root.querySelectorAll("[data-evaluation-type]")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          state.type = button.dataset.evaluationType;
+          render();
+        });
+      });
+  }
+
+  // =======================================================
+  // PESAN
+  // =======================================================
+
+  function renderMessage(title, message) {
+    root.innerHTML = `
+      <div class="inventory-page">
+        <section class="glass-card">
+          <div class="card-heading">
+            <h3>${esc(title)}</h3>
+            <p>${esc(message)}</p>
+          </div>
+        </section>
+      </div>
+    `;
   }
 
   // =======================================================
@@ -247,7 +1039,7 @@
   async function loadData() {
     if (!isAdmin()) {
       throw new Error(
-        "Silakan login sebagai Admin untuk memeriksa data lengkap."
+        "Silakan login sebagai Admin untuk membuka evaluasi perangkat."
       );
     }
 
@@ -272,403 +1064,6 @@
   }
 
   // =======================================================
-  // RINGKASAN DATA
-  // =======================================================
-
-  function getSummary(rows, type) {
-    let repair = 0;
-    let maintenance = 0;
-
-    rows.forEach(row => {
-      const history = getHistory(type, row.serial);
-
-      repair += history.repair;
-      maintenance += history.maintenance;
-    });
-
-    return {
-      total: rows.length,
-      repair,
-      maintenance
-    };
-  }
-
-  function renderSummary(summary) {
-    return `
-      <div class="dashboard-grid">
-
-        <article class="stat-card">
-          <div class="stat-icon blue">
-            ${icon("komputer")}
-          </div>
-          <div class="stat-info">
-            <span>Total Perangkat</span>
-            <strong>${summary.total}</strong>
-            <small>Data aktif</small>
-          </div>
-        </article>
-
-        <article class="stat-card">
-          <div class="stat-icon purple">
-            ${icon("history")}
-          </div>
-          <div class="stat-info">
-            <span>Total Perbaikan</span>
-            <strong>${summary.repair}</strong>
-            <small>Riwayat tercatat</small>
-          </div>
-        </article>
-
-        <article class="stat-card">
-          <div class="stat-icon teal">
-            ${icon("maintenance")}
-          </div>
-          <div class="stat-info">
-            <span>Total Perawatan</span>
-            <strong>${summary.maintenance}</strong>
-            <small>Riwayat tercatat</small>
-          </div>
-        </article>
-
-      </div>
-    `;
-  }
-
-  // =======================================================
-  // TABEL KOMPUTER
-  // =======================================================
-
-  function computerRows(rows) {
-    return rows.map(row => {
-      const history = getHistory(
-        "computers",
-        row.serial
-      );
-
-      const age = getAge(row.tahun);
-
-      return `
-        <tr>
-          <td>
-            <strong>${esc(row.komputer || "-")}</strong>
-            <small>${esc(row.serial || "-")}</small>
-          </td>
-
-          <td>${esc(row.cpu || "-")}</td>
-
-          <td>
-            ${esc(row.core || "-")} /
-            ${esc(row.thread || "-")}
-          </td>
-
-          <td>${esc(row.ram || "-")}</td>
-
-          <td>${esc(row.storage || "-")}</td>
-
-          <td>
-            ${age === null ? "-" : `${age} tahun`}
-            <small>Tahun: ${esc(row.tahun || "-")}</small>
-          </td>
-
-          <td>${history.repair} kali</td>
-
-          <td>${history.maintenance} kali</td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  // =======================================================
-  // TABEL PRINTER
-  // =======================================================
-
-  function printerRows(rows) {
-    return rows.map(row => {
-      const history = getHistory(
-        "printers",
-        row.serial
-      );
-
-      return `
-        <tr>
-          <td>
-            <strong>${esc(row.unit || "-")}</strong>
-            <small>${esc(row.serial || "-")}</small>
-          </td>
-
-          <td>${esc(row.merek || "-")}</td>
-
-          <td>${esc(row.model || "-")}</td>
-
-          <td>${esc(row.tinta || "-")}</td>
-
-          <td>${formatDate(row.ftp)}</td>
-
-          <td>${calculateMP(row.ftp)}</td>
-
-          <td>${history.repair} kali</td>
-
-          <td>${history.maintenance} kali</td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  // =======================================================
-  // GAMBAR HALAMAN
-  // =======================================================
-
-  function render() {
-    const type = state.type;
-    const rows = state[type];
-
-    const isComputer = type === "computers";
-
-    const summary = getSummary(rows, type);
-
-    const query = state.query
-      .trim()
-      .toLowerCase();
-
-    const filtered = rows.filter(row => {
-      const values = isComputer
-        ? [
-            row.komputer,
-            row.serial,
-            row.cpu,
-            row.ram,
-            row.storage,
-            row.tahun
-          ]
-        : [
-            row.unit,
-            row.serial,
-            row.merek,
-            row.model,
-            row.tinta,
-            row.ftp
-          ];
-
-      return values.some(value =>
-        String(value ?? "")
-          .toLowerCase()
-          .includes(query)
-      );
-    });
-
-    const updated = state.lastUpdated
-      ? new Intl.DateTimeFormat("id-ID", {
-          dateStyle: "medium",
-          timeStyle: "short"
-        }).format(state.lastUpdated)
-      : "-";
-
-    root.innerHTML = `
-      <div class="inventory-page">
-
-        <div class="inventory-heading">
-          <div>
-            <span class="inventory-eyebrow">
-              GOJAK TECHOPS
-            </span>
-
-            <h2>Evaluasi Perangkat</h2>
-
-            <p>
-              Pemeriksaan spesifikasi dan riwayat
-              pemeliharaan perangkat.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            class="inventory-button inventory-primary"
-            id="evaluationRefresh"
-            ${state.loading ? "disabled" : ""}>
-            ${state.loading ? "Memuat..." : "Perbarui Data"}
-          </button>
-        </div>
-
-        <section class="glass-card">
-          <div class="card-heading">
-            <div>
-              <h3>Data Pemeriksaan</h3>
-              <p>
-                Tahap awal sebelum menentukan kategori
-                kelayakan perangkat.
-              </p>
-            </div>
-          </div>
-
-          <div class="maintenance-radio-group">
-            <button
-              type="button"
-              class="inventory-button ${isComputer ? "inventory-primary" : ""}"
-              data-evaluation-type="computers">
-              ${icon("komputer")} Komputer
-            </button>
-
-            <button
-              type="button"
-              class="inventory-button ${!isComputer ? "inventory-primary" : ""}"
-              data-evaluation-type="printers">
-              ${icon("printer")} Printer
-            </button>
-          </div>
-        </section>
-
-        ${renderSummary(summary)}
-
-        <section class="glass-card">
-
-          <div class="card-heading">
-            <div>
-              <h3>
-                ${isComputer
-                  ? "Spesifikasi Komputer"
-                  : "Data Inventaris Printer"}
-              </h3>
-
-              <p>
-                ${filtered.length} dari ${rows.length}
-                perangkat ditampilkan.
-              </p>
-            </div>
-          </div>
-
-          <div class="inventory-toolbar">
-            <input
-              type="search"
-              class="inventory-search"
-              id="evaluationSearch"
-              placeholder="Cari perangkat..."
-              value="${esc(state.query)}"
-              autocomplete="off">
-          </div>
-
-          <div class="inventory-table-wrap">
-            <table class="inventory-table">
-              <thead>
-                <tr>
-                  ${isComputer ? `
-                    <th>Komputer</th>
-                    <th>CPU</th>
-                    <th>Core / Thread</th>
-                    <th>RAM</th>
-                    <th>Storage</th>
-                    <th>Usia</th>
-                  ` : `
-                    <th>Printer / Serial</th>
-                    <th>Merek</th>
-                    <th>Model</th>
-                    <th>Tinta</th>
-                    <th>Tanggal FTP</th>
-                    <th>Masa Pakai</th>
-                  `}
-
-                  <th>Perbaikan</th>
-                  <th>Perawatan</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                ${filtered.length
-                  ? (
-                    isComputer
-                      ? computerRows(filtered)
-                      : printerRows(filtered)
-                  )
-                  : `
-                    <tr>
-                      <td colspan="8">
-                        Tidak ada data yang sesuai.
-                      </td>
-                    </tr>
-                  `
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div class="inventory-footer">
-            <span>
-              Data diperbarui: ${updated}
-            </span>
-          </div>
-
-        </section>
-
-        <section class="glass-card">
-          <div class="card-heading">
-            <h3>Catatan Pemeriksaan</h3>
-            <p>
-              Hasil ini belum merupakan rekomendasi
-              penggantian perangkat.
-            </p>
-          </div>
-
-          <ul>
-            <li>Data diambil dari inventaris aktif.</li>
-            <li>Usia komputer dihitung dari Tahun Perolehan.</li>
-            <li>Masa Pakai printer dihitung dari tanggal FTP.</li>
-            <li>Perbaikan dan Perawatan dihitung terpisah.</li>
-            <li>Riwayat dicocokkan menggunakan jenis aset dan serial.</li>
-            <li>Data hanya dibaca dan tidak disimpan kembali.</li>
-          </ul>
-        </section>
-
-      </div>
-    `;
-
-    bindEvents();
-  }
-
-  // =======================================================
-  // EVENT HALAMAN
-  // =======================================================
-
-  function bindEvents() {
-    $("#evaluationRefresh")?.addEventListener(
-      "click",
-      () => openPage(true)
-    );
-
-    $("#evaluationSearch")?.addEventListener(
-      "input",
-      event => {
-        state.query = event.target.value;
-        render();
-      }
-    );
-
-    root.querySelectorAll("[data-evaluation-type]")
-      .forEach(button => {
-        button.addEventListener("click", () => {
-          state.type = button.dataset.evaluationType;
-          state.query = "";
-          render();
-        });
-      });
-  }
-
-  // =======================================================
-  // PESAN AKSES DAN ERROR
-  // =======================================================
-
-  function renderMessage(title, message) {
-    root.innerHTML = `
-      <div class="inventory-page">
-        <section class="glass-card">
-          <div class="card-heading">
-            <h3>${esc(title)}</h3>
-            <p>${esc(message)}</p>
-          </div>
-        </section>
-      </div>
-    `;
-  }
-
-  // =======================================================
   // BUKA HALAMAN
   // =======================================================
 
@@ -676,10 +1071,13 @@
     if (state.loading) return;
 
     if (!isAdmin()) {
+      state.loaded = false;
+
       renderMessage(
         "Login Admin diperlukan",
-        "Evaluasi menggunakan serial lengkap untuk mencocokkan riwayat Maintenance. Silakan login Admin terlebih dahulu."
+        "Evaluasi membutuhkan serial lengkap untuk mencocokkan riwayat Maintenance. Silakan login Admin terlebih dahulu."
       );
+
       return;
     }
 
@@ -691,8 +1089,8 @@
     state.loading = true;
 
     renderMessage(
-      "Memuat data perangkat",
-      "Sedang membaca inventaris dan riwayat Maintenance..."
+      "Memuat evaluasi perangkat",
+      "Sedang membaca inventaris komputer, printer, dan riwayat Maintenance..."
     );
 
     try {
@@ -704,7 +1102,7 @@
 
       renderMessage(
         "Data belum dapat dimuat",
-        error.message || "Periksa koneksi dan coba kembali."
+        error.message || "Periksa koneksi lalu coba kembali."
       );
 
     } finally {
@@ -713,7 +1111,7 @@
   }
 
   // =======================================================
-  // INISIALISASI DAN NAVIGASI
+  // NAVIGASI DAN AUTENTIKASI
   // =======================================================
 
   document.addEventListener(
