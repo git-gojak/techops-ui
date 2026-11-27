@@ -19,10 +19,11 @@ document.addEventListener("DOMContentLoaded", () => {
       title: "Maintenance",
       subtitle: "Perawatan dan perbaikan perangkat"
     },
+
     connectivity: {
-      title: "Koneksi",
-      subtitle: "Monitoring konektivitas"
-    },
+  title: "Evaluasi Perangkat",
+  subtitle: "Analisis kelayakan komputer dan printer"
+},
     guide: {
       title: "Panduan",
       subtitle: "Petunjuk penggunaan GoJak TechOps"
