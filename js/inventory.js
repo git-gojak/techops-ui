@@ -804,93 +804,9 @@
   // =======================================================
   // ICON
   // =======================================================
-
   function inventoryIcon(key) {
-    const aliases = {
-      tahun: "calendar",
-      komputer: "monitor",
-      merek: "package",
-      model: "box",
-      serial: "barcode",
-      cpu: "cpu",
-      core: "layers",
-      thread: "network",
-      ram: "memory",
-      storage: "storage",
-      gpu: "monitor",
-      os: "window",
-      pengguna: "user",
-      scan_terakhir: "scan",
-      perubahan: "history",
-      status: "shield",
-      unit: "printer",
-      tinta: "droplet",
-      ftp: "calendar",
-      mp: "clock",
-      printer: "printer"
-    };
-
-    const shapes = {
-      calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
-      monitor: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
-      barcode: '<path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14"/>',
-      package: '<path d="m12 3 9 5-9 5-9-5 9-5zM3 8v9l9 5 9-5V8M12 13v9"/>',
-      box: '<path d="M4 7 12 3l8 4v10l-8 4-8-4zM4 7l8 5 8-5M12 12v9"/>',
-      cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 9h6v6H9zM9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
-      layers: '<path d="m12 3 9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/>',
-      network: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="m11 7-5 9m7-9 5 9M7 18h10"/>',
-      memory: '<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 7v10M11 7v10M15 7v10M6 17v3M10 17v3M14 17v3M18 17v3"/>',
-      storage: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14h18M7 17h.01M11 17h.01"/>',
-      window: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 6.5h.01M11 6.5h.01"/>',
-      user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-      scan: '<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M4 12h16"/>',
-      history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
-      shield: '<path d="M12 3 20 6v5c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/>',
-      printer: '<path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/>',
-      droplet: '<path d="M12 3s7 8 7 13a7 7 0 0 1-14 0c0-5 7-13 7-13z"/>',
-      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>'
-    };
-
-    const colors = {
-      calendar: "--blue-light",
-      monitor: "--blue-light",
-      barcode: "--purple",
-      package: "--purple",
-      box: "--teal",
-      cpu: "--blue-light",
-      layers: "--purple",
-      network: "--teal",
-      memory: "--green",
-      storage: "--yellow",
-      window: "--blue-light",
-      user: "--green",
-      scan: "--purple",
-      history: "--yellow",
-      shield: "--green",
-      printer: "--blue-light",
-      droplet: "--teal",
-      clock: "--yellow"
-    };
-
-    const icon = aliases[key] || key;
-    const shape = shapes[icon] || shapes.monitor;
-
-    return `
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="var(${colors[icon] || "--blue-light"})"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true">
-        ${shape}
-      </svg>
-    `;
+    return window.TechOpsIcons.render(key);
   }
-
   // =======================================================
   // DETAIL INVENTARIS — MODE BACA SAJA
   // =======================================================
