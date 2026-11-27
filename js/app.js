@@ -22,12 +22,18 @@ document.addEventListener("DOMContentLoaded", () => {
     connectivity: {
       title: "Koneksi",
       subtitle: "Monitoring konektivitas"
+    },
+    guide: {
+      title: "Panduan",
+      subtitle: "Petunjuk penggunaan GoJak TechOps"
     }
   };
 
   const navButtons = document.querySelectorAll("[data-page]");
   const sections = document.querySelectorAll(".page-section");
-let activePage = "dashboard";
+
+  let activePage = "dashboard";
+
   const pageTitle = document.getElementById("pageTitle");
   const pageSubtitle = document.getElementById("pageSubtitle");
   const sidebar = document.getElementById("sidebar");
@@ -71,7 +77,9 @@ let activePage = "dashboard";
 
   function navigateTo(page) {
     if (!pageTitles[page]) return;
-activePage = page;
+
+    activePage = page;
+
     sections.forEach(section => {
       section.classList.toggle(
         "active",
@@ -96,17 +104,17 @@ activePage = page;
 
     closeSidebar();
 
-// Beri tahu modul bahwa halaman aktif telah berubah.
-document.dispatchEvent(
-  new CustomEvent("techops:pagechange", {
-    detail: { page: activePage }
-  })
-);
+    // Beri tahu modul bahwa halaman aktif telah berubah.
+    document.dispatchEvent(
+      new CustomEvent("techops:pagechange", {
+        detail: { page: activePage }
+      })
+    );
 
-window.scrollTo({
-  top: 0,
-  behavior: "smooth"
-});
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
   }
 
   function closeSidebar() {
@@ -167,7 +175,7 @@ window.scrollTo({
     }
   }, true);
 
-    // Tombol QR tengah untuk publik dan Admin.
+  // Tombol QR tengah untuk publik dan Admin.
   mobileQrButton?.addEventListener("click", () => {
     if (window.MaintenancePage?.openScanner) {
       window.MaintenancePage.openScanner();
@@ -182,12 +190,12 @@ window.scrollTo({
 
   // API navigasi dan proteksi untuk modul lain.
   window.TechOps = {
-  navigateTo,
-  getActivePage: () => activePage,
-  isAdmin,
-  requireAdmin,
-  refreshAdminUI
-};
+    navigateTo,
+    getActivePage: () => activePage,
+    isAdmin,
+    requireAdmin,
+    refreshAdminUI
+  };
 
   // Sinkronisasi tampilan awal.
   refreshAdminUI();
