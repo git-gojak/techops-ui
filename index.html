@@ -32,7 +32,6 @@
 
     <div class="brand">
       <div class="brand-logo">GT</div>
-
       <div class="brand-text">
         <strong>GoJak</strong>
         <span>TechOps</span>
@@ -96,6 +95,18 @@
           </svg>
         </span>
         <span>Koneksi</span>
+      </button>
+
+      <!-- MENU BARU: PANDUAN -->
+      <button class="nav-item" data-page="guide" type="button">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/>
+            <path d="M4 5.5v13A2.5 2.5 0 0 1 6.5 16H20"/>
+            <path d="M8 7h8M8 10h8"/>
+          </svg>
+        </span>
+        <span>Panduan</span>
       </button>
 
     </nav>
@@ -173,7 +184,6 @@
               Monitoring dan pengelolaan perangkat teknologi informasi.
             </p>
           </div>
-
           <div class="welcome-decoration">GT</div>
         </div>
 
@@ -245,7 +255,6 @@
                 <p>Rekap komputer dan printer berdasarkan unit</p>
               </div>
             </div>
-
             <div id="unitMonitoring" class="empty-state">
               Data unit akan ditampilkan setelah API diintegrasikan.
             </div>
@@ -258,7 +267,6 @@
                 <p>Urutan berdasarkan tanggal dan waktu aktivitas</p>
               </div>
             </div>
-
             <div id="latestMaintenance" class="empty-state">
               Belum ada data aktivitas yang dimuat.
             </div>
@@ -278,7 +286,6 @@
               <path d="M8 21h8M12 17v4"/>
             </svg>
           </span>
-
           <h2>Inventaris Komputer</h2>
           <p>
             Modul komputer akan diintegrasikan pada batch berikutnya.
@@ -298,7 +305,6 @@
               <path d="M6 14h12v7H6z"/>
             </svg>
           </span>
-
           <h2>Inventaris Printer</h2>
           <p>
             Modul printer akan diintegrasikan pada batch berikutnya.
@@ -306,17 +312,16 @@
         </div>
 
       </section>
-        
-<!-- MAINTENANCE -->
-<section class="page-section" id="page-maintenance">
 
-  <div id="maintenanceRoot">
-    <div class="maintenance-loading">
-      Halaman Maintenance siap dimuat.
-    </div>
-  </div>
+      <!-- MAINTENANCE -->
+      <section class="page-section" id="page-maintenance">
+        <div id="maintenanceRoot">
+          <div class="maintenance-loading">
+            Halaman Maintenance siap dimuat.
+          </div>
+        </div>
+      </section>
 
-</section>
       <!-- KONEKSI -->
       <section class="page-section" id="page-connectivity">
 
@@ -329,11 +334,29 @@
               <path d="m7 11 10-5M7 13l10 5"/>
             </svg>
           </span>
-
           <h2>Koneksi</h2>
           <p>
             Monitoring koneksi akan diintegrasikan pada batch berikutnya.
           </p>
+        </div>
+
+      </section>
+
+      <!-- HALAMAN PANDUAN -->
+      <section class="page-section" id="page-guide">
+
+        <div id="guideRoot">
+          <div class="page-placeholder">
+            <span class="placeholder-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/>
+                <path d="M4 5.5v13A2.5 2.5 0 0 1 6.5 16H20"/>
+                <path d="M8 7h8M8 10h8"/>
+              </svg>
+            </span>
+            <h2>Panduan GoJak TechOps</h2>
+            <p>Panduan penggunaan aplikasi sedang disiapkan.</p>
+          </div>
         </div>
 
       </section>
@@ -498,12 +521,18 @@
 <script src="js/auth.js"></script>
 <script src="js/icons.js"></script>
 <script src="js/dashboard.js"></script>
-<script src="js/inventory.js"></script>  
+<script src="js/inventory.js"></script>
+
 <!-- QR SCANNER -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 <!-- MAINTENANCE -->
 <script src="js/maintenance.js"></script>
 <script src="js/hardware.js"></script>
+
+<!-- PANDUAN -->
+<script src="js/guide.js"></script>
+
 <!-- PWA SERVICE WORKER -->
 <script>
   if ("serviceWorker" in navigator && location.protocol === "https:") {
