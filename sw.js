@@ -22,7 +22,8 @@ const APP_FILES = [
   "./js/inventory.js",
   "./js/maintenance.js",
   "./js/hardware.js",
-  "./icons/app-icon.svg"
+  "./icons/app-icon.svg",
+  "./icons/ui.svg"
 ];
 
 // INSTALL
