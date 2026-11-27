@@ -171,50 +171,27 @@
     return `${year}-${month}-${day}`;
   }
 
-  function formatDate(value) {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
-      return "-";
-    }
+ 
+function formatDate(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "-";
+  }
 
-    let year;
-    let month;
-    let day;
+  const text = String(value).trim();
 
-    if (value instanceof Date) {
-      if (Number.isNaN(value.getTime())) return "-";
+  // Ambil bagian tanggal saja dari format ISO
+  const isoMatch = text.match(
+    /^(\d{4})-(\d{1,2})-(\d{1,2})/
+  );
 
-      year = value.getFullYear();
-      month = value.getMonth() + 1;
-      day = value.getDate();
-
-    } else {
-      const text = String(value).trim();
-
-      const isoMatch = text.match(
-        /^(\d{4})-(\d{1,2})-(\d{1,2})/
-      );
-
-      if (isoMatch) {
-        year = Number(isoMatch[1]);
-        month = Number(isoMatch[2]);
-        day = Number(isoMatch[3]);
-
-      } else {
-        const localMatch = text.match(
-          /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/
-        );
-
-        if (!localMatch) return text;
-
-        day = Number(localMatch[1]);
-        month = Number(localMatch[2]);
-        year = Number(localMatch[3]);
-      }
-    }
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]);
+    const day = Number(isoMatch[3]);
 
     const date = new Date(year, month - 1, day);
 
@@ -228,10 +205,41 @@
 
     return new Intl.DateTimeFormat("id-ID", {
       day: "2-digit",
-      month: "short",
+      month: "long",
       year: "numeric"
     }).format(date);
   }
+
+  // Format DD/MM/YYYY atau DD-MM-YYYY
+  const localMatch = text.match(
+    /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/
+  );
+
+  if (localMatch) {
+    const day = Number(localMatch[1]);
+    const month = Number(localMatch[2]);
+    const year = Number(localMatch[3]);
+
+    const date = new Date(year, month - 1, day);
+
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      return "-";
+    }
+
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    }).format(date);
+  }
+
+  return text;
+}
+
 
   // =======================================================
   // HALAMAN MAINTENANCE
