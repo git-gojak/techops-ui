@@ -74,33 +74,28 @@
           "Fitur yang dapat digunakan oleh pengguna umum.",
           `
 
-          ${guideItem(1, "Mengenal Dashboard", "monitor", `
+          ${guideItem(1, "Dashboard", "monitor", `
             <p>
               Dashboard merupakan halaman ringkasan utama
               GoJak TechOps.
             </p>
 
-            </ul>
+            </ol>
               <li><strong>Total Komputer:</strong> jumlah inventaris komputer.</li>
               <li><strong>Total Printer:</strong> jumlah inventaris printer.</li>
               <li><strong>Riwayat Maintenance:</strong> aktivitas yang tercatat.</li>
               <li><strong>Kondisi Baik:</strong> ringkasan kondisi perangkat.</li>
             </ol>
 
-            <p>
-              Dashboard juga menampilkan monitoring perangkat
-              berdasarkan unit dan aktivitas maintenance terbaru.
-            </p>
-
           `)}
 
-          ${guideItem(2, "Melihat Inventaris Komputer", "komputer", `
+          ${guideItem(2, "Komputer", "komputer", `
             <p>
               Halaman Komputer menampilkan daftar inventaris
               dan spesifikasi perangkat.
             </p>
 
-            </ul>
+            </ol>
               <li>Computer Name, merek, dan model.</li>
               <li>Serial ID dan pengguna.</li>
               <li>Tahun perolehan.</li>
@@ -117,20 +112,15 @@
               <li>Gunakan navigasi halaman untuk data berikutnya.</li>
             </ol>
 
-            <p>
-              Beberapa informasi dapat disamarkan pada tampilan
-              pengguna umum.
-            </p>
-
           `)}
 
-          ${guideItem(3, "Melihat Inventaris Printer", "printer", `
+          ${guideItem(3, "Printer", "printer", `
             <p>
               Halaman Printer digunakan untuk melihat daftar
               dan informasi operasional printer.
             </p>
 
-            </ul>
+            </ol>
               <li>Serial Number, unit, merek, dan model.</li>
               <li>Jenis tinta.</li>
               <li>Tanggal FTP.</li>
@@ -146,41 +136,25 @@
               <li>Buka Detail untuk melihat informasi printer.</li>
             </ol>
 
-            <p>
-              Masa Pakai dihitung berdasarkan tanggal FTP
-              yang tercatat.
-            </p>
-
           `)}
 
-          ${guideItem(4, "Membaca Riwayat Maintenance", "history", `
+          ${guideItem(4, "Maintenance", "history", `
             <p>
               Halaman Maintenance menampilkan catatan perawatan
               dan perbaikan perangkat.
             </p>
 
-            </ul>
+            </ol>
               <li><strong>Perawatan:</strong> kegiatan pemeliharaan perangkat.</li>
               <li><strong>Perbaikan:</strong> kegiatan penanganan kerusakan.</li>
             </ol>
 
-            <p>
-              Riwayat dapat digunakan untuk melihat kegiatan,
-              kondisi perangkat, keterangan pekerjaan,
-              dan informasi penanganan sesuai catatan.
-            </p>
-
-            <p>
-              Pengguna umum dapat membaca riwayat.
-              Pencatatan kegiatan baru hanya dapat dilakukan Admin.
-            </p>
-
           `)}
 
-          ${guideItem(5, "Menggunakan QR Info", "scan", `
+          ${guideItem(5, "QR Info", "scan", `
             <p>
-              QR Scanner digunakan untuk mencari informasi
-              perangkat melalui QR atau serial perangkat.
+              untuk mencari informasi dan maintenance.
+              Periksa izin kamera.
             </p>
 
             <ol>
@@ -191,46 +165,37 @@
               <li>Baca informasi perangkat yang ditampilkan.</li>
             </ol>
 
-            <p>
-              Pengguna umum hanya dapat melihat informasi
-              perangkat dan riwayat maintenance.
-            </p>
-
-            <p>
-              Jika kamera tidak terbuka, periksa izin kamera
-              browser dan pastikan halaman menggunakan HTTPS.
-            </p>
           `)}
 
           `
         )}
 
-        <!-- KOLOM KANAN: ADMIN -->
+        <!-- KOLOM KANAN: Teknisi -->
         ${guideGroup(
-          "Panduan Admin",
-          "Fitur pengelolaan yang memerlukan login Admin.",
+          "Panduan Teknisi",
+          "Fitur pengelolaan yang memerlukan login.",
           `
 
-          ${guideItem(6, "Login dan Logout Admin", "shield", `
-            <p><strong>Login Admin:</strong></p>
+          ${guideItem(6, "Login dan Logout", "shield", `
+            <p><strong>Login:</strong></p>
 
             <ol>
               <li>Tekan ikon profil GT di kanan atas.</li>
-              <li>Masukkan PIN Admin sebanyak 6 digit.</li>
+              <li>Masukkan PIN sebanyak 6 digit.</li>
               <li>Tekan Masuk.</li>
-              <li>Pastikan status Admin sudah aktif.</li>
+              <li>Pastikan status sudah aktif.</li>
             </ol>
 
-            <p><strong>Logout Admin:</strong></p>
+            <p><strong>Logout:</strong></p>
 
             <ol>
-              <li>Tekan ikon profil Admin.</li>
+              <li>Tekan ikon profil.</li>
               <li>Pilih Keluar.</li>
               <li>Konfirmasi jika diminta.</li>
             </ol>
 
             <p>
-              Jangan membagikan PIN Admin kepada pihak
+              Jangan membagikan PIN kepada pihak
               yang tidak memiliki kewenangan.
             </p>
           `)}
@@ -238,20 +203,19 @@
           ${guideItem(7, "Menambah dan Mengubah Data Perangkat", "package", `
             <p>
               Penambahan dan perubahan data komputer maupun printer
-              hanya tersedia setelah login Admin.
+              hanya tersedia setelah login.
             </p>
 
-            <p><strong>Menambah perangkat:</strong></p>
+            <p><strong>Menambah:</strong></p>
 
             <ol>
-              <li>Login sebagai Admin.</li>
               <li>Buka menu Komputer atau Printer.</li>
               <li>Tekan Tambah.</li>
               <li>Isi informasi sesuai data sebenarnya.</li>
               <li>Periksa kembali sebelum menyimpan.</li>
             </ol>
 
-            <p><strong>Mengubah data:</strong></p>
+            <p><strong>Mengubah:</strong></p>
 
             <ol>
               <li>Cari perangkat yang ingin diperbarui.</li>
@@ -260,13 +224,9 @@
               <li>Simpan perubahan.</li>
             </ol>
 
-            <p>
-              Pastikan Serial ID atau Serial Number
-              tidak tertukar.
-            </p>
           `)}
 
-          ${guideItem(8, "Mengarsipkan dan Mengaktifkan Perangkat", "history", `
+          ${guideItem(8, "Mengarsipkan dan Mengaktifkan", "history", `
             <p>
               Fitur Arsip digunakan untuk menandai perangkat
               yang tidak lagi berada dalam daftar perangkat aktif,
@@ -276,7 +236,6 @@
             <p><strong>Mengarsipkan:</strong></p>
 
             <ol>
-              <li>Login sebagai Admin.</li>
               <li>Buka inventaris Komputer atau Printer.</li>
               <li>Cari perangkat yang akan diarsipkan.</li>
               <li>Tekan Arsip dan ikuti konfirmasi.</li>
@@ -293,12 +252,11 @@
 
           ${guideItem(9, "Mencatat Maintenance melalui QR", "scan", `
             <p>
-              Admin dapat mencatat maintenance melalui hasil
+              Teknisi dapat mencatat maintenance melalui hasil
               pemindaian QR perangkat.
             </p>
 
             <ol>
-              <li>Login sebagai Admin.</li>
               <li>Buka QR Scanner.</li>
               <li>Pindai QR perangkat yang ditangani.</li>
               <li>Periksa informasi perangkat.</li>
@@ -317,32 +275,25 @@
             </p>
 
             <p>
-              Jadwal Perawatan komputer dihitung 6 bulan,
-              sedangkan printer 3 bulan. Perbaikan tidak
-              menggunakan jadwal otomatis tersebut.
+              Jadwal Perawatan selanjutnya akan otomatis terisi.
             </p>
           `)}
 
-          ${guideItem(10, "Mengganti PIN Admin", "shield", `
+          ${guideItem(10, "Mengganti PIN", "shield", `
             <p>
-              PIN Admin dapat diganti melalui menu profil
+              PIN dapat diganti melalui menu profil
               setelah berhasil login.
             </p>
 
             <ol>
-              <li>Login sebagai Admin.</li>
-              <li>Tekan ikon profil.</li>
+              <li>Pastikan sudah login.</li>
+              <li>Tekan icon profil.</li>
               <li>Pilih Ganti PIN.</li>
               <li>Masukkan PIN lama.</li>
               <li>Masukkan PIN baru sebanyak 6 digit.</li>
               <li>Masukkan kembali PIN baru untuk konfirmasi.</li>
               <li>Tekan Simpan PIN Baru.</li>
             </ol>
-
-            <p>
-              Simpan PIN di tempat yang aman dan jangan
-              membagikannya kepada orang lain.
-            </p>
           `)}
 
           `
@@ -353,7 +304,7 @@
       <!-- PENUTUP -->
       <section class="glass-card">
         <div class="card-heading">
-          <h3>Informasi TambahanGoJak TechOps</h3>
+          <h3>Informasi Tambahan</h3>
           <p>
             Gunakan aplikasi sesuai kewenangan dan pastikan
             data perangkat yang dimasukkan benar.
