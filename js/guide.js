@@ -80,7 +80,7 @@
               GoJak TechOps.
             </p>
 
-            </ol>
+            <ol>
               <li><strong>Total Komputer:</strong> jumlah inventaris komputer.</li>
               <li><strong>Total Printer:</strong> jumlah inventaris printer.</li>
               <li><strong>Riwayat Maintenance:</strong> aktivitas yang tercatat.</li>
@@ -95,7 +95,7 @@
               dan spesifikasi perangkat.
             </p>
 
-            </ol>
+            <ol>
               <li>Computer Name, merek, dan model.</li>
               <li>Serial ID dan pengguna.</li>
               <li>Tahun perolehan.</li>
@@ -120,7 +120,7 @@
               dan informasi operasional printer.
             </p>
 
-            </ol>
+            <ol>
               <li>Serial Number, unit, merek, dan model.</li>
               <li>Jenis tinta.</li>
               <li>Tanggal FTP.</li>
@@ -144,7 +144,7 @@
               dan perbaikan perangkat.
             </p>
 
-            </ol>
+            <ol>
               <li><strong>Perawatan:</strong> kegiatan pemeliharaan perangkat.</li>
               <li><strong>Perbaikan:</strong> kegiatan penanganan kerusakan.</li>
             </ol>
