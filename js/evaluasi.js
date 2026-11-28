@@ -11,17 +11,10 @@
    - Sensor identitas mengikuti Backend.
    - Read-only, tidak mengubah database.
 
-   IDENTITAS:
-   KOMPUTER:
-   - Nama komputer
-   - Pengguna
-   - Serial
-   - Spesifikasi hardware
-
-   PRINTER:
-   - Unit
-   - Model
-   - Serial
+   UI:
+   - Mengikuti komponen dan ikon GoJak TechOps.
+   - Tombol responsif dan label dapat membungkus.
+   - Kartu perangkat dibuat lebih mudah dibaca.
    ========================================================= */
 
 (function () {
@@ -38,14 +31,14 @@
     computers: [],
     printers: [],
     maintenance: [],
-
     view: "hardware",
     type: "computers",
-
     loading: false,
     loaded: false,
     lastUpdated: null
   };
+
+  let pageActive = false;
 
   const $ = (selector, parent = root) =>
     parent.querySelector(selector);
@@ -175,26 +168,6 @@
     return new Date().getFullYear() - year;
   }
 
-  function getPrinterAge(value) {
-    const date = parseDate(value);
-
-    if (!date || date > new Date()) return null;
-
-    const now = new Date();
-
-    let years = now.getFullYear() - date.getFullYear();
-
-    const anniversary = new Date(
-      now.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
-
-    if (anniversary > now) years--;
-
-    return Math.max(0, years);
-  }
-
   function formatDate(value) {
     const date = parseDate(value);
 
@@ -252,9 +225,8 @@
   }
 
   // =======================================================
-  // RIWAYAT MAINTENANCE PER PERANGKAT
-  // Admin saja. Serial asli digunakan internal untuk
-  // mencocokkan riwayat.
+  // RIWAYAT MAINTENANCE
+  // Admin saja. Serial asli hanya digunakan internal.
   // =======================================================
 
   function getHistory(type, serial) {
@@ -383,10 +355,8 @@
 
   function evaluateComputerHardware(row) {
     const age = getComputerAge(row.tahun);
-
     const ram = numberValue(row.ram);
     const core = numberValue(row.core);
-
     const cpu = assessCpu(row.cpu);
 
     const replacementFlags = [];
@@ -493,14 +463,10 @@
   function getRepairRecommendations(type) {
     const rows = state[type];
 
-    const evaluated = rows.map(row => {
-      const history = getHistory(type, row.serial);
-
-      return {
-        row,
-        history
-      };
-    });
+    const evaluated = rows.map(row => ({
+      row,
+      history: getHistory(type, row.serial)
+    }));
 
     const withRepair = evaluated
       .filter(item => item.history.repair > 0)
@@ -551,76 +517,111 @@
   }
 
   // =======================================================
-  // SPESIFIKASI HARDWARE
+  // KOMPONEN FIELD SPESIFIKASI
+  // Memakai ikon yang sudah tersedia di icons.js.
   // =======================================================
 
-  function computerSpecification(row, age) {
+  function renderSpecField(name, value, iconName) {
     return `
-      <div class="evaluation-spec">
-
-        <span>
-          CPU:
-          <strong>${esc(row.cpu || "-")}</strong>
+      <div style="
+        display:flex;
+        align-items:flex-start;
+        gap:8px;
+        min-width:0;
+        padding:9px 10px;
+        border:1px solid var(--border);
+        border-radius:10px;
+        background:rgba(255,255,255,.025);
+      ">
+        <span style="
+          flex:0 0 18px;
+          margin-top:1px;
+        ">
+          ${icon(iconName)}
         </span>
 
-        <span>
-          Core / Thread:
-          <strong>${esc(row.core || "-")} / ${esc(row.thread || "-")}</strong>
-        </span>
+        <div style="
+          min-width:0;
+          flex:1;
+        ">
+          <small style="
+            display:block;
+            margin-bottom:3px;
+            color:var(--text-muted);
+            font-size:10px;
+          ">
+            ${esc(name)}
+          </small>
 
-        <span>
-          RAM:
-          <strong>${esc(row.ram || "-")}</strong>
-        </span>
-
-        <span>
-          Storage:
-          <strong>${esc(row.storage || "-")}</strong>
-        </span>
-
-        <span>
-          OS:
-          <strong>${esc(row.os || "-")}</strong>
-        </span>
-
-        <span>
-          Tahun:
-          <strong>${esc(row.tahun || "-")}</strong>
-        </span>
-
-        <span>
-          Usia:
-          <strong>${esc(formatAge(age))}</strong>
-        </span>
-
+          <strong style="
+            display:block;
+            color:var(--text-main);
+            font-size:12px;
+            font-weight:600;
+            line-height:1.5;
+            overflow-wrap:anywhere;
+            word-break:break-word;
+          ">
+            ${esc(value || "-")}
+          </strong>
+        </div>
       </div>
     `;
   }
 
+  // =======================================================
+  // SPESIFIKASI KOMPUTER
+  // =======================================================
+
+  function computerSpecification(row, age) {
+    return `
+      <div style="
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:8px;
+        margin-top:13px;
+      ">
+        ${renderSpecField("Processor", row.cpu, "cpu")}
+
+        ${renderSpecField(
+          "Core / Thread",
+          `${row.core || "-"} / ${row.thread || "-"}`,
+          "core"
+        )}
+
+        ${renderSpecField("RAM", row.ram, "ram")}
+
+        ${renderSpecField("Storage", row.storage, "storage")}
+
+        ${renderSpecField("Sistem Operasi", row.os, "os")}
+
+        ${renderSpecField("Tahun", row.tahun, "tahun")}
+
+        ${renderSpecField(
+          "Usia Perangkat",
+          formatAge(age),
+          "calendar"
+        )}
+      </div>
+    `;
+  }
+
+  // =======================================================
+  // SPESIFIKASI PRINTER
+  // =======================================================
+
   function printerSpecification(row) {
     return `
-      <div class="evaluation-spec">
-
-        <span>
-          Model:
-          <strong>${esc(row.model || "-")}</strong>
-        </span>
-
-        <span>
-          Merek:
-          <strong>${esc(row.merek || "-")}</strong>
-        </span>
-
-        <span>
-          Tinta:
-          <strong>${esc(row.tinta || "-")}</strong>
-        </span>
-
-        <span>
-          Tanggal FTP:
-          <strong>${esc(formatDate(row.ftp))}</strong>
-        </span>
-
+      <div style="
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:8px;
+        margin-top:13px;
+      ">
+        ${renderSpecField("Model", row.model, "model")}
+        ${renderSpecField("Merek", row.merek, "merek")}
+        ${renderSpecField("Jenis Tinta", row.tinta, "tinta")}
+        ${renderSpecField("Tanggal FTP", formatDate(row.ftp), "ftp")}
       </div>
     `;
   }
@@ -669,66 +670,152 @@
 
   // =======================================================
   // KARTU HARDWARE KOMPUTER
-  // Nama komputer dan pengguna ditampilkan berdampingan.
   // =======================================================
 
   function renderHardwareCard(item, index, category) {
     const row = item.row;
-
     const isReplacement = category === "replacement";
 
     const label = isReplacement
       ? "Perlu Penggantian"
       : "Perlu Perhatian";
 
+    const color = isReplacement
+      ? "var(--red)"
+      : "var(--yellow)";
+
+    const background = isReplacement
+      ? "rgba(240,100,100,.10)"
+      : "rgba(242,189,75,.10)";
+
     return `
-      <article class="glass-card evaluation-device-card">
+      <article
+        class="glass-card evaluation-device-card"
+        style="min-width:0; overflow:hidden;"
+      >
 
-        <div class="evaluation-device-heading">
+        <div style="
+          display:flex;
+          flex-direction:column;
+          gap:10px;
+          min-width:0;
+        ">
 
-          <div>
+          <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            flex-wrap:wrap;
+            gap:7px;
+          ">
 
-            <span class="evaluation-number">
-              Prioritas ${index + 1}
+            <span style="
+              color:var(--blue-light);
+              font-size:11px;
+              font-weight:700;
+            ">
+              PRIORITAS ${index + 1}
             </span>
 
-            <h4>
+            <span style="
+              display:inline-flex;
+              align-items:center;
+              justify-content:center;
+              gap:6px;
+              max-width:100%;
+              padding:6px 10px;
+              border:1px solid ${color};
+              border-radius:20px;
+              background:${background};
+              color:${color};
+              font-size:10px;
+              font-weight:700;
+              line-height:1.4;
+              white-space:normal;
+              overflow-wrap:anywhere;
+              text-align:center;
+            ">
+              ${icon(isReplacement ? "history" : "monitor")}
+              ${label}
+            </span>
+
+          </div>
+
+          <div style="min-width:0;">
+
+            <h4 style="
+              margin:0;
+              color:var(--text-main);
+              font-size:14px;
+              line-height:1.5;
+              overflow-wrap:anywhere;
+            ">
               ${esc(deviceName(row, "computers"))}
-              <span style="font-weight:normal;">
-                — ${esc(row.pengguna || "Pengguna belum tercatat")}
-              </span>
             </h4>
 
-            <small>
+            <div style="
+              display:flex;
+              align-items:flex-start;
+              gap:5px;
+              margin-top:5px;
+              color:var(--green);
+              font-size:11px;
+              line-height:1.5;
+              overflow-wrap:anywhere;
+            ">
+              ${icon("pengguna")}
+              <span style="min-width:0; overflow-wrap:anywhere;">
+                ${esc(row.pengguna || "Pengguna belum tercatat")}
+              </span>
+            </div>
+
+            <small style="
+              display:block;
+              margin-top:5px;
+              color:var(--text-muted);
+              font-size:10px;
+              overflow-wrap:anywhere;
+            ">
               Serial: ${esc(row.serial || "Tidak tersedia")}
             </small>
 
           </div>
 
-          <span class="evaluation-badge ${
-            isReplacement
-              ? "evaluation-red"
-              : "evaluation-yellow"
-          }">
-            ${label}
-          </span>
-
         </div>
 
         ${computerSpecification(row, item.age)}
 
-        <details class="evaluation-detail">
+        <details class="evaluation-detail" style="margin-top:12px;">
 
-          <summary>Alasan Evaluasi</summary>
+          <summary style="
+            padding:10px;
+            border:1px solid var(--border);
+            border-radius:9px;
+            background:rgba(255,255,255,.025);
+            color:var(--text-secondary);
+            font-size:12px;
+            font-weight:600;
+            cursor:pointer;
+          ">
+            Alasan Evaluasi
+          </summary>
 
-          <div class="evaluation-reason">
-
-            <ul>
+          <div style="
+            padding:10px 4px 2px;
+            color:var(--text-secondary);
+            font-size:12px;
+            line-height:1.7;
+          ">
+            <ul style="padding-left:18px; margin:0;">
               ${item.reasons.map(reason => `
-                <li>${esc(reason)}</li>
+                <li style="
+                  margin-bottom:6px;
+                  overflow-wrap:anywhere;
+                ">
+                  ${esc(reason)}
+                </li>
               `).join("")}
             </ul>
-
           </div>
 
         </details>
@@ -738,30 +825,64 @@
   }
 
   // =======================================================
-  // KARTU PRINTER PUBLIK
+  // KARTU PRINTER
   // =======================================================
 
   function renderPrinterHardwareCard(row, index) {
     return `
-      <article class="glass-card evaluation-device-card">
+      <article
+        class="glass-card evaluation-device-card"
+        style="min-width:0; overflow:hidden;"
+      >
 
-        <div class="evaluation-device-heading">
+        <div style="
+          display:flex;
+          align-items:center;
+          gap:10px;
+          min-width:0;
+        ">
 
-          <div>
+          <div class="stat-icon teal" style="flex:0 0 38px;">
+            ${icon("printer")}
+          </div>
 
-            <span class="evaluation-number">
-              Printer ${index + 1}
-            </span>
+          <div style="min-width:0; flex:1;">
 
-            <h4>
+            <small style="
+              color:var(--blue-light);
+              font-size:10px;
+              font-weight:700;
+            ">
+              PRINTER ${index + 1}
+            </small>
+
+            <h4 style="
+              margin-top:3px;
+              color:var(--text-main);
+              font-size:14px;
+              line-height:1.5;
+              overflow-wrap:anywhere;
+            ">
               ${esc(row.unit || "Unit tidak tercatat")}
             </h4>
 
-            <small>
+            <small style="
+              display:block;
+              margin-top:4px;
+              color:var(--text-muted);
+              font-size:11px;
+              overflow-wrap:anywhere;
+            ">
               Model: ${esc(row.model || "Tidak tersedia")}
             </small>
 
-            <small>
+            <small style="
+              display:block;
+              margin-top:3px;
+              color:var(--text-muted);
+              font-size:10px;
+              overflow-wrap:anywhere;
+            ">
               Serial: ${esc(row.serial || "Tidak tersedia")}
             </small>
 
@@ -780,7 +901,6 @@
   function renderRepairCard(item, index, type) {
     const row = item.row;
     const history = item.history;
-
     const condition = history.latestCondition;
 
     const needsReview =
@@ -817,9 +937,7 @@
           </div>
 
           <span class="evaluation-badge ${
-            needsReview
-              ? "evaluation-yellow"
-              : ""
+            needsReview ? "evaluation-yellow" : ""
           }">
             ${label}
           </span>
@@ -979,7 +1097,6 @@
 
   // =======================================================
   // PILIHAN JENIS EVALUASI
-  // Riwayat perbaikan hanya terlihat oleh Admin.
   // =======================================================
 
   function renderViewSelector() {
@@ -989,13 +1106,8 @@
       <section class="glass-card">
 
         <div class="card-heading">
-
           <h3>Jenis Evaluasi</h3>
-
-          <p>
-            Pilih dasar evaluasi yang ingin dilihat.
-          </p>
-
+          <p>Pilih dasar evaluasi yang ingin dilihat.</p>
         </div>
 
         <div class="maintenance-radio-group">
@@ -1007,11 +1119,19 @@
                 ? "inventory-primary"
                 : ""
             }"
-            data-evaluation-view="hardware">
-
+            data-evaluation-view="hardware"
+            style="
+              flex:1 1 155px;
+              min-width:0;
+              max-width:100%;
+              white-space:normal;
+              line-height:1.4;
+              text-align:center;
+              overflow-wrap:anywhere;
+            "
+          >
             ${icon("komputer")}
             Berdasarkan Hardware
-
           </button>
 
           <button
@@ -1021,11 +1141,19 @@
                 ? "inventory-primary"
                 : ""
             }"
-            data-evaluation-view="repair">
-
+            data-evaluation-view="repair"
+            style="
+              flex:1 1 155px;
+              min-width:0;
+              max-width:100%;
+              white-space:normal;
+              line-height:1.4;
+              text-align:center;
+              overflow-wrap:anywhere;
+            "
+          >
             ${icon("history")}
             Berdasarkan Perbaikan
-
           </button>
 
         </div>
@@ -1043,13 +1171,8 @@
       <section class="glass-card">
 
         <div class="card-heading">
-
           <h3>Jenis Perangkat</h3>
-
-          <p>
-            Pilih komputer atau printer.
-          </p>
-
+          <p>Pilih komputer atau printer.</p>
         </div>
 
         <div class="maintenance-radio-group">
@@ -1061,10 +1184,18 @@
                 ? "inventory-primary"
                 : ""
             }"
-            data-evaluation-type="computers">
-
-            ${icon("komputer")} Komputer
-
+            data-evaluation-type="computers"
+            style="
+              flex:0 1 auto;
+              min-width:0;
+              max-width:100%;
+              white-space:normal;
+              line-height:1.4;
+              text-align:center;
+            "
+          >
+            ${icon("komputer")}
+            Komputer
           </button>
 
           <button
@@ -1074,10 +1205,18 @@
                 ? "inventory-primary"
                 : ""
             }"
-            data-evaluation-type="printers">
-
-            ${icon("printer")} Printer
-
+            data-evaluation-type="printers"
+            style="
+              flex:0 1 auto;
+              min-width:0;
+              max-width:100%;
+              white-space:normal;
+              line-height:1.4;
+              text-align:center;
+            "
+          >
+            ${icon("printer")}
+            Printer
           </button>
 
         </div>
@@ -1212,7 +1351,6 @@
 
     const type = state.type;
     const isComputer = type === "computers";
-
     const result = getRepairRecommendations(type);
 
     const totalRepair = result.withRepair.reduce(
@@ -1363,10 +1501,9 @@
             type="button"
             class="inventory-button inventory-primary"
             id="evaluationRefresh"
-            ${state.loading ? "disabled" : ""}>
-
+            ${state.loading ? "disabled" : ""}
+          >
             ${state.loading ? "Memuat..." : "Perbarui Data"}
-
           </button>
 
         </div>
@@ -1536,34 +1673,46 @@
   }
 
   // =======================================================
-  // NAVIGASI DAN AUTENTIKASI
+  // NAVIGASI
   // =======================================================
 
   document.addEventListener(
     "techops:pagechange",
     event => {
-      if (event.detail?.page === "connectivity") {
+      pageActive = event.detail?.page === "connectivity";
+
+      if (pageActive) {
         openPage();
       }
     }
   );
 
-  document.addEventListener(
-    "techops:authchange",
-    () => {
+  // =======================================================
+  // SINKRONISASI AUTENTIKASI
+  // Menggunakan callback API yang tersedia.
+  // =======================================================
+
+  if (window.TechOpsAPI?.onAuthChange) {
+    window.TechOpsAPI.onAuthChange(() => {
       state.loaded = false;
 
       state.computers = [];
       state.printers = [];
       state.maintenance = [];
 
-      if (
-        window.TechOps?.getActivePage?.() === "connectivity"
-      ) {
+      if (!isAdmin()) {
+        state.view = "hardware";
+      }
+
+      if (pageActive) {
         openPage(true);
       }
-    }
-  );
+    });
+  }
+
+  // =======================================================
+  // API MODUL
+  // =======================================================
 
   window.EvaluasiPerangkat = {
     openPage,
