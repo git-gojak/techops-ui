@@ -3,33 +3,25 @@
    GOJAK TECHOPS
    EVALUASI PERANGKAT
 
-   PILIHAN EVALUASI:
-   1. Berdasarkan Hardware
-   2. Berdasarkan Perbaikan
-
-   PRINSIP HARDWARE:
-   - Intel Core i3 Gen 8 atau lebih baru menjadi acuan.
-   - AMD Ryzen 3 seri 3000 atau lebih baru menjadi acuan.
-   - RAM minimal 8 GB.
-   - 4 core atau lebih disarankan.
-   - Core dan thread adalah faktor pendukung.
-   - Usia perangkat menjadi faktor pendukung.
-   - SSD SATA dan NVMe sama-sama memenuhi kebutuhan.
-   - HDD tambahan untuk data bukan kekurangan.
-   - OS hanya ditampilkan sebagai informasi.
-   - Riwayat perbaikan tidak memengaruhi evaluasi hardware.
-
-   PRINSIP PERBAIKAN:
-   - Hanya membaca catatan Maintenance yang tersedia.
-   - Riwayat dicocokkan berdasarkan jenis aset dan serial.
-   - Perbaikan dan Perawatan dihitung terpisah.
-   - Perawatan rutin bukan kerusakan.
-   - Tidak menganggap catatan sebagai riwayat seumur hidup.
-   - Kondisi terakhir menjadi informasi pendukung.
-
    AKSES:
-   - Admin diperlukan untuk membuka evaluasi.
+   - Evaluasi Hardware: Publik dan Admin.
+   - Evaluasi Perbaikan: Admin saja.
+   - Publik menggunakan API getPublic().
+   - Admin menggunakan API get().
+   - Sensor identitas mengikuti Backend.
    - Read-only, tidak mengubah database.
+
+   IDENTITAS:
+   KOMPUTER:
+   - Nama komputer
+   - Pengguna
+   - Serial
+   - Spesifikasi hardware
+
+   PRINTER:
+   - Unit
+   - Model
+   - Serial
    ========================================================= */
 
 (function () {
@@ -261,6 +253,8 @@
 
   // =======================================================
   // RIWAYAT MAINTENANCE PER PERANGKAT
+  // Admin saja. Serial asli digunakan internal untuk
+  // mencocokkan riwayat.
   // =======================================================
 
   function getHistory(type, serial) {
@@ -323,9 +317,6 @@
   function assessCpu(value) {
     const cpu = String(value || "").toUpperCase();
 
-    // Intel Core i3/i5/i7/i9
-    // Contoh: i3-8100, i5-8500, i3-10100.
-
     const intel = cpu.match(
       /\bI[3579]\s*[- ]?\s*(\d{4,5})\b/
     );
@@ -344,9 +335,6 @@
         description: `Intel Core Gen ${generation}`
       };
     }
-
-    // AMD Ryzen.
-    // Contoh: Ryzen 3 3200G, Ryzen 5 3600.
 
     const amd = cpu.match(
       /\bRYZEN\s*([3579])\s*(?:PRO\s*)?(\d{4,5})/
@@ -368,8 +356,6 @@
         description: `AMD Ryzen ${series} seri ${generation}000`
       };
     }
-
-    // Intel Core Ultra dan seri Core baru.
 
     if (
       /\bCORE\s*ULTRA\b/.test(cpu) ||
@@ -393,8 +379,6 @@
 
   // =======================================================
   // EVALUASI HARDWARE KOMPUTER
-  //
-  // Tidak menggunakan jumlah perbaikan.
   // =======================================================
 
   function evaluateComputerHardware(row) {
@@ -408,8 +392,6 @@
     const replacementFlags = [];
     const attentionFlags = [];
 
-    // Processor.
-
     if (cpu.known && !cpu.meets) {
       replacementFlags.push(
         "Prosesor yang digunakan merupakan generasi lama dan kemampuan pemrosesannya sudah tertinggal."
@@ -419,8 +401,6 @@
         "Model prosesor belum dapat dikenali. Spesifikasi perlu diperiksa kembali."
       );
     }
-
-    // RAM.
 
     if (ram !== null && ram < 8) {
       attentionFlags.push(
@@ -432,15 +412,11 @@
       );
     }
 
-    // Core.
-
     if (core !== null && core < 4) {
       attentionFlags.push(
         "Kemampuan menjalankan beberapa aplikasi secara bersamaan lebih terbatas."
       );
     }
-
-    // Usia.
 
     if (age !== null && age >= 10) {
       attentionFlags.push(
@@ -512,10 +488,6 @@
 
   // =======================================================
   // EVALUASI BERDASARKAN CATATAN PERBAIKAN
-  //
-  // Tidak menentukan jumlah perbaikan seumur hidup.
-  // Tidak menggunakan angka perbaikan sebagai satu-satunya
-  // dasar rekomendasi penggantian.
   // =======================================================
 
   function getRepairRecommendations(type) {
@@ -530,8 +502,6 @@
       };
     });
 
-    // Perangkat yang memiliki catatan Perbaikan.
-
     const withRepair = evaluated
       .filter(item => item.history.repair > 0)
       .sort((a, b) => {
@@ -541,8 +511,6 @@
           (a.history.latestDate?.getTime() || 0)
         );
       });
-
-    // Kondisi terakhir yang perlu diperiksa.
 
     const needsReview = evaluated
       .filter(item => {
@@ -575,9 +543,11 @@
   // =======================================================
 
   function deviceName(row, type) {
-    return type === "computers"
-      ? row.komputer || row.serial || "Komputer tanpa nama"
-      : row.unit || row.model || row.serial || "Printer tanpa nama";
+    if (type === "computers") {
+      return row.komputer || "Komputer tanpa nama";
+    }
+
+    return row.unit || "Unit printer tanpa nama";
   }
 
   // =======================================================
@@ -632,13 +602,13 @@
       <div class="evaluation-spec">
 
         <span>
-          Merek:
-          <strong>${esc(row.merek || "-")}</strong>
+          Model:
+          <strong>${esc(row.model || "-")}</strong>
         </span>
 
         <span>
-          Model:
-          <strong>${esc(row.model || "-")}</strong>
+          Merek:
+          <strong>${esc(row.merek || "-")}</strong>
         </span>
 
         <span>
@@ -698,7 +668,8 @@
   }
 
   // =======================================================
-  // KARTU HARDWARE
+  // KARTU HARDWARE KOMPUTER
+  // Nama komputer dan pengguna ditampilkan berdampingan.
   // =======================================================
 
   function renderHardwareCard(item, index, category) {
@@ -721,7 +692,12 @@
               Prioritas ${index + 1}
             </span>
 
-            <h4>${esc(deviceName(row, "computers"))}</h4>
+            <h4>
+              ${esc(deviceName(row, "computers"))}
+              <span style="font-weight:normal;">
+                — ${esc(row.pengguna || "Pengguna belum tercatat")}
+              </span>
+            </h4>
 
             <small>
               Serial: ${esc(row.serial || "Tidak tersedia")}
@@ -762,6 +738,42 @@
   }
 
   // =======================================================
+  // KARTU PRINTER PUBLIK
+  // =======================================================
+
+  function renderPrinterHardwareCard(row, index) {
+    return `
+      <article class="glass-card evaluation-device-card">
+
+        <div class="evaluation-device-heading">
+
+          <div>
+
+            <span class="evaluation-number">
+              Printer ${index + 1}
+            </span>
+
+            <h4>
+              ${esc(row.unit || "Unit tidak tercatat")}
+            </h4>
+
+            <small>
+              Model: ${esc(row.model || "Tidak tersedia")}
+            </small>
+
+            <small>
+              Serial: ${esc(row.serial || "Tidak tersedia")}
+            </small>
+
+          </div>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+  // =======================================================
   // KARTU RIWAYAT PERBAIKAN
   // =======================================================
 
@@ -795,6 +807,12 @@
             <small>
               Serial: ${esc(row.serial || "Tidak tersedia")}
             </small>
+
+            ${type === "computers" ? `
+              <small>
+                Pengguna: ${esc(row.pengguna || "Tidak tercatat")}
+              </small>
+            ` : ""}
 
           </div>
 
@@ -883,6 +901,42 @@
   }
 
   // =======================================================
+  // KATEGORI PRINTER
+  // =======================================================
+
+  function renderPrinterHardwarePage() {
+    return `
+      <section class="evaluation-category">
+
+        <div class="evaluation-category-heading">
+
+          <div>
+            <h3>Daftar Printer</h3>
+            <p>Identitas printer yang terdaftar dalam inventaris.</p>
+          </div>
+
+          <span class="evaluation-count">
+            ${state.printers.length} printer
+          </span>
+
+        </div>
+
+        ${state.printers.length
+          ? state.printers.map((row, index) =>
+              renderPrinterHardwareCard(row, index)
+            ).join("")
+          : `
+            <div class="glass-card evaluation-empty">
+              Belum ada data printer.
+            </div>
+          `
+        }
+
+      </section>
+    `;
+  }
+
+  // =======================================================
   // KATEGORI RIWAYAT PERBAIKAN
   // =======================================================
 
@@ -925,9 +979,12 @@
 
   // =======================================================
   // PILIHAN JENIS EVALUASI
+  // Riwayat perbaikan hanya terlihat oleh Admin.
   // =======================================================
 
   function renderViewSelector() {
+    if (!isAdmin()) return "";
+
     return `
       <section class="glass-card">
 
@@ -1035,31 +1092,7 @@
 
   function renderHardwarePage() {
     if (state.type === "printers") {
-      return `
-        <section class="glass-card evaluation-notes">
-
-          <h3>Evaluasi Hardware Printer</h3>
-
-          <p>
-            Data printer saat ini berisi identitas, model,
-            tinta, dan tanggal FTP. Data tersebut belum
-            cukup untuk menilai kondisi teknis hardware
-            printer secara objektif.
-          </p>
-
-          <p>
-            Karena itu, printer tidak diberi kategori
-            penggantian berdasarkan tanggal FTP atau
-            jumlah perbaikan saja.
-          </p>
-
-          <p>
-            Untuk melihat catatan perbaikan printer,
-            pilih menu Berdasarkan Perbaikan.
-          </p>
-
-        </section>
-      `;
+      return renderPrinterHardwarePage();
     }
 
     const result = getHardwareRecommendations();
@@ -1168,6 +1201,15 @@
   // =======================================================
 
   function renderRepairPage() {
+    if (!isAdmin()) {
+      return `
+        <section class="glass-card">
+          <h3>Akses Admin diperlukan</h3>
+          <p>Riwayat perbaikan hanya tersedia untuk Admin.</p>
+        </section>
+      `;
+    }
+
     const type = state.type;
     const isComputer = type === "computers";
 
@@ -1361,6 +1403,8 @@
     root.querySelectorAll("[data-evaluation-view]")
       .forEach(button => {
         button.addEventListener("click", () => {
+          if (!isAdmin()) return;
+
           state.view = button.dataset.evaluationView;
           render();
         });
@@ -1398,32 +1442,52 @@
 
   // =======================================================
   // MEMUAT DATA
+  //
+  // Publik:
+  //   getPublic() mengirim sessionId kosong.
+  //
+  // Admin:
+  //   get() menggunakan sesi Admin.
+  //
+  // Maintenance:
+  //   Hanya dimuat untuk Admin.
   // =======================================================
 
   async function loadData() {
-    if (!isAdmin()) {
-      throw new Error(
-        "Silakan login sebagai Admin untuk membuka evaluasi perangkat."
-      );
+    const api = window.TechOpsAPI;
+
+    if (!api) {
+      throw new Error("TechOpsAPI tidak tersedia.");
     }
+
+    const admin = isAdmin();
+
+    const getData = admin
+      ? api.get.bind(api)
+      : api.getPublic.bind(api);
 
     const results = await Promise.all([
 
-      window.TechOpsAPI.get("computers.list", {
+      getData("computers.list", {
         includeArchived: false
       }),
 
-      window.TechOpsAPI.get("printers.list", {
+      getData("printers.list", {
         includeArchived: false
-      }),
-
-      window.TechOpsAPI.get("maintenance.list")
+      })
 
     ]);
 
     state.computers = normalizeArray(results[0]);
     state.printers = normalizeArray(results[1]);
-    state.maintenance = normalizeArray(results[2]);
+
+    if (admin) {
+      const maintenance = await api.get("maintenance.list");
+      state.maintenance = normalizeArray(maintenance);
+    } else {
+      state.maintenance = [];
+      state.view = "hardware";
+    }
 
     state.lastUpdated = new Date();
     state.loaded = true;
@@ -1436,17 +1500,6 @@
   async function openPage(forceRefresh = false) {
     if (state.loading) return;
 
-    if (!isAdmin()) {
-      state.loaded = false;
-
-      renderMessage(
-        "Login Admin diperlukan",
-        "Silakan login Admin terlebih dahulu untuk membuka evaluasi perangkat."
-      );
-
-      return;
-    }
-
     if (state.loaded && !forceRefresh) {
       render();
       return;
@@ -1456,7 +1509,7 @@
 
     renderMessage(
       "Memuat evaluasi perangkat",
-      "Sedang membaca data komputer, printer, dan riwayat Maintenance..."
+      "Sedang membaca data komputer dan printer..."
     );
 
     let success = false;
