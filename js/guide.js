@@ -61,7 +61,7 @@
           "Fitur yang dapat digunakan oleh pengguna umum.",
           `
 
-          ${guideItem(1, "Dashboard", "monitor", `
+          ${guideItem(1, "Dashboard", "dashboard", `
             <p>
               Dashboard merupakan halaman ringkasan utama
               GoJak TechOps.
