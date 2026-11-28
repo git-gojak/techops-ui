@@ -252,8 +252,9 @@
 
           ${guideItem(9, "Mencatat Maintenance melalui QR", "scan", `
             <p>
-              Teknisi dapat mencatat maintenance melalui hasil
-              pemindaian QR perangkat.
+              Teknisi dapat mencatat maintenance melalui hasil pemindaian QR perangkat.
+              Jenis kerusakan pada kegiatan Perbaikan dibedakan menjadi Hardware atau Software.
+              Jadwal Perawatan selanjutnya akan otomatis terisi.
             </p>
 
             <ol>
@@ -268,15 +269,6 @@
               </li>
               <li>Periksa data, lalu simpan.</li>
             </ol>
-
-            <p>
-              Jenis kerusakan pada kegiatan Perbaikan
-              dibedakan menjadi Hardware atau Software.
-            </p>
-
-            <p>
-              Jadwal Perawatan selanjutnya akan otomatis terisi.
-            </p>
           `)}
 
           ${guideItem(10, "Mengganti PIN", "shield", `
@@ -300,18 +292,6 @@
         )}
 
       </div>
-
-      <!-- PENUTUP -->
-      <section class="glass-card">
-        <div class="card-heading">
-          <h3>Informasi Tambahan</h3>
-          <p>
-            Gunakan aplikasi sesuai kewenangan dan pastikan
-            data perangkat yang dimasukkan benar.
-          </p>
-        </div>
-      </section>
-
     </div>
   `;
 
