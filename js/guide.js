@@ -52,19 +52,6 @@
 
   root.innerHTML = `
     <div class="inventory-page">
-
-      <!-- INFORMASI PANDUAN -->
-      <section class="glass-card">
-        <div class="card-heading">
-          <h3>${icon("history")} Informasi Panduan</h3>
-          <p>
-            Panduan ini dapat dibaca oleh publik.
-            Pengelolaan data dan pencatatan maintenance
-            tetap memerlukan login.
-          </p>
-        </div>
-      </section>
-
       <!-- DUA KOLOM PANDUAN -->
       <div class="dashboard-lower-grid">
 
