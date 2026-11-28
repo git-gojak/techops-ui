@@ -11,10 +11,12 @@
    - Sensor identitas mengikuti Backend.
    - Read-only, tidak mengubah database.
 
-   UI:
-   - Mengikuti komponen dan ikon GoJak TechOps.
-   - Tombol responsif dan label dapat membungkus.
-   - Kartu perangkat dibuat lebih mudah dibaca.
+   FILTER:
+   - Dasar evaluasi: Hardware / Riwayat Perbaikan.
+   - Jenis perangkat: Semua / Komputer / Printer.
+   - Profil: Standar Dasar / Ketat / Ringan.
+   - Profil Ketat dan Ringan sementara memakai
+     kriteria evaluasi yang berlaku.
    ========================================================= */
 
 (function () {
@@ -32,7 +34,14 @@
     printers: [],
     maintenance: [],
     view: "hardware",
-    type: "computers",
+    type: "all",
+    profile: "basic",
+    filterOpen: false,
+    draft: {
+      view: "hardware",
+      type: "all",
+      profile: "basic"
+    },
     loading: false,
     loaded: false,
     lastUpdated: null
@@ -518,7 +527,6 @@
 
   // =======================================================
   // KOMPONEN FIELD SPESIFIKASI
-  // Memakai ikon yang sudah tersedia di icons.js.
   // =======================================================
 
   function renderSpecField(name, value, iconName) {
@@ -533,17 +541,11 @@
         border-radius:10px;
         background:rgba(255,255,255,.025);
       ">
-        <span style="
-          flex:0 0 18px;
-          margin-top:1px;
-        ">
+        <span style="flex:0 0 18px;margin-top:1px;">
           ${icon(iconName)}
         </span>
 
-        <div style="
-          min-width:0;
-          flex:1;
-        ">
+        <div style="min-width:0;flex:1;">
           <small style="
             display:block;
             margin-bottom:3px;
@@ -590,11 +592,8 @@
         )}
 
         ${renderSpecField("RAM", row.ram, "ram")}
-
         ${renderSpecField("Storage", row.storage, "storage")}
-
         ${renderSpecField("Sistem Operasi", row.os, "os")}
-
         ${renderSpecField("Tahun", row.tahun, "tahun")}
 
         ${renderSpecField(
@@ -639,7 +638,6 @@
 
     return `
       <div class="evaluation-history">
-
         <div>
           <span>Perbaikan</span>
           <strong>${history.repair} kali tercatat</strong>
@@ -663,7 +661,6 @@
               : "-"}
           </strong>
         </div>
-
       </div>
     `;
   }
@@ -691,16 +688,14 @@
     return `
       <article
         class="glass-card evaluation-device-card"
-        style="min-width:0; overflow:hidden;"
+        style="min-width:0;overflow:hidden;"
       >
-
         <div style="
           display:flex;
           flex-direction:column;
           gap:10px;
           min-width:0;
         ">
-
           <div style="
             display:flex;
             align-items:center;
@@ -708,7 +703,6 @@
             flex-wrap:wrap;
             gap:7px;
           ">
-
             <span style="
               color:var(--blue-light);
               font-size:11px;
@@ -738,11 +732,9 @@
               ${icon(isReplacement ? "history" : "monitor")}
               ${label}
             </span>
-
           </div>
 
           <div style="min-width:0;">
-
             <h4 style="
               margin:0;
               color:var(--text-main);
@@ -764,7 +756,7 @@
               overflow-wrap:anywhere;
             ">
               ${icon("pengguna")}
-              <span style="min-width:0; overflow-wrap:anywhere;">
+              <span style="min-width:0;overflow-wrap:anywhere;">
                 ${esc(row.pengguna || "Pengguna belum tercatat")}
               </span>
             </div>
@@ -778,15 +770,12 @@
             ">
               Serial: ${esc(row.serial || "Tidak tersedia")}
             </small>
-
           </div>
-
         </div>
 
         ${computerSpecification(row, item.age)}
 
         <details class="evaluation-detail" style="margin-top:12px;">
-
           <summary style="
             padding:10px;
             border:1px solid var(--border);
@@ -806,7 +795,7 @@
             font-size:12px;
             line-height:1.7;
           ">
-            <ul style="padding-left:18px; margin:0;">
+            <ul style="padding-left:18px;margin:0;">
               ${item.reasons.map(reason => `
                 <li style="
                   margin-bottom:6px;
@@ -817,9 +806,7 @@
               `).join("")}
             </ul>
           </div>
-
         </details>
-
       </article>
     `;
   }
@@ -832,22 +819,19 @@
     return `
       <article
         class="glass-card evaluation-device-card"
-        style="min-width:0; overflow:hidden;"
+        style="min-width:0;overflow:hidden;"
       >
-
         <div style="
           display:flex;
           align-items:center;
           gap:10px;
           min-width:0;
         ">
-
           <div class="stat-icon teal" style="flex:0 0 38px;">
             ${icon("printer")}
           </div>
 
-          <div style="min-width:0; flex:1;">
-
+          <div style="min-width:0;flex:1;">
             <small style="
               color:var(--blue-light);
               font-size:10px;
@@ -885,11 +869,8 @@
             ">
               Serial: ${esc(row.serial || "Tidak tersedia")}
             </small>
-
           </div>
-
         </div>
-
       </article>
     `;
   }
@@ -913,11 +894,8 @@
 
     return `
       <article class="glass-card evaluation-device-card">
-
         <div class="evaluation-device-heading">
-
           <div>
-
             <span class="evaluation-number">
               Data ${index + 1}
             </span>
@@ -933,7 +911,6 @@
                 Pengguna: ${esc(row.pengguna || "Tidak tercatat")}
               </small>
             ` : ""}
-
           </div>
 
           <span class="evaluation-badge ${
@@ -941,7 +918,6 @@
           }">
             ${label}
           </span>
-
         </div>
 
         ${type === "computers"
@@ -959,7 +935,6 @@
             Serial kosong. Riwayat Maintenance tidak dapat dicocokkan.
           </p>
         ` : ""}
-
       </article>
     `;
   }
@@ -978,29 +953,22 @@
 
     return `
       <section class="evaluation-category">
-
         <div class="evaluation-category-heading">
-
           <div>
-
             <h3>
               <span class="evaluation-dot ${
                 isReplacement
                   ? "evaluation-dot-red"
                   : "evaluation-dot-yellow"
               }"></span>
-
               ${title}
             </h3>
-
             <p>${description}</p>
-
           </div>
 
           <span class="evaluation-count">
             ${items.length} perangkat
           </span>
-
         </div>
 
         ${items.length
@@ -1013,7 +981,6 @@
             </div>
           `
         }
-
       </section>
     `;
   }
@@ -1025,9 +992,7 @@
   function renderPrinterHardwarePage() {
     return `
       <section class="evaluation-category">
-
         <div class="evaluation-category-heading">
-
           <div>
             <h3>Daftar Printer</h3>
             <p>Identitas printer yang terdaftar dalam inventaris.</p>
@@ -1036,7 +1001,6 @@
           <span class="evaluation-count">
             ${state.printers.length} printer
           </span>
-
         </div>
 
         ${state.printers.length
@@ -1049,7 +1013,6 @@
             </div>
           `
         }
-
       </section>
     `;
   }
@@ -1066,9 +1029,7 @@
   ) {
     return `
       <section class="evaluation-category">
-
         <div class="evaluation-category-heading">
-
           <div>
             <h3>${title}</h3>
             <p>${description}</p>
@@ -1077,7 +1038,6 @@
           <span class="evaluation-count">
             ${items.length} perangkat
           </span>
-
         </div>
 
         ${items.length
@@ -1090,157 +1050,20 @@
             </div>
           `
         }
-
       </section>
     `;
   }
 
   // =======================================================
-  // PILIHAN JENIS EVALUASI
+  // HALAMAN HARDWARE KOMPUTER
   // =======================================================
 
-  function renderViewSelector() {
-    if (!isAdmin()) return "";
-
-    return `
-      <section class="glass-card">
-
-        <div class="card-heading">
-          <h3>Jenis Evaluasi</h3>
-          <p>Pilih dasar evaluasi yang ingin dilihat.</p>
-        </div>
-
-        <div class="maintenance-radio-group">
-
-          <button
-            type="button"
-            class="inventory-button ${
-              state.view === "hardware"
-                ? "inventory-primary"
-                : ""
-            }"
-            data-evaluation-view="hardware"
-            style="
-              flex:1 1 155px;
-              min-width:0;
-              max-width:100%;
-              white-space:normal;
-              line-height:1.4;
-              text-align:center;
-              overflow-wrap:anywhere;
-            "
-          >
-            ${icon("komputer")}
-            Berdasarkan Hardware
-          </button>
-
-          <button
-            type="button"
-            class="inventory-button ${
-              state.view === "repair"
-                ? "inventory-primary"
-                : ""
-            }"
-            data-evaluation-view="repair"
-            style="
-              flex:1 1 155px;
-              min-width:0;
-              max-width:100%;
-              white-space:normal;
-              line-height:1.4;
-              text-align:center;
-              overflow-wrap:anywhere;
-            "
-          >
-            ${icon("history")}
-            Berdasarkan Perbaikan
-          </button>
-
-        </div>
-
-      </section>
-    `;
-  }
-
-  // =======================================================
-  // PILIHAN JENIS PERANGKAT
-  // =======================================================
-
-  function renderTypeSelector() {
-    return `
-      <section class="glass-card">
-
-        <div class="card-heading">
-          <h3>Jenis Perangkat</h3>
-          <p>Pilih komputer atau printer.</p>
-        </div>
-
-        <div class="maintenance-radio-group">
-
-          <button
-            type="button"
-            class="inventory-button ${
-              state.type === "computers"
-                ? "inventory-primary"
-                : ""
-            }"
-            data-evaluation-type="computers"
-            style="
-              flex:0 1 auto;
-              min-width:0;
-              max-width:100%;
-              white-space:normal;
-              line-height:1.4;
-              text-align:center;
-            "
-          >
-            ${icon("komputer")}
-            Komputer
-          </button>
-
-          <button
-            type="button"
-            class="inventory-button ${
-              state.type === "printers"
-                ? "inventory-primary"
-                : ""
-            }"
-            data-evaluation-type="printers"
-            style="
-              flex:0 1 auto;
-              min-width:0;
-              max-width:100%;
-              white-space:normal;
-              line-height:1.4;
-              text-align:center;
-            "
-          >
-            ${icon("printer")}
-            Printer
-          </button>
-
-        </div>
-
-      </section>
-    `;
-  }
-
-  // =======================================================
-  // HALAMAN HARDWARE
-  // =======================================================
-
-  function renderHardwarePage() {
-    if (state.type === "printers") {
-      return renderPrinterHardwarePage();
-    }
-
+  function renderComputerHardwarePage() {
     const result = getHardwareRecommendations();
 
     return `
       <div class="dashboard-grid">
-
         <article class="stat-card">
-
           <div class="stat-icon blue">
             ${icon("komputer")}
           </div>
@@ -1249,11 +1072,9 @@
             <span>Total Komputer Aktif</span>
             <strong>${state.computers.length}</strong>
           </div>
-
         </article>
 
         <article class="stat-card">
-
           <div class="stat-icon purple">
             ${icon("history")}
           </div>
@@ -1262,11 +1083,9 @@
             <span>Perlu Penggantian</span>
             <strong>${result.replacement.length}</strong>
           </div>
-
         </article>
 
         <article class="stat-card">
-
           <div class="stat-icon teal">
             ${icon("monitor")}
           </div>
@@ -1275,9 +1094,7 @@
             <span>Perlu Perhatian</span>
             <strong>${result.attention.length}</strong>
           </div>
-
         </article>
-
       </div>
 
       ${renderHardwareCategory(
@@ -1295,11 +1112,9 @@
       )}
 
       <section class="glass-card evaluation-notes">
-
         <h3>Dasar Evaluasi Hardware</h3>
 
         <ul>
-
           <li>
             Acuan prosesor adalah Intel Core i3 Gen 8
             atau AMD Ryzen 3 seri 3000 dan lebih baru.
@@ -1328,18 +1143,16 @@
             Riwayat perbaikan tidak memengaruhi
             penilaian hardware.
           </li>
-
         </ul>
-
       </section>
     `;
   }
 
   // =======================================================
-  // HALAMAN PERBAIKAN
+  // HALAMAN RIWAYAT PERBAIKAN
   // =======================================================
 
-  function renderRepairPage() {
+  function renderRepairPageForType(type) {
     if (!isAdmin()) {
       return `
         <section class="glass-card">
@@ -1349,7 +1162,6 @@
       `;
     }
 
-    const type = state.type;
     const isComputer = type === "computers";
     const result = getRepairRecommendations(type);
 
@@ -1365,9 +1177,7 @@
 
     return `
       <div class="dashboard-grid">
-
         <article class="stat-card">
-
           <div class="stat-icon blue">
             ${icon(isComputer ? "komputer" : "printer")}
           </div>
@@ -1376,11 +1186,9 @@
             <span>Perangkat dengan Catatan Perbaikan</span>
             <strong>${result.withRepair.length}</strong>
           </div>
-
         </article>
 
         <article class="stat-card">
-
           <div class="stat-icon purple">
             ${icon("history")}
           </div>
@@ -1389,11 +1197,9 @@
             <span>Total Perbaikan Tercatat</span>
             <strong>${totalRepair}</strong>
           </div>
-
         </article>
 
         <article class="stat-card">
-
           <div class="stat-icon teal">
             ${icon("monitor")}
           </div>
@@ -1402,9 +1208,7 @@
             <span>Total Perawatan Tercatat</span>
             <strong>${totalMaintenance}</strong>
           </div>
-
         </article>
-
       </div>
 
       ${renderRepairCategory(
@@ -1422,11 +1226,9 @@
       )}
 
       <section class="glass-card evaluation-notes">
-
         <h3>Catatan Riwayat Maintenance</h3>
 
         <ul>
-
           <li>
             Jumlah Perbaikan dan Perawatan dihitung
             secara terpisah.
@@ -1458,9 +1260,348 @@
             Tidak adanya catatan perbaikan bukan berarti
             perangkat belum pernah mengalami kerusakan.
           </li>
-
         </ul>
+      </section>
+    `;
+  }
 
+  // =======================================================
+  // PENGGABUNGAN JENIS PERANGKAT
+  // =======================================================
+
+  function renderHardwarePage() {
+    if (state.type === "printers") {
+      return renderPrinterHardwarePage();
+    }
+
+    if (state.type === "all") {
+      return `
+        ${renderComputerHardwarePage()}
+        ${renderPrinterHardwarePage()}
+      `;
+    }
+
+    return renderComputerHardwarePage();
+  }
+
+  function renderRepairPage() {
+    if (!isAdmin()) {
+      return `
+        <section class="glass-card">
+          <h3>Akses Admin diperlukan</h3>
+          <p>Riwayat perbaikan hanya tersedia untuk Admin.</p>
+        </section>
+      `;
+    }
+
+    if (state.type === "all") {
+      return `
+        ${renderRepairPageForType("computers")}
+        ${renderRepairPageForType("printers")}
+      `;
+    }
+
+    return renderRepairPageForType(state.type);
+  }
+
+  // =======================================================
+  // PANEL FILTER EVALUASI
+  // =======================================================
+
+  function renderFilterPanel() {
+    if (!state.filterOpen) return "";
+
+    const selected = (value, current) =>
+      value === current ? "inventory-primary" : "";
+
+    const profileDescription = {
+      basic: "Menggunakan kriteria evaluasi yang saat ini berlaku.",
+      strict: "Profil standar lebih ketat. Ambang penilaian akan ditetapkan pada tahap evaluasi berikutnya.",
+      light: "Profil standar lebih ringan. Ambang penilaian akan ditetapkan pada tahap evaluasi berikutnya."
+    };
+
+    return `
+      <div
+        class="evaluation-filter-backdrop"
+        data-filter-close="true"
+        style="
+          position:fixed;
+          inset:0;
+          z-index:9998;
+          display:flex;
+          align-items:flex-end;
+          justify-content:center;
+          padding:12px;
+          background:rgba(0,0,0,.58);
+        "
+      >
+        <section
+          class="glass-card evaluation-filter-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="evaluationFilterTitle"
+          data-filter-panel="true"
+          style="
+            width:min(100%,620px);
+            max-height:88vh;
+            overflow:auto;
+            padding:18px;
+            border:1px solid var(--border);
+            border-radius:18px;
+            background:var(--card-bg,var(--background));
+            box-shadow:0 18px 55px rgba(0,0,0,.32);
+          "
+        >
+          <div style="
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:12px;
+          ">
+            <div>
+              <h3 id="evaluationFilterTitle" style="margin:0;">
+                Filter Evaluasi
+              </h3>
+
+              <p style="
+                margin:5px 0 0;
+                color:var(--text-muted);
+                font-size:12px;
+              ">
+                Tentukan tampilan data sebelum hasil ditampilkan.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="inventory-button"
+              data-filter-close-button
+              aria-label="Tutup filter"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div style="margin-top:18px;">
+            <strong style="
+              display:block;
+              margin-bottom:9px;
+              font-size:13px;
+            ">
+              Dasar Evaluasi
+            </strong>
+
+            <div style="
+              display:flex;
+              flex-wrap:wrap;
+              gap:8px;
+            ">
+              <button
+                type="button"
+                class="inventory-button ${selected("hardware", state.draft.view)}"
+                data-draft-view="hardware"
+              >
+                ${icon("monitor")} Hardware
+              </button>
+
+              ${isAdmin() ? `
+                <button
+                  type="button"
+                  class="inventory-button ${selected("repair", state.draft.view)}"
+                  data-draft-view="repair"
+                >
+                  ${icon("history")} Riwayat Perbaikan
+                </button>
+              ` : `
+                <button
+                  type="button"
+                  class="inventory-button"
+                  disabled
+                  title="Riwayat perbaikan hanya tersedia untuk Admin"
+                  style="opacity:.5;cursor:not-allowed;"
+                >
+                  ${icon("history")} Riwayat Perbaikan (Admin)
+                </button>
+              `}
+            </div>
+          </div>
+
+          <div style="margin-top:18px;">
+            <strong style="
+              display:block;
+              margin-bottom:9px;
+              font-size:13px;
+            ">
+              Jenis Perangkat
+            </strong>
+
+            <div style="
+              display:flex;
+              flex-wrap:wrap;
+              gap:8px;
+            ">
+              <button
+                type="button"
+                class="inventory-button ${selected("all", state.draft.type)}"
+                data-draft-type="all"
+              >
+                Semua
+              </button>
+
+              <button
+                type="button"
+                class="inventory-button ${selected("computers", state.draft.type)}"
+                data-draft-type="computers"
+              >
+                ${icon("komputer")} Komputer
+              </button>
+
+              <button
+                type="button"
+                class="inventory-button ${selected("printers", state.draft.type)}"
+                data-draft-type="printers"
+              >
+                ${icon("printer")} Printer
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;">
+            <strong style="
+              display:block;
+              margin-bottom:9px;
+              font-size:13px;
+            ">
+              Profil Standar
+            </strong>
+
+            <div style="
+              display:grid;
+              grid-template-columns:repeat(3,minmax(0,1fr));
+              gap:8px;
+            ">
+              <button
+                type="button"
+                class="inventory-button ${selected("basic", state.draft.profile)}"
+                data-draft-profile="basic"
+                style="min-width:0;white-space:normal;"
+              >
+                Standar Dasar
+              </button>
+
+              <button
+                type="button"
+                class="inventory-button ${selected("strict", state.draft.profile)}"
+                data-draft-profile="strict"
+                style="min-width:0;white-space:normal;"
+              >
+                Standar Ketat
+              </button>
+
+              <button
+                type="button"
+                class="inventory-button ${selected("light", state.draft.profile)}"
+                data-draft-profile="light"
+                style="min-width:0;white-space:normal;"
+              >
+                Standar Ringan
+              </button>
+            </div>
+
+            <p style="
+              margin:8px 0 0;
+              color:var(--text-muted);
+              font-size:11px;
+              line-height:1.5;
+            ">
+              ${esc(profileDescription[state.draft.profile] || profileDescription.basic)}
+              Hasil evaluasi sementara tetap mengikuti kriteria yang berlaku.
+            </p>
+          </div>
+
+          <div style="
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+            margin-top:20px;
+          ">
+            <button
+              type="button"
+              class="inventory-button"
+              data-filter-reset
+            >
+              Reset
+            </button>
+
+            <button
+              type="button"
+              class="inventory-button inventory-primary"
+              data-filter-apply
+              style="flex:1 1 160px;"
+            >
+              Terapkan Filter
+            </button>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  // =======================================================
+  // RINGKASAN FILTER AKTIF
+  // =======================================================
+
+  function renderFilterSummary() {
+    const viewLabel = state.view === "repair"
+      ? "Riwayat Perbaikan"
+      : "Hardware";
+
+    const typeLabel = {
+      all: "Semua Perangkat",
+      computers: "Komputer",
+      printers: "Printer"
+    }[state.type] || "Semua Perangkat";
+
+    const profileLabel = {
+      basic: "Standar Dasar",
+      strict: "Standar Ketat",
+      light: "Standar Ringan"
+    }[state.profile] || "Standar Dasar";
+
+    return `
+      <section class="glass-card" style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        flex-wrap:wrap;
+      ">
+        <div style="min-width:0;">
+          <strong style="
+            display:block;
+            font-size:13px;
+          ">
+            Filter aktif
+          </strong>
+
+          <span style="
+            display:block;
+            margin-top:4px;
+            color:var(--text-muted);
+            font-size:11px;
+            line-height:1.5;
+          ">
+            ${esc(viewLabel)} · ${esc(typeLabel)} · ${esc(profileLabel)}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          class="inventory-button"
+          id="evaluationFilterOpen"
+        >
+          ${icon("filter")} Filter
+        </button>
       </section>
     `;
   }
@@ -1479,11 +1620,8 @@
 
     root.innerHTML = `
       <div class="inventory-page evaluation-page">
-
         <div class="inventory-heading">
-
           <div>
-
             <span class="inventory-eyebrow">
               GOJAK TECHOPS
             </span>
@@ -1494,7 +1632,6 @@
               Evaluasi kondisi hardware dan riwayat perbaikan
               perangkat secara terpisah.
             </p>
-
           </div>
 
           <button
@@ -1505,12 +1642,11 @@
           >
             ${state.loading ? "Memuat..." : "Perbarui Data"}
           </button>
-
         </div>
 
-        ${renderViewSelector()}
+        ${renderFilterSummary()}
 
-        ${renderTypeSelector()}
+        ${renderFilterPanel()}
 
         ${state.view === "hardware"
           ? renderHardwarePage()
@@ -1520,7 +1656,6 @@
         <div class="inventory-footer">
           Data diperbarui: ${esc(updated)}
         </div>
-
       </div>
     `;
 
@@ -1537,23 +1672,77 @@
       () => openPage(true)
     );
 
-    root.querySelectorAll("[data-evaluation-view]")
-      .forEach(button => {
-        button.addEventListener("click", () => {
-          if (!isAdmin()) return;
+    $("#evaluationFilterOpen")?.addEventListener("click", () => {
+      state.draft = {
+        view: state.view,
+        type: state.type,
+        profile: state.profile
+      };
 
-          state.view = button.dataset.evaluationView;
-          render();
-        });
-      });
+      state.filterOpen = true;
+      render();
+    });
 
-    root.querySelectorAll("[data-evaluation-type]")
-      .forEach(button => {
-        button.addEventListener("click", () => {
-          state.type = button.dataset.evaluationType;
-          render();
-        });
+    root.querySelectorAll(
+      "[data-filter-close], [data-filter-close-button]"
+    ).forEach(element => {
+      element.addEventListener("click", event => {
+        if (event.target.closest("[data-filter-panel]")) return;
+
+        state.filterOpen = false;
+        render();
       });
+    });
+
+    root.querySelectorAll("[data-draft-view]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (
+          button.dataset.draftView === "repair" &&
+          !isAdmin()
+        ) {
+          return;
+        }
+
+        state.draft.view = button.dataset.draftView;
+        render();
+      });
+    });
+
+    root.querySelectorAll("[data-draft-type]").forEach(button => {
+      button.addEventListener("click", () => {
+        state.draft.type = button.dataset.draftType;
+        render();
+      });
+    });
+
+    root.querySelectorAll("[data-draft-profile]").forEach(button => {
+      button.addEventListener("click", () => {
+        state.draft.profile = button.dataset.draftProfile;
+        render();
+      });
+    });
+
+    $("[data-filter-reset]")?.addEventListener("click", () => {
+      state.draft = {
+        view: "hardware",
+        type: "all",
+        profile: "basic"
+      };
+
+      render();
+    });
+
+    $("[data-filter-apply]")?.addEventListener("click", () => {
+      state.view = isAdmin()
+        ? state.draft.view
+        : "hardware";
+
+      state.type = state.draft.type;
+      state.profile = state.draft.profile;
+      state.filterOpen = false;
+
+      render();
+    });
   }
 
   // =======================================================
@@ -1563,16 +1752,12 @@
   function renderMessage(title, message) {
     root.innerHTML = `
       <div class="inventory-page">
-
         <section class="glass-card">
-
           <div class="card-heading">
             <h3>${esc(title)}</h3>
             <p>${esc(message)}</p>
           </div>
-
         </section>
-
       </div>
     `;
   }
@@ -1604,7 +1789,6 @@
       : api.getPublic.bind(api);
 
     const results = await Promise.all([
-
       getData("computers.list", {
         includeArchived: false
       }),
@@ -1612,7 +1796,6 @@
       getData("printers.list", {
         includeArchived: false
       })
-
     ]);
 
     state.computers = normalizeArray(results[0]);
@@ -1689,7 +1872,6 @@
 
   // =======================================================
   // SINKRONISASI AUTENTIKASI
-  // Menggunakan callback API yang tersedia.
   // =======================================================
 
   if (window.TechOpsAPI?.onAuthChange) {
